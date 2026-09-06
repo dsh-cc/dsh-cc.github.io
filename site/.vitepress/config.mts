@@ -66,9 +66,9 @@ export default defineConfig({
       link: '/zh/',
       themeConfig: {
         nav: [
-          // TODO(P2): flip `文档` to internal entries (/zh/quickstart, /zh/guide/, /zh/reference/)
-          // once the doc pages land and are no longer stubs.
-          { text: '文档', link: 'https://github.com/dsh-cc/dsh-cc/blob/main/README.zh.md' },
+          { text: '快速开始', link: '/zh/quickstart' },
+          { text: '使用场景', link: '/zh/guide/' },
+          { text: '参考', link: '/zh/reference/' },
           { text: 'GitHub', link: 'https://github.com/dsh-cc/dsh-cc' },
           { text: 'npm', link: 'https://www.npmjs.com/org/dsh-cc' },
           { text: '发布', link: 'https://github.com/dsh-cc/dsh-cc/releases' },
@@ -139,9 +139,9 @@ export default defineConfig({
   },
   themeConfig: {
     nav: [
-      // TODO(P2): flip `Docs` to internal entries (/quickstart, /guide/, /reference/)
-      // once the doc pages land and are no longer stubs.
-      { text: 'Docs', link: 'https://github.com/dsh-cc/dsh-cc#readme' },
+      { text: 'Quick start', link: '/quickstart' },
+      { text: 'Guides', link: '/guide/' },
+      { text: 'Reference', link: '/reference/' },
       { text: 'GitHub', link: 'https://github.com/dsh-cc/dsh-cc' },
       { text: 'npm', link: 'https://www.npmjs.com/org/dsh-cc' },
       { text: 'Releases', link: 'https://github.com/dsh-cc/dsh-cc/releases' },

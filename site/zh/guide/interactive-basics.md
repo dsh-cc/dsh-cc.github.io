@@ -31,7 +31,7 @@ $ dsh-cc -c
 
 如果传入 `-c`/`--continue` 但没有历史会话，TUI 会提示 "no previous session to continue"。不带显式参数时，TUI 读取自己的项目 resume 标记，存在则自动恢复最近会话。
 
-在会话内，`/resume` 列出会话，用于恢复被中断的会话。注意这是部分对齐：`/resume` 只负责列出会话，切换由宿主负责（在 shell 中执行 `dsh --resume <id>`）。当前源文档中没有 `/rename` 命令。
+在会话内，`/resume` 列出会话，用于恢复被中断的会话。注意这是部分对齐：`/resume` 只负责列出会话，切换由宿主负责（在 shell 中执行 `dsh --resume <id>`）。用 `/rename <标题>` 重命名当前会话；完整命令见[斜杠命令目录](/zh/reference/commands)。
 
 ## 检查工作状态
 
@@ -48,7 +48,7 @@ TUI 还提供对话导出、用量/上下文显示、todo 查看、审批、排�
 
 ## 上下文管理
 
-源文档中没有记录 `/compact` 或 `/clear` 斜杠命令，因此这里不做罗列。上下文处理由 compaction 包（micro-compaction）和记忆层（`CLAUDE.md` 风格的上下文，外加专门用于持久记忆的写入通道，按工作区隔离）承担；可用 `/memory` 查看记忆。
+上下文处理：`/compact` 可带保留指令压缩会话；TUI 本地的 `/clear`（别名 `/new`、`/reset`）开启全新对话且旧会话仍可恢复（详见[斜杠命令目录](/zh/reference/commands)）。记忆层（`CLAUDE.md` 风格的上下文，外加专门用于持久记忆的写入通道，按工作区隔离）承载长期知识；可用 `/memory` 查看记忆。
 
 ## 安全地并行开发
 

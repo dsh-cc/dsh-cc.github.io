@@ -31,7 +31,7 @@ $ dsh-cc -c
 
 If you pass `-c`/`--continue` and there is no previous session, the TUI shows a "no previous session to continue" notice. With no explicit flag, the TUI reads its own project resume marker and auto-resumes the last session if one exists.
 
-Inside a session, `/resume` lists sessions so you can resume an interrupted one. Note this is partial parity: `/resume` lists sessions, but switching is host-owned (`dsh --resume <id>` from the shell). There is no `/rename` command in the current source documentation.
+Inside a session, `/resume` lists sessions so you can resume an interrupted one. Note this is partial parity: `/resume` lists sessions, but switching is host-owned (`dsh --resume <id>` from the shell). Rename the current session with `/rename <title>`; the full list lives in the [slash-command catalog](/reference/commands).
 
 ## Inspecting work
 
@@ -48,7 +48,7 @@ The TUI also provides transcript export, usage/context display, todo inspection,
 
 ## Context management
 
-The sources do not document `/compact` or `/clear` slash commands, so they are not listed here. Context handling is served by the compaction package (micro-compaction) and the memory layer (`CLAUDE.md`-style context plus a dedicated write channel for durable memories, isolated by workspace); use `/memory` to inspect memories.
+For context handling, `/compact` compacts the session with optional preservation instructions; the TUI-local `/clear` (aliases `/new`, `/reset`) starts a fresh conversation while the previous session stays resumable (see the [slash-command catalog](/reference/commands)). The memory layer (`CLAUDE.md`-style context plus a dedicated write channel for durable memories, isolated by workspace) carries durable knowledge; use `/memory` to inspect memories.
 
 ## Working in parallel safely
 
