@@ -83,7 +83,7 @@ stdout 不是 TTY 时 TUI 会拒绝挂载。设置 `DSH_CCTUI_ALLOW_NO_TTY='1'` 
 在没有交互终端的情况下挂载 TUI——这是从脚本接入 dsh-cc 进程时的逃生舱。
 上面的冒烟门禁刻意**不**使用它：它给子进程一个真正的伪终端，因为门禁的
 目的正是证明用户级、交互优先的启动路径可用。完整变量目录见
-[/reference/env-vars](/reference/env-vars)。
+[/reference/env-vars](/zh/reference/env-vars)。
 
 ::: warning
 非交互挂载是诊断用的逃生舱，不是批处理模式。dsh-cc 没有无头任务执行器；
@@ -102,11 +102,11 @@ $ dsh plugin --profile web add \
 $ dsh web
 ```
 
-这是浏览器界面，不是自动化 API——安装步骤见 [/quickstart](/quickstart)。
+这是浏览器界面，不是自动化 API——安装步骤见 [/quickstart](/zh/quickstart)。
 
 ## 下一步
 
-- [/reference/cli](/reference/cli) — `dsh-cc` 启动器及其参数
-- [/reference/env-vars](/reference/env-vars) — 环境变量目录
-- [/guide/from-claude-code](/guide/from-claude-code) — 迁移既有
+- [/reference/cli](/zh/reference/cli) — `dsh-cc` 启动器及其参数
+- [/reference/env-vars](/zh/reference/env-vars) — 环境变量目录
+- [/guide/from-claude-code](/zh/guide/from-claude-code) — 迁移既有
   Claude Code 工作流

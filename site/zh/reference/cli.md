@@ -44,11 +44,11 @@ $ dsh-cc
 的 argv 重新推导，因此启动 `dsh-cc` 时请勿手动设置它们。
 
 ::: tip
-`DSH_CC_*` 变量的完整细节见 [/reference/env-vars](/reference/env-vars)。
+`DSH_CC_*` 变量的完整细节见 [/reference/env-vars](/zh/reference/env-vars)。
 :::
 
 ## 下一步
 
-- [/reference/env-vars](/reference/env-vars) —— `DSH_CC_*` 环境变量契约。
-- [/reference/commands](/reference/commands) —— TUI 中可用的斜杠命令。
-- [/reference/permission-modes](/reference/permission-modes) —— 会话内的权限模式。
+- [/reference/env-vars](/zh/reference/env-vars) —— `DSH_CC_*` 环境变量契约。
+- [/reference/commands](/zh/reference/commands) —— TUI 中可用的斜杠命令。
+- [/reference/permission-modes](/zh/reference/permission-modes) —— 会话内的权限模式。

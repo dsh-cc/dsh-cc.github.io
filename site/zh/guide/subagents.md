@@ -5,7 +5,7 @@ description: 在 .claude/agents 下编写 Claude Code 风格的代理定义，�
 
 # 子代理
 
-子代理（subagent）是主代理可以委派任务的、拥有全新上下文的专注助手。每个子代理是你工作区 `.claude/agents` 目录下的一个 markdown 文件：文件的 frontmatter 决定子代理使用哪个模型、哪些工具，正文则成为子代理的系统提示。本页讲的是**编写**这些定义——如何运行后台或恢复代理，请看 [/guide/background-tasks](/guide/background-tasks)。
+子代理（subagent）是主代理可以委派任务的、拥有全新上下文的专注助手。每个子代理是你工作区 `.claude/agents` 目录下的一个 markdown 文件：文件的 frontmatter 决定子代理使用哪个模型、哪些工具，正文则成为子代理的系统提示。本页讲的是**编写**这些定义——如何运行后台或恢复代理，请看 [/guide/background-tasks](/zh/guide/background-tasks)。
 
 ## 文件契约
 
@@ -27,7 +27,7 @@ description: 在 .claude/agents 下编写 Claude Code 风格的代理定义，�
 | 字段 | 作用 |
 | --- | --- |
 | `description` | 一句话说明该代理的用途。`Available subagents` 系统提示区块渲染的就是它，因此它驱动调度——主模型靠阅读这些描述来挑选代理。 |
-| `model` | Claude Code 风格的模型别名（`sonnet`、`opus`、`haiku`、`fable`、`inherit` 等）。在 spawn 时通过 `ccModelRoutes` 服务解析，见 [/guide/model-routing](/guide/model-routing)。 |
+| `model` | Claude Code 风格的模型别名（`sonnet`、`opus`、`haiku`、`fable`、`inherit` 等）。在 spawn 时通过 `ccModelRoutes` 服务解析，见 [/guide/model-routing](/zh/guide/model-routing)。 |
 | `tools` | 收窄子代理的工具集（allow/deny），见下文工具一节。 |
 | `background` | 将该代理固定为可继续的后台代理启动，见下文。 |
 
@@ -84,7 +84,7 @@ To delegate to one, pass its name as the `subagent_type` argument of the Task to
 
 ### `model:` 与别名路由
 
-frontmatter 的 `model:` 字段在每次 spawn 时都通过 `ccModelRoutes` 解析，因此 `model: haiku` 会落到你的 `haiku` 路由当时映射到的 provider/model——重新映射某个路由无需改动定义。若别名服务不存在，所有子代理直接继承父代理的路由。细节与示例见 [/guide/model-routing](/guide/model-routing)。
+frontmatter 的 `model:` 字段在每次 spawn 时都通过 `ccModelRoutes` 解析，因此 `model: haiku` 会落到你的 `haiku` 路由当时映射到的 provider/model——重新映射某个路由无需改动定义。若别名服务不存在，所有子代理直接继承父代理的路由。细节与示例见 [/guide/model-routing](/zh/guide/model-routing)。
 
 ### `tools:` 限制
 
@@ -99,7 +99,7 @@ frontmatter 的 `tools:` 值会收窄子代理的工具集，并针对 spawn 时
 
 默认情况下 `Task` 调用是**前台**的：工具等待子代理完成并返回其文本输出。在定义中设置 `background: true` 会把该代理固定为持久、可继续的后台代理——调用立即返回一个 `agentId`，结果稍后以唤醒消息的形式到达。调用方仍可覆盖这一固定：显式 `run_in_background: false` 强制前台，显式 `run_in_background: true` 则让任何代理都在后台启动。
 
-后台代理的运行、恢复、中断与查看（`send_message` / `interrupt` / `list`、`/tasks`、`/agents`）见 [/guide/background-tasks](/guide/background-tasks)。
+后台代理的运行、恢复、中断与查看（`send_message` / `interrupt` / `list`、`/tasks`、`/agents`）见 [/guide/background-tasks](/zh/guide/background-tasks)。
 
 ## 说明与限制
 
@@ -114,6 +114,6 @@ frontmatter 的 `tools:` 值会收窄子代理的工具集，并针对 spawn 时
 
 ## 下一步
 
-- [/guide/background-tasks](/guide/background-tasks) —— 运行、恢复和中断后台代理。
-- [/guide/skills](/guide/skills) —— `SKILL.md` 技能，另一种扩展面。
-- [/reference/extension-formats](/reference/extension-formats) —— dsh-cc 读取的文件格式，包括 `.claude/agents`。
+- [/guide/background-tasks](/zh/guide/background-tasks) —— 运行、恢复和中断后台代理。
+- [/guide/skills](/zh/guide/skills) —— `SKILL.md` 技能，另一种扩展面。
+- [/reference/extension-formats](/zh/reference/extension-formats) —— dsh-cc 读取的文件格式，包括 `.claude/agents`。

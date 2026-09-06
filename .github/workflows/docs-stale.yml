@@ -1,0 +1,63 @@
+name: docs-stale
+
+on:
+  schedule:
+    - cron: '0 9 * * 1' # Mondays 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  upstream-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute latest upstream docs commit sha
+        id: upstream
+        run: |
+          sha="$(gh api 'repos/dsh-cc/dsh-cc/commits?path=README.md&per_page=1' --jq '.[0].sha')"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "upstream sha: $sha"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compare with recorded sha
+        run: |
+          sha="${{ steps.upstream.outputs.sha }}"
+          recorded="$(cat .github/dshcc-upstream-sha)"
+          echo "recorded: $recorded"
+          if [ "$recorded" = "unseeded" ]; then
+            echo "Not seeded yet — orchestrator seeds .github/dshcc-upstream-sha separately."
+            echo "Current upstream sha (nothing to do this run): $sha"
+            exit 0
+          fi
+          if [ "$sha" = "$recorded" ]; then
+            echo "Upstream unchanged since recorded sha — no issue needed."
+            exit 0
+          fi
+          existing="$(gh issue list --search 'docs: dsh-cc upstream changed — review distilled pages in:title' --state open --json number --jq 'length')"
+          if [ "$existing" -gt 0 ]; then
+            echo "An open tracking issue already exists — not creating a duplicate."
+            exit 0
+          fi
+          gh issue create \
+            --title "docs: dsh-cc upstream changed — review distilled pages" \
+            --body "$(cat <<EOF
+          The upstream \`dsh-cc/dsh-cc\` docs changed since the last recorded review.
+
+          - **Recorded sha:** \`$recorded\`
+          - **Latest sha touching README.md:** [$sha](https://github.com/dsh-cc/dsh-cc/commit/$sha)
+          - **Compare:** https://github.com/dsh-cc/dsh-cc/compare/$recorded...$sha
+
+          ### Checklist
+          - [ ] Review the upstream diff for changes affecting distilled pages
+          - [ ] Re-run \`DSHCC_SRC=upstream-dsh-cc node scripts/check-docs.mjs\` locally
+          - [ ] Update affected \`site/**\` pages and their \`site/zh/**\` twins
+          - [ ] Update \`distilled-from: dsh-cc v...\` on changed \`reference/*\` pages
+          - [ ] Update the recorded sha in \`.github/dshcc-upstream-sha\` when done
+          EOF
+          )"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

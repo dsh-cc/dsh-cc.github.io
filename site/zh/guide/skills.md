@@ -146,8 +146,8 @@ Reference the skill directory for extra context: ${CLAUDE_SKILL_DIR}/notes.md
 
 ## 下一步
 
-- [/guide/hooks](/guide/hooks) —— 响应会话与工具事件
-- [/guide/subagents](/guide/subagents) —— 把工作委派给子智能体
+- [/guide/hooks](/zh/guide/hooks) —— 响应会话与工具事件
+- [/guide/subagents](/zh/guide/subagents) —— 把工作委派给子智能体
   （包括 `context: fork` 的路由方式）
-- [/reference/extension-formats](/reference/extension-formats) ——
+- [/reference/extension-formats](/zh/reference/extension-formats) ——
   `SKILL.md`、agent 与插件文件格式的参考手册

@@ -123,12 +123,12 @@ my-plugin/
 
 - `name` 是清单中唯一必填的字段，且必须是 kebab-case。
 - 清单未声明 `commands` 时，加载器扫描 `commands/*.md`；`commands/` 的嵌套子目录会被跳过。
-- 技能遵循 [Skills](/guide/skills) 中描述的 `SKILL.md` 约定。
+- 技能遵循 [Skills](/zh/guide/skills) 中描述的 `SKILL.md` 约定。
 - 接缝不可用的组件会被报告为 `skipped` 而不是破坏加载，所以你可以渐进式地发布插件。
 
 ## 下一步
 
-- [Skills](/guide/skills) —— `SKILL.md` 技能如何工作，包括从插件挂载的技能。
-- [Subagents](/guide/subagents) —— agent 定义与派发，包括插件提供的 agent。
-- [Extension formats](/reference/extension-formats) —— dsh-cc 读取的磁盘格式。
-- [Settings](/reference/settings) —— settings 级联，包括 `enabledPlugins`。
+- [Skills](/zh/guide/skills) —— `SKILL.md` 技能如何工作，包括从插件挂载的技能。
+- [Subagents](/zh/guide/subagents) —— agent 定义与派发，包括插件提供的 agent。
+- [Extension formats](/zh/reference/extension-formats) —— dsh-cc 读取的磁盘格式。
+- [Settings](/zh/reference/settings) —— settings 级联，包括 `enabledPlugins`。

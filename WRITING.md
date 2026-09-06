@@ -46,6 +46,10 @@ Body starts with `# <title>` matching frontmatter. No other h1.
 - Tables for command/flag/env catalogs. Columns: name, what it does. Mark
   partial/experimental behavior honestly when the source says so (e.g. parity
   status "partial").
+- **ZH pages link to ZH pages**: every internal link on a `site/zh/**` page
+  carries the `/zh/` prefix (`/zh/guide/…`), never the unprefixed EN path.
+- **Code-block comments stay in English** in both locales so blocks remain
+  byte-identical; explain the commands in the surrounding prose instead.
 - Containers (`::: tip`, `::: warning`, `::: info`, `::: details`) sparingly —
   at most two per page.
 - Bash blocks labeled `bash` or `sh`, commands prefixed `$ `. Config blocks

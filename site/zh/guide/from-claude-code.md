@@ -70,11 +70,11 @@ MCP: dsh config takes precedence — skipped Claude Code MCP config: ~/.claude/.
 
 ## 切换前须知
 
-在团队决定迁移之前，值得了解的诚实差异。完整矩阵的每一行都在 [/reference/compatibility](/reference/compatibility)：
+在团队决定迁移之前，值得了解的诚实差异。完整矩阵的每一行都在 [/reference/compatibility](/zh/reference/compatibility)：
 
 - **没有 `/rewind`。** 文件检查点与回滚缺失——还没有按 prompt 的文件快照机制。会话持久化、恢复和 fork 是完全对齐的；`/resume` 可以列出会话，但切换由宿主负责（`dsh --resume <id>`）。
 - **子代理的后台语义不同。** 省略 `run_in_background` 时子代理保持前台，除非 agent 定义固定了 `background: true`——这与 Claude Code 交互式的 omit=background 不同。后台子代理是可继续的，可通过 `agentId`（`send_message` / `interrupt`）寻址，Ctrl+B 提升仅为 TUI 表面。
-- **Hook 事件为部分桥接。** 会话、输入、工具、权限、任务和子代理生命周期事件大多完全对齐，但若干上游事件在 dsh 中还没有发出点——例如 PreCompact、PostToolBatch、MessageDisplay 和 UserPromptExpansion 尚未桥接。prompt/agent hook executor 存在，但由 `enablePromptHooks` / `enableAgentHooks` 门控（默认关闭）。已桥接的事件集见 [/reference/compatibility](/reference/compatibility)。
+- **Hook 事件为部分桥接。** 会话、输入、工具、权限、任务和子代理生命周期事件大多完全对齐，但若干上游事件在 dsh 中还没有发出点——例如 PreCompact、PostToolBatch、MessageDisplay 和 UserPromptExpansion 尚未桥接。prompt/agent hook executor 存在，但由 `enablePromptHooks` / `enableAgentHooks` 门控（默认关闭）。已桥接的事件集见 [/reference/compatibility](/zh/reference/compatibility)。
 - **部分斜杠命令由宿主负责。** `/model` 和 `/exit` 刻意不作为 preset 命令——dsh 原生的 TUI 等价物（`/model`、`/effort`、空闲双击 Ctrl+C）承担这些角色。另一些是部分对齐，例如 `/config` 是仅文本的渲染/修补，键集在白名单内；`/init` 通过追加一轮对话来写入/刷新 `CLAUDE.md`。
 - **状态栏接近但不完全一致。** 命令输出最多渲染 3 行（CC 会渲染每一行），dsh-cc 会在命令输出下方追加一行自己的模式行，stdin 负载只提供 dsh-cc 能真实取到来源的字段子集。
 - **`ANTHROPIC_*` 环境变量不被支持**（见上文）——provider 与 API key 配置遵循 dsh-cc 自己的凭证与路由模型。
@@ -91,7 +91,7 @@ MCP: dsh config takes precedence — skipped Claude Code MCP config: ~/.claude/.
 
 ## 下一步
 
-- [/quickstart](/quickstart) — 还没跑起来的话，从这里开始。
-- [/guide/mcp-servers](/guide/mcp-servers) — 迁移之后管理 MCP 服务器。
-- [/reference/settings](/reference/settings) — 完整的 settings 级联。
-- [/reference/compatibility](/reference/compatibility) — 支撑上文每一条结论的完整 Claude Code 兼容矩阵。
+- [/quickstart](/zh/quickstart) — 还没跑起来的话，从这里开始。
+- [/guide/mcp-servers](/zh/guide/mcp-servers) — 迁移之后管理 MCP 服务器。
+- [/reference/settings](/zh/reference/settings) — 完整的 settings 级联。
+- [/reference/compatibility](/zh/reference/compatibility) — 支撑上文每一条结论的完整 Claude Code 兼容矩阵。
