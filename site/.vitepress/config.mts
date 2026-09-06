@@ -130,6 +130,10 @@ export default defineConfig({
           next: '下一页',
         },
         outline: { level: [2, 3], label: '本页目录' },
+        footer: {
+          message: 'dsh-cc 不是 Claude Code，也不是 Claude Code 的包装器。与 Anthropic 无关联，亦未获其背书。',
+          copyright: 'Apache-2.0 许可 · 官方包仅发布于 npm @dsh-cc scope',
+        },
       },
     },
   },
@@ -233,5 +237,9 @@ export default defineConfig({
       next: 'Next page',
     },
     outline: { level: [2, 3] },
+    footer: {
+      message: 'dsh-cc is not Claude Code and is not a wrapper around Claude Code. Not affiliated with or endorsed by Anthropic.',
+      copyright: 'Apache-2.0 licensed · Official packages only from the @dsh-cc npm scope',
+    },
   },
 })

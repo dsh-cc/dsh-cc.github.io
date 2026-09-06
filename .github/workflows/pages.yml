@@ -22,12 +22,27 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: corepack enable
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm docs:build
+
+      - name: Assert .nojekyll in dist
+        run: test -f site/.vitepress/dist/.nojekyll
 
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site/
+          path: site/.vitepress/dist
 
       - id: deployment
         uses: actions/deploy-pages@v4

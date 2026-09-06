@@ -83,3 +83,14 @@
 .install .p {
   color: var(--vp-c-brand-2, #22d3ee);
 }
+
+/* Landing page structural classes ported from the old static site. */
+.badges { margin: 22px auto 0; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.badges img { height: 20px; }
+.notice {
+  margin: 32px auto 8px; max-width: 720px;
+  border: 1px solid #3b82f655; background: #3b82f612;
+  border-radius: 12px; padding: 18px 22px; font-size: 14.5px;
+}
+.notice strong { color: var(--vp-c-brand-2); }
+.fine { color: var(--vp-c-text-2); font-size: 13.5px; opacity: 0.75; max-width: 720px; margin: 24px auto 0; }
