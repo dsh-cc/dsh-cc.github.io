@@ -4,3 +4,9 @@ site/.vitepress/cache
 .DS_Store
 
 .pnpm-store/
+
+# Local agent tooling — machine/workspace-local, never published.
+# (.claude/settings.local.json in particular is per Claude Code convention.)
+.claude/
+.serena/
+CLAUDE.md
