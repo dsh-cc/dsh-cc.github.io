@@ -60,7 +60,10 @@ these roots, in precedence order (lower rank wins name conflicts):
 
 The project root is the nearest ancestor containing `.git`; without one, the
 current cwd is used. Legacy `.claude/commands/*.md` files are also loaded and
-marked `deprecated`.
+marked `deprecated`. The harness-native filesystem provider adds the roots
+`<projectRoot>/.dsh/skills`, `<projectRoot>/.agents/skills`, and
+`~/.agents/skills` (see [the skills guide](/guide/skills) for the full merged
+root set).
 
 **Minimal skeleton:**
 

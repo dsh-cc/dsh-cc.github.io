@@ -18,3 +18,5 @@ PERL5LIB
 DSH_CCTUI_ALLOW_NO_TTY # TUI no-TTY escape hatch; defined in harness repo (packages/ui/tui)
 DSH_HARNESS_DIR # harness CLI location override used by the harness repo's CI gate
 INSTALL_ANCHOR # harness install-tree anchor passed to harness's healProfilesModuleFallback()
+DSH_AGENTS_HOME # harness skill-filesystem agentsHome override; verified in deepseek-harness packages/skill/skill-filesystem/src/index.ts
+@deepseek-ai/dsh-skill-filesystem # harness provider mounted by dsh-cc preset (packages/preset/cc/agent.cordis.yml — yml outside the md corpus)

@@ -45,6 +45,26 @@ Notes, from the provider's discovery rules:
 - Discovery deduplicates by real path, so a symlinked or overlapping file is
   served once.
 
+### Harness-native roots (also scanned)
+
+The preset additionally mounts the DeepSeek Harness filesystem skill provider
+(`@deepseek-ai/dsh-skill-filesystem`), so the catalog you see in `/skills`
+also merges these roots, in the provider's own rank order:
+
+| Rank | Source | Path |
+| --- | --- | --- |
+| 100 | project-dsh | `<projectRoot>/.dsh/skills` |
+| 200 | project-agents | `<projectRoot>/.agents/skills` |
+| 300 | custom | provider `customSkillDirs` |
+| 400 | user-dsh | `<dshHome>/skills` |
+| 500 | user-agents | `~/.agents/skills` |
+
+- `~/.agents` is the shared agent config home; the `DSH_AGENTS_HOME`
+  environment variable overrides it.
+- The `.agents` roots come from the harness layer, not dsh-cc itself. If a
+  skill there does not show up in `/skills`, upgrade dsh:
+  `npm install -g @deepseek-ai/dsh@latest`.
+
 ## `SKILL.md` anatomy
 
 A `SKILL.md` is parsed as a YAML frontmatter document split from a Markdown

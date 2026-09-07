@@ -57,6 +57,8 @@ hook；单 hook 默认为 600 000 毫秒）：
 
 project root 是包含 `.git` 的最近祖先目录；没有则用当前 cwd。旧式
 `.claude/commands/*.md` 文件也会被加载，并在元数据中标记为 `deprecated`。
+harness 原生的文件系统提供方还会追加 `<projectRoot>/.dsh/skills`、
+`<projectRoot>/.agents/skills`、`~/.agents/skills` 这些根目录（完整的合并根目录清单见[技能指南](/zh/guide/skills)）。
 
 **最小骨架：**
 

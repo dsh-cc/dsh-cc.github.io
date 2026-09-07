@@ -28,6 +28,21 @@ description: 把可复用的任务级说明打包成 SKILL.md 技能包，由 ds
 - 旧版 `.claude/commands/*.md` 文件也会被加载，并在其元数据中标记为 `deprecated`。
 - 发现按真实路径去重，因此符号链接或互相重叠的文件只会被服务一次。
 
+### Harness 原生根目录（同样会被扫描）
+
+preset 还挂载了 DeepSeek Harness 的文件系统技能提供方（`@deepseek-ai/dsh-skill-filesystem`），因此你在 `/skills` 中看到的合并目录还会覆盖以下根目录（按该提供方自己的 rank 顺序）：
+
+| Rank | 来源 | 路径 |
+| --- | --- | --- |
+| 100 | project-dsh | `<projectRoot>/.dsh/skills` |
+| 200 | project-agents | `<projectRoot>/.agents/skills` |
+| 300 | custom | 提供方 `customSkillDirs` |
+| 400 | user-dsh | `<dshHome>/skills` |
+| 500 | user-agents | `~/.agents/skills` |
+
+- `~/.agents` 是共享的 agent 配置主目录，可用环境变量 `DSH_AGENTS_HOME` 覆盖。
+- `.agents` 根目录来自 harness 层而不是 dsh-cc 本身。如果放在那里的技能没有出现在 `/skills` 中，请升级 dsh：`npm install -g @deepseek-ai/dsh@latest`。
+
 ## `SKILL.md` 的结构
 
 `SKILL.md` 按 YAML frontmatter 文档解析，frontmatter 与 Markdown 正文分离。提供方读取所有已知的 Claude Code 字段，并容忍未知字段；已知字段取值非法时会在加载时显式报错，而不是静默地错误激活。技能名必须是 kebab-case 才能注册到注册表。
