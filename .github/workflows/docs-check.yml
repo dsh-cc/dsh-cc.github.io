@@ -1,0 +1,25 @@
+name: docs-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  docs-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout upstream dsh-cc corpus
+        uses: actions/checkout@v4
+        with:
+          repository: dsh-cc/dsh-cc
+          path: upstream-dsh-cc
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run docs quality gate
+        run: DSHCC_SRC=upstream-dsh-cc node scripts/check-docs.mjs

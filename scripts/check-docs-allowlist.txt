@@ -1,0 +1,22 @@
+# check-docs-allowlist.txt — tokens exempted from upstream corpus fact-check.
+# One token per line; `#` starts a comment. Keep minimal and justified.
+
+# --- dsh-cc env vars that live in upstream *source*, not in the md/yaml corpus ---
+# Verified in packages/settings/settings-cascade (lib/env.js, tests/env.spec.ts);
+# standard OS loader/toolchain vars stripped from the child environment.
+LD_LIBRARY_PATH
+DYLD_LIBRARY_PATH
+PYTHONPATH
+NODE_OPTIONS
+NODE_PATH
+RUBYLIB
+PERL5LIB
+
+# --- deepseek-harness internals (sibling harness repo, not part of the dsh-cc corpus) ---
+# Documented on site/guide/ci-headless; describe the harness repo's CI gate, which
+# dsh-cc's md corpus does not mention.
+DSH_CCTUI_ALLOW_NO_TTY # TUI no-TTY escape hatch; defined in harness repo (packages/ui/tui)
+DSH_HARNESS_DIR # harness CLI location override used by the harness repo's CI gate
+INSTALL_ANCHOR # harness install-tree anchor passed to harness's healProfilesModuleFallback()
+DSH_AGENTS_HOME # harness skill-filesystem agentsHome override; verified in deepseek-harness packages/skill/skill-filesystem/src/index.ts
+@deepseek-ai/dsh-skill-filesystem # harness provider mounted by dsh-cc preset (packages/preset/cc/agent.cordis.yml — yml outside the md corpus)
