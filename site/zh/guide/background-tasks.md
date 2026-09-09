@@ -34,7 +34,7 @@ dsh-cc 有两类不同的"后台运行"：
 | 省略，定义固定 `background: true` | 省略时转后台。 |
 | 省略，无固定 | 前台：工具等待完成并返回子代理的文本输出。 |
 
-`background: true` 固定位于定义的 frontmatter——见 [/guide/subagents](/zh/guide/subagents)。仓库自带的 `deep-reasoner` 和 `fast-worker` 代理固定了 `background: true`，因此对它们的普通 `Task` 调用会以可持续方式后台启动；自带的 `explore` 和 `dsh-cc-guide` 代理未固定，保持前台收集。
+`background: true` 固定位于定义的 frontmatter——见 [/guide/subagents](/zh/guide/subagents)。官方插件代理 `dsh-cc-agents:critic` 自带该固定，因此对它的普通 `Task` 调用会以可持续方式后台启动；`dsh-cc-agents:executor` 不带固定（会修改文件的代理默认前台运行，便于你先核验其报告）；自带的 `explore` 和 `dsh-cc-guide` 代理同样未固定，保持前台收集。
 
 ::: warning
 `subagent_type: "fork"` 不能后台运行——fork 加后台会被拒绝（上游 issue #2124）；fork 保持为前台一次性运行。

@@ -56,20 +56,21 @@ not implementations.
 ```text
 ## Available subagents
 
-- deep-reasoner — reason through hard architecture and design problems
-- fast-worker — execute a pre-approved mechanical plan
+- explore — a fast, read-only codebase scout; returns paths and line numbers, not implementations
+- dsh-cc-guide — answers questions about dsh-cc itself: commands, tools, settings, known limits
 
 To delegate to one, pass its name as the `subagent_type` argument of the Task tool.
 ```
 
-区块只列出文件定义——后端 provider 名称永远不会被当作可寻址的类型展示。
+区块列出工作区文件定义，以及插件挂载的代理（后者以限定 id `plugin:agent` 呈现）——后端 provider 名称永远不会被当作可寻址的类型展示。
 
-调度分四种情况：
+调度分五种情况：
 
 1. **`subagent_type` 省略、为空或为 `general-purpose`** —— 对调用者做一次全新 spawn：提示文本成为子代理的第一条用户消息，不参与任何定义，也不复制父对话。请写自包含的提示。
 2. **`subagent_type: "fork"`** —— 对调用者做一次继承对话的 fork：已完成的父轮次作为子代理的种子；不参与任何定义。`fork` 是**保留哨兵**，优先于同名的工作区文件，因此 `.claude/agents/fork.md` 不可达。
 3. **匹配到工作区中的某个定义** —— spawn 的人设是该定义的正文，模型路由是别名解析后的 `model:`，工具按经过清洗的 `tools:` 值过滤。子代理的最大委派深度为 3。
-4. **其他任何类型** —— 返回错误结果，列出该工作区可用的类型（或说明工作区没有定义）。
+4. **匹配插件代理的限定 id `plugin:agent`** —— 按与工作区定义完全相同的方式折叠（人设、清洗后的工具、别名解析的模型、最大深度 3、后台固定）。插件代理**只能**通过限定 id 寻址——裸插件代理名不可寻址，与 Claude Code 一致。文件定义与限定 id 占据不相交的命名空间：`agentType` 含 `:` 的工作区文件会在发现时被跳过并告警。
+5. **其他任何类型** —— 返回错误结果，列出该工作区可用的类型（或说明工作区没有定义）；类型包含 `:` 时会附带相应提示。
 
 ### 内置代理
 
@@ -103,12 +104,11 @@ frontmatter 的 `tools:` 值会收窄子代理的工具集，并针对 spawn 时
 
 ## 说明与限制
 
-截至 dsh-cc v0.5.0：
+截至 dsh-cc v0.6.0：
 
 - **`/agents` 是部分的。** 它只是对运行中代理的瘦快照（列表/详情/停止）；分组只有驻留状态，`/agents` attach 是保留但未实现的命名空间。
 - **进程级发现缓存。** 定义按工作区根在进程生命周期内缓存，且不监听文件系统：对于尚未建立缓存的条目，编辑在下一个会话生效；否则需重启进程。
-- **冷恢复会丢弃额外的代理选项。** 后台子代理的人设、工具过滤和模型路由可在恢复后保留，但其他字段（如别名标记的推理力度或 token 上限）不会。
-- **不支持插件代理调度。** 只有 `.claude/agents` 下的文件定义可以通过 `subagent_type` 寻址；seam 插件代理不可以。
+- **冷恢复按钉版恢复。** 后台子代理的人设、工具过滤、模型路由和 `maxTokens` 都从恢复钉版还原——钉版中记录为未设置的推理力度或 token 字段按缺失处理，而不是重新解析。其他代理选项在恢复后不保留。
 - **没有 TaskOutput 别名，也没有 outputFile 字段。** 前台结果以文本返回，没有输出文件。
 - **Task 子代理会剥离工作区指令。** 与 Claude Code 的自定义子代理不同，被委派的子代理在其可见批次中不会收到工作区 `CLAUDE.md` / `AGENTS.md` 基线（fork 子代理仍继承父种子中已有的内容）。
 

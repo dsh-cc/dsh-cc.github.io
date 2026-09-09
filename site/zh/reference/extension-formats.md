@@ -1,7 +1,7 @@
 ---
 title: 扩展格式
 description: 每个 Claude Code 兼容扩展文件（hooks、skills、plugins、subagents）的存放位置、最小骨架，以及指向完整指南的链接。
-distilled-from: dsh-cc v0.5.0
+distilled-from: dsh-cc v0.6.0
 ---
 
 # 扩展格式
@@ -82,10 +82,12 @@ Body with $ARGUMENTS substitution and optional inline-shell !`cmd` commands.
 ## plugins — `plugin.json`
 
 **文件位置：** 插件根目录持有 `.claude-plugin/plugin.json`（首选）或顶层
-`plugin.json`（旧式）。默认发现逻辑将 `enabledPlugins`（user → project →
-local 设置级联）与 `<claudeHome>/plugins/installed_plugins.json` 求交集，其中
-`<claudeHome>` 是 `$CLAUDE_CONFIG_DIR`（否则 `~/.claude`）；键必须是精确的
-`name@marketplace`。显式 `pluginDirs` 则改为扁平展开：本身或一层子目录中持有
+`plugin.json`（旧式）。插件状态是**双 home 制**：默认发现逻辑将
+`enabledPlugins`（按 claude-user → dsh-user → project → local 级联，后读
+文件按键覆盖）与两个 home 合并后的 `plugins/installed_plugins.json` 求交集
+——Claude home `$CLAUDE_CONFIG_DIR`（否则 `~/.claude`）保持完全可读，dsh
+home `$DSH_HOME`（否则 `~/.dsh`）是写入根目录，同名键 dsh 条目获胜。显式
+`pluginDirs` 则改为扁平展开：本身或一层子目录中持有
 `.claude-plugin/plugin.json` 或顶层 `plugin.json` 的目录。
 
 **最小骨架：**
@@ -102,7 +104,8 @@ local 设置级联）与 `<claudeHome>/plugins/installed_plugins.json` 求交集
 `hooks`、`mcpServers` 和 `settings`；省略 `commands` 时加载器扫描
 `commands/*.md`。未知的顶层字段被忽略。每个组件挂载到对应的宿主 seam
 （`commands`、`subagents`、`skills`、`hooks`、`mcp`、`settings`）；seam 缺失
-的组件会被报告为 `skipped`，不会让整个加载失败。
+的组件会被报告为 `skipped`，不会让整个加载失败。agents 以插件名为命名空间
+挂载，因此 Task 工具通过限定 id（`plugin:agent`）派发它们。
 
 **完整内容：** [/guide/plugins](/zh/guide/plugins)
 

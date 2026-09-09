@@ -53,6 +53,8 @@ description: 通过 `.mcp.json` 文件把 MCP 服务器（工具、资源、prom
 | 3 | `$CLAUDE_CONFIG_DIR/.mcp.json`（默认 `~/.claude/.mcp.json`） | Claude Code 配置 |
 | 4 | `~/.claude.json` | Claude Code 配置 |
 
+插件也可以在清单中声明 MCP 服务器（`mcpServers` 或 `.mcp.json`）——见[插件](/zh/guide/plugins)。插件声明的服务器先挂载：同名插件服务器会遮蔽 `.mcp.json` 服务器，且插件声明的服务器不支持 OAuth。
+
 ### dsh 优先（dsh-first）规则
 
 dsh-cc 有一条刻意的 dsh-first 规则，Claude Code 没有对应机制：当 dsh 原生配置（项目 `.mcp.json` 或 `$DSH_HOME/.mcp.json`）声明了至少一个服务器时，Claude Code 的 MCP 配置文件**不会**被加载。被跳过的 claude-only 服务器会通过 logger warn、一次性的会话启动 TUI 提示，以及自动清除的 `/mcp` 状态行暴露出来。

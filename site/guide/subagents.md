@@ -56,20 +56,21 @@ The main agent delegates with the `Task` tool, passing the agent's name as `suba
 ```text
 ## Available subagents
 
-- deep-reasoner — reason through hard architecture and design problems
-- fast-worker — execute a pre-approved mechanical plan
+- explore — a fast, read-only codebase scout; returns paths and line numbers, not implementations
+- dsh-cc-guide — answers questions about dsh-cc itself: commands, tools, settings, known limits
 
 To delegate to one, pass its name as the `subagent_type` argument of the Task tool.
 ```
 
-Only file definitions are listed — backend provider names are never shown as addressable types.
+The section lists workspace file definitions plus any agents mounted by plugins, the latter by their scoped `plugin:agent` ids — backend provider names are never shown as addressable types.
 
-Dispatch follows four cases:
+Dispatch follows five cases:
 
 1. **`subagent_type` omitted, blank, or `general-purpose`** — a fresh spawn of the caller: your prompt text becomes the child's first user message, no definition participates, and no parent conversation is copied. Write a self-contained prompt.
 2. **`subagent_type: "fork"`** — a conversation-inheriting fork of the caller: completed parent turns seed the child; no definition participates. `fork` is a **reserved sentinel** and wins over a workspace file of the same name, so `.claude/agents/fork.md` is unreachable.
 3. **A type matching a definition** in the workspace — a spawn whose persona is the definition's body, whose model route is the alias-resolved `model:`, and whose tools are filtered by the sanitized `tools:` value. The child runs with a maximum delegation depth of 3.
-4. **Anything else** — an error result listing the available types in the workspace (or noting the workspace defines none).
+4. **A scoped id `plugin:agent` matching a plugin-mounted agent** — folded identically to a workspace definition (persona, sanitized tools, alias-resolved model, max depth 3, background pin). Plugin agents are addressable **only** by their scoped id — a bare plugin agent name is not addressable, matching Claude Code. File definitions and scoped ids occupy disjoint name spaces: a workspace file whose `agentType` contains `:` is skipped with a warning at discovery.
+5. **Anything else** — an error result listing the available types in the workspace (or noting the workspace defines none), with a colon-aware hint when the type contains `:`.
 
 ### Bundled agents
 
@@ -103,12 +104,11 @@ Running, resuming, interrupting, and inspecting background agents (`send_message
 
 ## Notes and limits
 
-As of dsh-cc v0.5.0:
+As of dsh-cc v0.6.0:
 
 - **`/agents` is partial.** It is a thin snapshot (list/detail/stop) over running agents; groups are residency-only and `/agents` attach is reserved but unimplemented.
 - **Process-level discovery cache.** Definitions are cached per workspace root for the process lifetime with no filesystem watcher: edits take effect on the next session for an uncached workspace, and on process restart otherwise.
-- **Cold resume drops extra agent options.** A background child's persona, tool filter, and model route survive resume, but other fields (such as alias-stamped reasoning effort or token limits) do not.
-- **No plugin-agent dispatch.** Only file definitions under `.claude/agents` are addressable by `subagent_type`; seam plugin agents are not.
+- **Cold resume is pinned.** A background child's persona, tool filter, model route, and `maxTokens` are restored from its resume pin — a pin recording an unset reasoning-effort or token field is honored as absent rather than re-resolved. Other agent options do not survive resume.
 - **No TaskOutput alias or outputFile field.** Foreground results come back as text; there is no output file.
 - **Workspace instructions are stripped from Task children.** Unlike Claude Code custom subagents, delegated children do not receive the workspace `CLAUDE.md` / `AGENTS.md` baseline in their visible batch (a fork child still inherits what was already in the parent seed).
 

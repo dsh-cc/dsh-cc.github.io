@@ -1,7 +1,7 @@
 ---
 title: Slash commands
 description: Reference catalog of every slash command in dsh-cc — preset (harness) commands and TUI-local commands, with parity status.
-distilled-from: dsh-cc v0.5.0
+distilled-from: dsh-cc v0.6.0
 ---
 
 # Slash commands
@@ -49,7 +49,7 @@ the matrix does not state a status for that command.
 | `/skills` | List every available skill with description, source, and invocation policy (model, user, or both). | Full |
 | `/init` | Scan a project and scaffold CLAUDE.md via a queued model turn. | Partial |
 | `/mcp` | Manage MCP connections: `/mcp` lists registered servers (name, connection state, tool count, OAuth requirement), `/mcp reconnect <name>`, `/mcp disconnect <name>`. `/mcp migrate` imports servers from Claude Code config files into `$DSH_HOME/.mcp.json` (raw entries verbatim, atomic write, `.bak` backup). | Full |
-| `/plugin` | List mounted Claude Code plugins (manifest name, plugin root, per-component load counts). | Full |
+| `/plugin` | Manage plugins and marketplaces: `list [--enabled\|--disabled]`, `install\|uninstall\|enable\|disable\|update <plugin[@mkt]> [--scope user\|project\|local]`, `marketplace list\|add <source>\|remove <name>\|update [name]`. Text output only (no interactive menu); a static trust-warning line replaces interactive consent; installs trigger a rescan — restart the session for new agents/hooks. Not implemented: `details`/`eval`/`init`/`prune`/`tag`/`validate`, `--config`, `--sparse`, managed scope. | Partial |
 | `/reload-plugins` | Rescan the on-disk discovery roots and remount plugins live. | Full |
 | `/output-style` | Manage output styles. | Full |
 
@@ -93,6 +93,9 @@ these local commands.
 
 ## Notes
 
+- Every slash command — preset and TUI-local — accepts a trailing `help` (or
+  `-h` / `--help`) argument that prints its usage, parameters, and
+  subcommands without a model turn; the `/help` index advertises this.
 - Plugin commands in the colon form `plugin:command` (e.g. `codex:review`)
   dispatch through the `ccPlugins` service and are treated as local commands by
   the TUI.

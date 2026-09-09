@@ -1,7 +1,7 @@
 ---
 title: Environment variables
 description: The environment variables dsh-cc reads and sets, with defaults from the launcher and TUI source.
-distilled-from: dsh-cc v0.5.0
+distilled-from: dsh-cc v0.6.0
 ---
 
 # Environment variables
@@ -11,13 +11,14 @@ home directory the launcher bootstraps into, the resume/worktree contract the
 `dsh-cc` launcher passes to the TUI plugin, and TUI escape hatches. Each name,
 value, and default below is taken verbatim from the
 [`packages/launcher/tui`](https://github.com/dsh-cc/dsh-cc) launcher and TUI
-source at v0.5.0.
+source at v0.6.0, plus one compatibility variable from the plugin loader.
 
 ## Reference
 
 | Variable | Default | What it does |
 | --- | --- | --- |
 | `DSH_HOME` | `~/.dsh` | Root of the dsh home directory. The launcher resolves it as `process.env.DSH_HOME || join(homedir(), '.dsh')` to locate `profiles/tui` and to default the Node compile cache. |
+| `CLAUDE_CONFIG_DIR` | `~/.claude` | The Claude home. Plugin discovery and Claude Code MCP config discovery read from it, and it stays fully read-visible. Since v0.6.0 it no longer relocates plugin-management writes — every `/plugin` mutation lands under `DSH_HOME`, so set `DSH_HOME` to relocate (see [Plugins](/guide/plugins)). |
 | `DSH_CC_PROFILE` | `tui` | Set by the launcher on the spawned `dsh` child; the TUI plugin reads it as `process.env.DSH_CC_PROFILE || 'tui'` to report the active dsh profile. |
 | `DSH_CC_RESUME_SESSION` | *(launcher-derived)* | Launcher-owned. Set to a session id to resume it (`--resume <id>` / `--resume=<id>`), or to the empty string for an explicit fresh start (`--new`/`-n`, or a freshly created worktree). The launcher sanitizes it from the inherited environment and re-derives it from argv only — do not set it manually. |
 | `DSH_CC_AUTO_RESUME` | *(launcher-derived)* | Launcher-owned. Set to `'1'` exactly when `DSH_CC_RESUME_SESSION` is left undefined, i.e. no explicit `--resume`/`--new` chose the session; the TUI then reads its own project resume marker. Do not set it manually. |

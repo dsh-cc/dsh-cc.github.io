@@ -20,6 +20,7 @@ You do not copy or convert anything in this list — the CC preset discovers the
 | `CLAUDE.md` | The memory layer supports `CLAUDE.md`-style context plus a dedicated write channel for durable memories. Memory is isolated by workspace, with optional shared team memory. |
 | `hooks.json` | Claude Code-style hooks react to session, prompt, tool, permission, compaction, task, and subagent lifecycle events; the CC preset loads the tracked `hooks.json` from the launch cwd. See [Know before you switch](#know-before-you-switch) for the bridged event set. |
 | `.claude/settings.json` | Project `.claude/settings.json` files shared with a Claude Code checkout work as-is — see [Settings mapping](#settings-mapping). |
+| Installed Claude Code plugins | Discovered from the Claude home (`~/.claude`) in read-only fashion — nothing there is ever modified or deleted. Anything you install or change through `/plugin` in dsh-cc writes to the dsh home (`~/.dsh`) instead; see [Plugins](/guide/plugins). |
 | Slash-command habits | The CC preset exposes a growing command surface (`/cost`, `/doctor`, `/status`, `/memory`, `/skills`, `/config`, `/permissions`, `/mcp`, `/plugin`, and more), so muscle memory mostly transfers. |
 
 Subagent frontmatter model aliases are recognized, but the actual provider/model is decided by dsh's routing — that is the point of moving.
@@ -65,7 +66,7 @@ Key aliasing: if both a camelCase `statusLine` and a dsh-native kebab-style `sta
 
 Two honest caveats from the sources:
 
-- External edits to `settings.json` made outside the running session apply at the next restart (no file watcher on that path).
+- Settings file sources **hot-reload** in a running session — the user, project, and git-hoisted local files are watched, and a malformed mid-write document keeps the last-good state. Outside hot-reload: inline `--settings` content, remote policy, and `hooks.json` (see [/reference/settings](/reference/settings)).
 - `ANTHROPIC_*` environment variables are **not honored** — there are no Anthropic semantics in dsh-cc. Model and endpoint configuration goes through dsh's own provider/model routing instead, e.g. via the `/provider` command and the model-alias settings namespaces.
 
 ## Know before you switch

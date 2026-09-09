@@ -21,7 +21,9 @@ $ npm install -g @deepseek-ai/dsh @dsh-cc/cli
 $ dsh-cc
 ```
 
-Already have `dsh` **>= 0.1.0-rc.5**? Install only the launcher:
+`dsh-cc` requires `dsh` **>= 0.1.2-rc.1**; the default `npm install -g @deepseek-ai/dsh` currently satisfies this (as of 2026-09-12), and the launcher enforces the floor at bootstrap.
+
+Already have `dsh` **>= 0.1.2-rc.1**? Install only the launcher:
 
 ```sh
 $ npm install -g @dsh-cc/cli
@@ -31,6 +33,23 @@ $ dsh-cc
 ::: tip
 Official packages come only from the `@dsh-cc` npm scope.
 :::
+
+### Optional: official plugins
+
+The install above is the whole quick start. Two optional official plugins — shipped through the dsh-cc repo's `dsh-cc` marketplace — add preconfigured subagent lanes:
+
+- **`dsh-cc-agents`** — the `dsh-cc-agents:critic` (reasoning and plan review) and `dsh-cc-agents:executor` (mechanical execution) subagents, plus an orchestration routing skill.
+- **`dsh-cc-shunt`** — gates that redirect bulk file reads and boilerplate generation to cheap-lane worker subagents, keeping large file corpora out of the main context.
+
+Install them inside a session:
+
+```text
+/plugin marketplace add dsh-cc/dsh-cc
+/plugin install dsh-cc-agents@dsh-cc
+/plugin install dsh-cc-shunt@dsh-cc
+```
+
+Restart the session after installing so the new agents and hooks are picked up. Details and configuration: [Plugins](/guide/plugins).
 
 ## First run
 

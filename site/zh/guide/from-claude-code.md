@@ -20,6 +20,7 @@ description: 把已有的 `.claude/` 工作区搬到 dsh-cc，agents、skills、
 | `CLAUDE.md` | 记忆层支持 `CLAUDE.md` 风格的项目上下文，另有面向长期信息的独立写入通道。记忆按工作区隔离，也可配置团队共享记忆。 |
 | `hooks.json` | Claude Code 风格 hooks 可以响应会话、用户输入、工具、权限、压缩、任务和子代理生命周期事件；CC preset 会从启动目录加载仓库跟踪的 `hooks.json`。已桥接的事件集见[切换前须知](#切换前须知)。 |
 | `.claude/settings.json` | 与 Claude Code checkout 共享的项目 `.claude/settings.json` 文件可以直接使用——见[Settings 映射](#settings-映射)。 |
+| 已安装的 Claude Code 插件 | 以只读方式从 Claude home（`~/.claude`）发现——那里的任何内容都不会被修改或删除。你在 dsh-cc 里通过 `/plugin` 安装或更改的内容改写到 dsh home（`~/.dsh`）；详见[插件](/zh/guide/plugins)。 |
 | 斜杠命令习惯 | CC preset 提供不断增长的命令面（`/cost`、`/doctor`、`/status`、`/memory`、`/skills`、`/config`、`/permissions`、`/mcp`、`/plugin` 等），肌肉记忆基本可以直接迁移。 |
 
 子代理 frontmatter 中的模型别名会被识别，但实际走哪个 provider/model 由 dsh 的路由决定——这正是迁移的意义所在。
@@ -65,7 +66,7 @@ MCP: dsh config takes precedence — skipped Claude Code MCP config: ~/.claude/.
 
 来自源材料的两条诚实的注意事项：
 
-- 在运行中的会话之外对 `settings.json` 的修改要等到下次重启才生效（该路径没有文件监听）。
+- settings 文件源在运行中的会话里**热重载**——user、project 与 git 提升的 local 文件都被监听；写入中途的畸形文档会保留上一次的良好状态。不热重载的例外：内联 `--settings` 内容、remote policy 和 `hooks.json`（见 [/reference/settings](/zh/reference/settings)）。
 - `ANTHROPIC_*` 环境变量**不被支持**——dsh-cc 中没有 Anthropic 语义。模型与端点配置走 dsh 自己的 provider/model 路由，例如通过 `/provider` 命令和模型别名 settings 命名空间。
 
 ## 切换前须知

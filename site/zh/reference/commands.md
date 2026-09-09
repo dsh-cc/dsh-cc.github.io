@@ -1,7 +1,7 @@
 ---
 title: 斜杠命令
 description: dsh-cc 全部斜杠命令的参考目录——preset（harness）命令与 TUI 本地命令，附对等状态。
-distilled-from: dsh-cc v0.5.0
+distilled-from: dsh-cc v0.6.0
 ---
 
 # 斜杠命令
@@ -47,7 +47,7 @@ matrix 未声明该命令的状态。
 | `/skills` | 列出每个可用 skill 及其描述、来源和调用策略（model、user 或两者）。 | Full |
 | `/init` | 扫描项目并通过排队的模型轮次生成 CLAUDE.md。 | Partial |
 | `/mcp` | 管理 MCP 连接：`/mcp` 列出已注册服务器（名称、连接状态、工具数、OAuth 要求），`/mcp reconnect <name>`、`/mcp disconnect <name>`。`/mcp migrate` 将 Claude Code 配置文件中的服务器导入 `$DSH_HOME/.mcp.json`（条目原样保留，原子写入，`.bak` 备份）。 | Full |
-| `/plugin` | 列出已挂载的 Claude Code 插件（manifest 名称、插件根目录、各组件加载数）。 | Full |
+| `/plugin` | 管理插件与 marketplace：`list [--enabled\|--disabled]`，`install\|uninstall\|enable\|disable\|update <plugin[@mkt]> [--scope user\|project\|local]`，`marketplace list\|add <source>\|remove <name>\|update [name]`。纯文本输出（无交互菜单）；以一行静态信任警告代替交互式同意提示；安装会触发重新扫描——新 agent/hook 需重启会话才生效。未实现：`details`/`eval`/`init`/`prune`/`tag`/`validate`、`--config`、`--sparse`、managed scope。 | Partial |
 | `/reload-plugins` | 重新扫描磁盘上的发现根目录并即时重新挂载插件。 | Full |
 | `/output-style` | 管理 output style。 | Full |
 
@@ -90,6 +90,8 @@ matrix 未声明该命令的状态。
 
 ## 说明
 
+- 每个斜杠命令——preset 与 TUI 本地——都接受结尾的 `help`（或 `-h` / `--help`）参数，
+  无需模型轮次即可打印其用法、参数和子命令；`/help` 索引中对此有提示。
 - 冒号形式的插件命令 `plugin:command`（例如 `codex:review`）通过
   `ccPlugins` 服务分发，TUI 将其视为本地命令。
 - 手工输入的未知 `/name` 若没有匹配的已注册命令，会作为用户提示词透传，因此

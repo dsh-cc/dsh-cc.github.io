@@ -32,7 +32,7 @@ by many hands stay truthful, consistent, and bilingual.
 ---
 title: <page title; English-slug pages keep English slugs, titles localized>
 description: <one sentence, used for meta/og>
-distilled-from: dsh-cc v0.5.0   # reference/* pages only: version content reflects
+distilled-from: dsh-cc v0.6.0   # reference/* pages only: version content reflects
 ---
 ```
 

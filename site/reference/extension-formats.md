@@ -1,7 +1,7 @@
 ---
 title: Extension formats
 description: Where each Claude Code-compatible extension file lives (hooks, skills, plugins, subagents), with minimal skeletons and links to the full guides.
-distilled-from: dsh-cc v0.5.0
+distilled-from: dsh-cc v0.6.0
 ---
 
 # Extension formats
@@ -87,13 +87,15 @@ served until a Read/Write/Edit tool touches a matching file.
 ## plugins — `plugin.json`
 
 **File location:** a plugin root holds `.claude-plugin/plugin.json`
-(preferred) or a top-level `plugin.json` (legacy). Default discovery
-intersects `enabledPlugins` (user → project → local settings cascade) with
-`<claudeHome>/plugins/installed_plugins.json`, where `<claudeHome>` is
-`$CLAUDE_CONFIG_DIR` (else `~/.claude`); keys must be exact
-`name@marketplace`. Explicit `pluginDirs` are flattened instead: the dir
-itself, or one-level children, that hold `.claude-plugin/plugin.json` or a
-top-level `plugin.json`.
+(preferred) or a top-level `plugin.json` (legacy). Plugin state is dual-home:
+default discovery intersects `enabledPlugins` (cascaded claude-user →
+dsh-user → project → local, later files overriding per key) with the merged
+`plugins/installed_plugins.json` of both homes — the Claude home
+`$CLAUDE_CONFIG_DIR` (else `~/.claude`) stays read-visible while the dsh home
+`$DSH_HOME` (else `~/.dsh`) is the write root, dsh entries winning per key.
+Explicit `pluginDirs` are flattened instead: the dir itself, or one-level
+children, that hold `.claude-plugin/plugin.json` or a top-level
+`plugin.json`.
 
 **Minimal skeleton:**
 
@@ -110,7 +112,8 @@ top-level `plugin.json`.
 the loader scans `commands/*.md`. Unknown top-level fields are ignored. Each
 component mounts onto its host seam (`commands`, `subagents`, `skills`,
 `hooks`, `mcp`, `settings`); a component whose seam is absent is reported
-`skipped`, never failing the whole load.
+`skipped`, never failing the whole load. Agents mount namespaced under the
+plugin name, so the Task tool dispatches them by scoped id (`plugin:agent`).
 
 **Full story:** [/guide/plugins](/guide/plugins)
 

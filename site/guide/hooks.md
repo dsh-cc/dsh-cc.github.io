@@ -179,8 +179,9 @@ session workspace. A blocking outcome feeds back as
 ## Known limitations
 
 - One process-level `configPath` is parsed once at load; Claude Code's layered
-  project, user, plugin, and policy discovery and live reload are not
-  implemented.
+  project, user, and policy discovery and live reload are not implemented
+  (plugin-shipped hooks arrive through the plugin loader instead — see
+  [Plugins](/guide/plugins)).
 - `systemMessage` is surfaced as a durable dim notice row (model-visible);
   `suppressOutput` and `terminalSequence` are not applied.
 - `{"continue": false}` halts the run via `agent.cancel({kind:'hook'})`.

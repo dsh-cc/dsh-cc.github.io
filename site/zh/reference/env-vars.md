@@ -1,22 +1,23 @@
 ---
 title: 环境变量
 description: dsh-cc 读取和设置的环境变量一览，默认值取自 launcher 与 TUI 源码。
-distilled-from: dsh-cc v0.5.0
+distilled-from: dsh-cc v0.6.0
 ---
 
 # 环境变量
 
 本页汇总启动 dsh-cc 时涉及的环境变量：launcher 引导使用的家目录、`dsh-cc`
 launcher 传递给 TUI 插件的恢复/工作树（worktree）约定，以及 TUI 的紧急开关。
-下列变量名、取值与默认值均逐字摘自 v0.5.0 的
+下列变量名、取值与默认值均逐字摘自 v0.6.0 的
 [`packages/launcher/tui`](https://github.com/dsh-cc/dsh-cc) launcher 与 TUI
-源码。
+源码，另有一个来自插件加载器的兼容变量。
 
 ## 变量参考
 
 | 变量 | 默认值 | 作用 |
 | --- | --- | --- |
 | `DSH_HOME` | `~/.dsh` | dsh 家目录的根。launcher 以 `process.env.DSH_HOME || join(homedir(), '.dsh')` 解析它来定位 `profiles/tui`，并为 Node 编译缓存提供默认路径。 |
+| `CLAUDE_CONFIG_DIR` | `~/.claude` | Claude 家目录。插件发现和 Claude Code MCP 配置发现从这里读取，且始终保持完全可读。自 v0.6.0 起它不再搬移插件管理的写入位置——所有 `/plugin` 修改都落在 `DSH_HOME` 下，如需换位置请设置 `DSH_HOME`（见 [插件](/zh/guide/plugins)）。 |
 | `DSH_CC_PROFILE` | `tui` | 由 launcher 设置到派生的 `dsh` 子进程上；TUI 插件以 `process.env.DSH_CC_PROFILE || 'tui'` 读取它来报告当前 dsh profile。 |
 | `DSH_CC_RESUME_SESSION` | *（由 launcher 推导）* | launcher 专属。设为会话 id 表示恢复该会话（`--resume <id>` / `--resume=<id>`），设为空字符串表示显式全新开始（`--new`/`-n`，或新建的 worktree）。launcher 会从继承环境中清除该变量，仅根据本次 argv 重新推导——不要手动设置。 |
 | `DSH_CC_AUTO_RESUME` | *（由 launcher 推导）* | launcher 专属。仅当 `DSH_CC_RESUME_SESSION` 未定义（即没有显式 `--resume`/`--new`）时设为 `'1'`；此时 TUI 读取自己的项目恢复标记。不要手动设置。 |

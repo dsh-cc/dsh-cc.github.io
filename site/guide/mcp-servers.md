@@ -53,6 +53,8 @@ When no explicit config is given, dsh-cc discovers `.mcp.json` files in this ord
 | 3 | `$CLAUDE_CONFIG_DIR/.mcp.json` (default `~/.claude/.mcp.json`) | Claude Code config |
 | 4 | `~/.claude.json` | Claude Code config |
 
+Plugins can additionally declare MCP servers in their manifest (`mcpServers` or `.mcp.json`) — see [Plugins](/guide/plugins). Plugin-declared servers mount first: a plugin server with the same name shadows a `.mcp.json` server, and OAuth is not supported for plugin-declared servers.
+
 ### The dsh-first precedence rule
 
 dsh-cc applies a deliberate dsh-first rule with no Claude Code analog: when a dsh-native config (the project `.mcp.json` or `$DSH_HOME/.mcp.json`) declares at least one server, Claude Code MCP config files are **not** loaded. Skipped claude-only servers surface via a logger warn, a one-shot session-start TUI notice, and a self-clearing `/mcp` status line.
