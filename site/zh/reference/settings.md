@@ -1,7 +1,7 @@
 ---
 title: 设置级联
 description: dsh-cc 如何在五个层级间解析 settings.json、合并它们，并安全地应用环境变量。
-distilled-from: dsh-cc v0.5.0
+distilled-from: dsh-cc v0.6.0
 ---
 
 # 设置级联
@@ -32,6 +32,10 @@ distilled-from: dsh-cc v0.5.0
 - **其他数组整体替换。** 例如 `additionalDirectories`：高层整体覆盖。
 - **配置错误会大声失败。** 存在但无法解析的设置文档（JSON 损坏、根不是对象）会导致插件加载失败。文件不存在则不贡献任何内容，也不是错误。
 - **写入是对用户文件的外科式增量。** 只有调用方实际修改的键才会写入 `~/.dsh/settings.json`；来自高层级的继承值不会被复制进来。多个 dsh 进程并发写同一用户设置文件可能静默丢失更新（单进程 profile 不受影响）；unset 一个继承自低层的键不会跨重启持久化。
+
+### `enabledPlugins` 与插件状态
+
+`enabledPlugins` 键（精确的 `name@marketplace` id）决定哪些已安装的 Claude Code 格式插件在启动时挂载。用于插件发现时，级联会多出一个 dsh 层：claude-user → dsh-user → project → local。所有 `/plugin` 修改只写入 dsh home（`$DSH_HOME` / `~/.dsh`，包括 `~/.dsh/settings.json` 里 user 作用域的 `enabledPlugins` / `extraKnownMarketplaces` 条目）；Claude home 保持只读可见、从不写入。详见[插件](/zh/guide/plugins)。
 
 ## 热重载
 
@@ -77,11 +81,15 @@ PATH
 
 目前白名单中只有**一条**条目：`statusLine` → `statusline`。在 `tui` profile 上，这个键会用你自己的 shell 命令替换内置的底部状态行；它可以放在 `~/.dsh/settings.json` 或项目的 `.claude/settings.json` 中。
 
+## 插件启用：`enabledPlugins`
+
+插件发现读取 `enabledPlugins` 映射，按双 home 分层：claude-user（`$CLAUDE_CONFIG_DIR` / `~/.claude`）→ dsh-user（`$DSH_HOME` / `~/.dsh/settings.json`）→ project → local，后读文件按键覆盖。`/plugin` 的修改只写入 dsh home——用户作用域的 `enabledPlugins` 和 `extraKnownMarketplaces` 条目落在 `~/.dsh/settings.json`，Claude home 保持可读、绝不写入。完整的双 home 规则见 [插件](/zh/guide/plugins)。
+
 ## 迁移：机制就绪，尚无实际迁移
 
 `@dsh-cc/settings-migrations` 提供了一套版本化的迁移机制：`defineMigration({ version, name, migrate(ctx) })` 注册进模块注册表（按 version + name 去重），`runMigrations()` 以升序原子地应用所有 `version` 大于已记录 `migrationVersion` 的迁移（状态存于 `<home>/migrations.json`，默认 `$DSH_HOME` / `~/.dsh`）——批次中途失败则什么也不写，下次挂载重试，因此迁移必须幂等。`guard(ctx)` 返回 `false` 会跳过该迁移但不阻塞版本推进。
 
-截至 dsh-cc v0.5.0，**尚无任何具体迁移**——注册表为空，cc 与 dsh 都没有需要迁移的旧版设置格式；第一个真实迁移将随第一次设置结构变更落地。当前挂载该插件是空操作。该机制目前也只作用于用户层 `settings.json`——project/local/flag/policy 层还不是迁移目标。
+截至 dsh-cc v0.6.0，**尚无任何具体迁移**——注册表为空，cc 与 dsh 都没有需要迁移的旧版设置格式；第一个真实迁移将随第一次设置结构变更落地。当前挂载该插件是空操作。该机制目前也只作用于用户层 `settings.json`——project/local/flag/policy 层还不是迁移目标。
 
 ## Profile 级微调
 

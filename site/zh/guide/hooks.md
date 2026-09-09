@@ -168,7 +168,8 @@ hook 的 `prompt` 模板，fork 的文本输出按与 command hook 相同的结�
 ## 已知限制
 
 - 进程级只有一份 `configPath` 且加载时只解析一次；Claude Code 的项目、
-  用户、插件、策略多层发现与热重载均未实现。
+  用户、策略多层发现与热重载均未实现（插件自带的 hooks 改由插件加载器
+  挂载——见[插件](/zh/guide/plugins)）。
 - `systemMessage` 以持久的暗色提示行呈现（模型可见）；
   `suppressOutput` 和 `terminalSequence` 不被应用。
 - `{"continue": false}` 通过 `agent.cancel({kind:'hook'})` 中止运行。

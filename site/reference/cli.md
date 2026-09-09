@@ -1,7 +1,7 @@
 ---
 title: CLI flags
 description: The dsh-cc bin and the flags it accepts before spawning dsh --profile tui.
-distilled-from: dsh-cc v0.5.0
+distilled-from: dsh-cc v0.6.0
 ---
 
 # CLI flags
@@ -16,6 +16,8 @@ pinned to the launcher's version), so install both packages and start:
 $ npm install -g @deepseek-ai/dsh @dsh-cc/cli
 $ dsh-cc
 ```
+
+The launcher enforces a harness floor at bootstrap: the installed `dsh` must be **>= 0.1.2-rc.1** or startup refuses to proceed.
 
 ## Flags
 

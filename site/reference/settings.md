@@ -1,7 +1,7 @@
 ---
 title: Settings cascade
 description: How dsh-cc resolves settings.json across five levels, merges them, and applies environment variables safely.
-distilled-from: dsh-cc v0.5.0
+distilled-from: dsh-cc v0.6.0
 ---
 
 # Settings cascade
@@ -32,6 +32,10 @@ When the launch directory is inside a git repo, the local file is read from the 
 - **Other arrays are replaced.** For example `additionalDirectories`: the higher level overrides wholesale.
 - **Misconfiguration fails loud.** A present-but-unparsable settings document (bad JSON, non-object root) fails plugin load. An absent file contributes nothing and is not an error.
 - **Writes are surgical deltas onto the user file.** Only keys the caller actually changed are written to `~/.dsh/settings.json`; inherited values from higher levels are not copied in. Concurrent writes from multiple dsh processes can silently lose updates (single-process profiles are unaffected), and unsetting a key inherited from a lower level does not persist across restart.
+
+### `enabledPlugins` and plugin state
+
+The `enabledPlugins` key (exact `name@marketplace` ids) gates which installed Claude Code-format plugins mount at startup. For plugin discovery the cascade gains a dsh layer: claude-user → dsh-user → project → local. All `/plugin` mutations write to the dsh home only (`$DSH_HOME` / `~/.dsh`, including user-scope `enabledPlugins` / `extraKnownMarketplaces` entries in `~/.dsh/settings.json`); the Claude home stays read-visible and is never written. Details: [Plugins](/guide/plugins).
 
 ## Hot reload
 
@@ -77,11 +81,15 @@ Rules, exactly:
 
 Currently there is exactly **one** entry in the whitelist: `statusLine` → `statusline`. On the `tui` profile this key replaces the built-in bottom status line with your own shell command; it can live in `~/.dsh/settings.json` or a project `.claude/settings.json`.
 
+## Plugin enablement: `enabledPlugins`
+
+Plugin discovery reads the `enabledPlugins` map with a dual-home layering: claude-user (`$CLAUDE_CONFIG_DIR` / `~/.claude`) → dsh-user (`$DSH_HOME` / `~/.dsh/settings.json`) → project → local, later files overriding per key. `/plugin` mutations write only under the dsh home — user-scope `enabledPlugins` and `extraKnownMarketplaces` entries land in `~/.dsh/settings.json`, and the Claude home stays read-visible, never written. The full dual-home rules are in [Plugins](/guide/plugins).
+
 ## Migrations: mechanism ready, nothing shipped
 
 `@dsh-cc/settings-migrations` ships a versioned migration mechanism: `defineMigration({ version, name, migrate(ctx) })` registers into a module registry (deduplicated by version + name), and `runMigrations()` applies every migration whose `version` exceeds the recorded `migrationVersion` (stored in `<home>/migrations.json`, default `$DSH_HOME` / `~/.dsh`), in ascending order, atomically — a mid-batch failure writes nothing and retries on the next mount, so migrations must be idempotent. A `guard(ctx)` returning `false` skips a migration without blocking version advancement.
 
-As of dsh-cc v0.5.0, **no concrete migrations exist** — the registry is empty and neither cc nor dsh has a legacy settings format to migrate; the first real migration lands with the first settings-shape change. Mounting the plugin is currently a no-op. The mechanism also targets only the user `settings.json` — project/local/flag/policy layers are not yet migration targets.
+As of dsh-cc v0.6.0, **no concrete migrations exist** — the registry is empty and neither cc nor dsh has a legacy settings format to migrate; the first real migration lands with the first settings-shape change. Mounting the plugin is currently a no-op. The mechanism also targets only the user `settings.json` — project/local/flag/policy layers are not yet migration targets.
 
 ## Profile-level tweaks
 

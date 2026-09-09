@@ -34,7 +34,7 @@ Dispatch is **foreground on omit**: with `run_in_background` omitted, a `Task` c
 | Omitted, definition pins `background: true` | Backgrounds on omit. |
 | Omitted, no pin | Foreground: the tool waits for completion and returns the child's text output. |
 
-The `background: true` pin lives in the definition's frontmatter — see [/guide/subagents](/guide/subagents). The repo's bundled `deep-reasoner` and `fast-worker` agents pin `background: true`, so a plain `Task` call to them launches continuable in the background; the bundled `explore` and `dsh-cc-guide` agents stay unpinned and collect in the foreground.
+The `background: true` pin lives in the definition's frontmatter — see [/guide/subagents](/guide/subagents). The official plugin agent `dsh-cc-agents:critic` ships with this pin, so a plain `Task` call to it launches continuable in the background; `dsh-cc-agents:executor` ships no pin (a mutating agent defaults to foreground so you verify its report before composing), and the bundled `explore` and `dsh-cc-guide` agents stay unpinned and collect in the foreground.
 
 ::: warning
 `subagent_type: "fork"` cannot run in the background — fork plus background is rejected (upstream issue #2124); a fork stays a foreground one-shot.

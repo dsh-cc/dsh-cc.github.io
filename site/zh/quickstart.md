@@ -21,7 +21,9 @@ $ npm install -g @deepseek-ai/dsh @dsh-cc/cli
 $ dsh-cc
 ```
 
-如果已经安装 `dsh` **>= 0.1.0-rc.5**，只需安装启动器：
+`dsh-cc` 要求 `dsh` **>= 0.1.2-rc.1**；默认的 `npm install -g @deepseek-ai/dsh` 目前满足该要求（截至 2026-09-12），启动器会在引导时强制检查这一下限。
+
+如果已经安装 `dsh` **>= 0.1.2-rc.1**，只需安装启动器：
 
 ```sh
 $ npm install -g @dsh-cc/cli
@@ -31,6 +33,23 @@ $ dsh-cc
 ::: tip
 官方软件包只来自 `@dsh-cc` npm scope。
 :::
+
+### 可选：官方插件
+
+以上安装就是完整的快速开始。另有两个可选官方插件——通过 dsh-cc 仓库自带的 `dsh-cc` marketplace 分发——提供预配置好的子代理通道：
+
+- **`dsh-cc-agents`** — `dsh-cc-agents:critic`（推理与方案评审）和 `dsh-cc-agents:executor`（机械执行）两个子代理，外加一个编排路由 skill。
+- **`dsh-cc-shunt`** — 把大批量文件读取和模板代码生成重定向到廉价通道的工作子代理，让大文件语料不进入主上下文。
+
+在会话内安装：
+
+```text
+/plugin marketplace add dsh-cc/dsh-cc
+/plugin install dsh-cc-agents@dsh-cc
+/plugin install dsh-cc-shunt@dsh-cc
+```
+
+安装后重启会话，新的 agent 和 hook 才会被加载。细节与配置见 [插件](/zh/guide/plugins)。
 
 ## 首次运行
 
