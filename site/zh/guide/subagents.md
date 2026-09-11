@@ -112,6 +112,14 @@ frontmatter 的 `tools:` 值会收窄子代理的工具集，并针对 spawn 时
 - **没有 TaskOutput 别名，也没有 outputFile 字段。** 前台结果以文本返回，没有输出文件。
 - **Task 子代理会剥离工作区指令。** 与 Claude Code 的自定义子代理不同，被委派的子代理在其可见批次中不会收到工作区 `CLAUDE.md` / `AGENTS.md` 基线（fork 子代理仍继承父种子中已有的内容）。
 
+### 大体量子代理产物：handoff 存储
+
+子代理可以用 `handoff_put` 把长报告或计划放进 handoff 存储，并返回一段嵌有 `handoff://<id>` 句柄的简短摘要（≤2 KB 左右为宜）；编排方或后续子代理用 `handoff_get` 解析该句柄。值得知道的事实：
+
+- 句柄只在 cwd 哈希到相同 projectKey 的会话间解析——同一仓库的另一个 git worktree 是**不同**的 key。
+- 保留策略为 24 小时 TTL，外加每个项目一个 500 条目的磁盘 LRU。
+- 设置命名空间 `cc-handoff`：`enabled`（默认 `true`）与 `threshold-chars`（8192，仅作提示，从不强制）。
+
 ## 下一步
 
 - [/guide/background-tasks](/zh/guide/background-tasks) —— 运行、恢复和中断后台代理。

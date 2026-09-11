@@ -75,6 +75,18 @@ agent 的规范化 git 根解析目标目录，在 host 侧生成 frontmatter，
 
 它完全只读，斜杠输入与输出不会出现在模型请求中——使用它不消耗模型 token。
 
+### 用 `/learn` 蒸馏失败
+
+`/memory` 用来查看记忆，`/learn` 则用来写入记忆：该命令扫描持久的会话转录，
+找出反复出现的“失败→修正”模式，并将其蒸馏进工作区记忆。默认是 dry-run——
+它只渲染排序后的发现和提议的记忆块，什么也不写。只有 `/learn apply` 会写入：
+它创建 `session-learnings` 记忆主题，作为一个由 `/learn` 完全拥有、每次 apply
+时整体重新生成的 managed marker block——其他地方手工写的记忆不受影响——并
+更新 `MEMORY.md` 指针。发现为空时，现有记忆保持原样。`/learn all` 扫描所有
+项目的会话而不只是当前工作区；`/learn days=N` 覆盖时间窗口（默认 14）。调优
+在 `cc-learn` 设置命名空间：`enabled`（默认 `true`）、`days`（默认 `14`）、
+`min-occurrences`（默认 `2`）。
+
 ## 召回：记忆如何在后续会话浮现
 
 你不需要主动索取记忆。一个 `agent/pre-step` 监听器会运行一次**小模型侧查询**

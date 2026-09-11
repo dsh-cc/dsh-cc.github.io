@@ -1,7 +1,7 @@
 ---
 title: Slash commands
 description: Reference catalog of every slash command in dsh-cc — preset (harness) commands and TUI-local commands, with parity status.
-distilled-from: dsh-cc v0.6.0
+distilled-from: dsh-cc v0.6.2
 ---
 
 # Slash commands
@@ -30,6 +30,7 @@ the matrix does not state a status for that command.
 | `/tasks` | List caller-visible background jobs and their status. | Partial |
 | `/agents` | List, inspect, and stop continuable background agents: `/agents <id>` for detail, `/agents stop <id>` to interrupt one (it stays resumable). `/agents attach <id>` is a reserved, unimplemented namespace. | Partial |
 | `/plan` | Plan mode channel (exit via `exit_plan_mode`). | Full |
+| `/learn [apply\|all\|days=N]` | Distill recurring session failure patterns into workspace memory. Dry-run by default — only `apply` writes. `apply` writes the `session-learnings` memory topic (a managed marker block, regenerated wholesale; content outside the block is untouched) and updates `MEMORY.md`; `all` scans every project instead of the current workspace; `days=N` overrides the recency window (default 14). Tuned via the `cc-learn` settings namespace (`enabled` default true, `days` 14, `min-occurrences` 2). | Full |
 
 ## Model & provider
 
@@ -60,7 +61,8 @@ the matrix does not state a status for that command.
 | `/doctor` | Session health report (`--verbose` for the verbose rendering, `--json` for a JSON file under `$DSH_HOME`). | Full |
 | `/status` | Session status summary: current model, permission preset, session id, working directory. | Full |
 | `/diff` | Show git diff summary or a file diff via the shell; also inspects CLAUDE.md / settings differences. | Full |
-| `/cost` | Per-model session usage and cost, folded against the deployment price table. | Full |
+| `/cost` | Per-model session usage and cost, folded against the deployment price table. The CC preset ships a starter table of official published list prices (USD per 1M tokens); a runtime id with a route prefix (e.g. `llmbox_ant/glm-5.3`) matches the bare model row via `/`-suffix longest-row-wins matching, and there is no `*` wildcard — unmatched models report "no price configured" instead of a misleading zero cost. Prices live in the preset's `modelTable` config. | Full |
+| `/cache-health` | Shows prompt-cache prefix stability (stable prefix segment count, estimated tokens, changed-since-last-call flag, drift table) joined with provider-metered cache read/write ratios for this session. A passive observer, detector-only: it reports, never rewrites requests. Disabling is composition config (`config.enabled` in the CC preset's cordis yml), not a settings namespace. | Full |
 | `/stats` | Session event statistics: turn and step counts, tool-call distribution, token usage totals. | Full |
 | `/version` | Print the plugin bundle version and, when the host surfaces one, the harness version. | Full |
 | `/release-notes` | Print the bundled release notes changelog. | Full |
@@ -90,6 +92,7 @@ these local commands.
 | `/export-md <path>` | Export the transcript to a Markdown file. | |
 | `/copy` | Copy the latest assistant reply to the clipboard. | |
 | `/provider [list \| add <preset-id> \| remove <route>]` | Manage LLM provider routes and API keys. | Full |
+| `/onboard` | Re-run the first-run setup (clears the onboarding opt-out). | |
 
 ## Notes
 

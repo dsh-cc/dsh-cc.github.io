@@ -1,7 +1,7 @@
 ---
 title: 设置级联
 description: dsh-cc 如何在五个层级间解析 settings.json、合并它们，并安全地应用环境变量。
-distilled-from: dsh-cc v0.6.0
+distilled-from: dsh-cc v0.6.2
 ---
 
 # 设置级联
@@ -100,6 +100,17 @@ PATH
 ```
 
 它们在已安装的 bundle 之后应用。
+
+## Preset 功能命名空间
+
+若干 CC preset 功能通过 `~/.dsh/settings.json` 中各自的 settings 命名空间调优：
+
+| 命名空间 | 键（默认值） | 调优对象 | 更多 |
+| --- | --- | --- | --- |
+| `cc-onboarding` | `suppressed`（未设置/false） | 设为 `true` 可永久跳过首次运行的 onboarding 流程；用 `/onboard` 重新开启。 | [快速开始](/zh/quickstart) |
+| `cc-learn` | `enabled`（true）、`days`（14）、`min-occurrences`（2） | `/learn` 命令的时间窗口与写入门槛。 | [记忆体系](/zh/guide/memory) |
+| `cc-handoff` | `enabled`（true）、`threshold-chars`（8192，仅提示） | 子代理 handoff 存储的开关及其提示性大小阈值。 | [子代理](/zh/guide/subagents) |
+| `cc-context-compression` | `enabled`（false）、`mode`（dry-run）、`min-bytes`（8192）、`min-savings-ratio`（0.4）、`protected-tools` | 可选开启的可逆工具结果压缩。 | [交互基础](/zh/guide/interactive-basics) |
 
 ## 另请参阅
 

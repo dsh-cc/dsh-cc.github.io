@@ -38,7 +38,7 @@ $ dsh-cc
 
 以上安装就是完整的快速开始。另有两个可选官方插件——通过 dsh-cc 仓库自带的 `dsh-cc` marketplace 分发——提供预配置好的子代理通道：
 
-- **`dsh-cc-agents`** — `dsh-cc-agents:critic`（推理与方案评审）和 `dsh-cc-agents:executor`（机械执行）两个子代理，外加一个编排路由 skill。
+- **`dsh-cc-agents`** — `dsh-cc-agents:critic`（推理与方案评审）、`dsh-cc-agents:executor`（机械执行）和 `dsh-cc-agents:marathon`（长周期、全仓库级工作）三个子代理，外加一个编排路由 skill。
 - **`dsh-cc-shunt`** — 把大批量文件读取和模板代码生成重定向到廉价通道的工作子代理，让大文件语料不进入主上下文。
 
 在会话内安装：
@@ -61,6 +61,8 @@ $ dsh-cc
 ```sh
 $ DSH_CCTUI_UI_MODE=regular dsh --profile tui
 ```
+
+全新安装且未配置模型时，TUI 会自动打开 provider 面板：选一个预设，粘贴 API 密钥（只存入凭据存储 `~/.dsh/.credentials.yaml`），并设置默认模型。按 `Esc` 关闭只跳过当前会话——下次启动会再次提供。要永久关闭，在 `~/.dsh/settings.json` 的用户设置命名空间下设置 `cc-onboarding.suppressed: true`；随时可用 `/onboard` 重新开启。非交互（非 TTY）运行不会触发该流程。
 
 ## 你的第一个任务
 
