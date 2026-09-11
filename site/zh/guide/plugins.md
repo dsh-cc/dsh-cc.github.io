@@ -116,12 +116,13 @@ dsh-cc 内置一个兼容插件加载器，读取 Claude Code 插件的 `plugin.
 
 两个官方插件通过 `dsh-cc` marketplace 发布。
 
-### dsh-cc-agents —— critic 与 executor 子代理
+### dsh-cc-agents —— critic、executor 与 marathon 子代理
 
-包含两个子代理和一个在两者之间做路由的编排技能：
+包含三个子代理和一个在它们之间做路由的编排技能：
 
 - **`dsh-cc-agents:critic`** —— 重推理工作：复杂分析、架构决策、对抗性方案评审、根因分析。运行在 `opus` 模型别名上，默认后台运行。
 - **`dsh-cc-agents:executor`** —— 执行已获批、完全明确的计划中的机械性工作：格式化、简单重构、样板代码、改名、测试、文档、检查。运行在 `sonnet` 模型别名上，默认前台运行。
+- **`dsh-cc-agents:marathon`** —— 长周期、模糊或全仓库级的复杂任务：架构重设计、跨模块重构、没有明显线索的长时间调试，以及在主线方案失败后的重新进攻。运行在 `fable` 模型别名上（未配置时继承主线程路由）；会执行修改操作的人设，与 executor 一样默认前台运行。
 
 在会话内安装，然后重启会话：
 
@@ -140,7 +141,7 @@ dsh-cc 内置一个兼容插件加载器，读取 Claude Code 插件的 `plugin.
 注意：
 
 - 如果你的 workspace 定义了名为 `deep-reasoner` 或 `fast-worker` 的文件型 agent，裸名会解析到你的 workspace 定义；插件副本只能通过精确的限定 id 寻址。两者都会出现在 agent 目录中，插件副本可通过其描述区分。
-- 这两个 agent 请求 `opus` / `sonnet` 别名但不要求其存在：未配置的别名会退化为继承父级路由——功能不受影响，只是失去快慢通道分离。
+- 这三个 agent 请求 `opus` / `sonnet` / `fable` 别名但不要求其存在：未配置的别名会退化为继承父级路由——功能不受影响，只是失去快慢通道分离。
 
 ### dsh-cc-shunt —— 让大文件内容不进入主上下文
 

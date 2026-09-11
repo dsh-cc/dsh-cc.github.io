@@ -112,6 +112,14 @@ As of dsh-cc v0.6.0:
 - **No TaskOutput alias or outputFile field.** Foreground results come back as text; there is no output file.
 - **Workspace instructions are stripped from Task children.** Unlike Claude Code custom subagents, delegated children do not receive the workspace `CLAUDE.md` / `AGENTS.md` baseline in their visible batch (a fork child still inherits what was already in the parent seed).
 
+### Large child artifacts: the handoff store
+
+A child can park a long report or plan in the handoff store with `handoff_put` and return a summary (≤2 KB works well) embedding a `handoff://<id>` handle; the orchestrator or a follow-up child resolves the handle with `handoff_get`. Facts worth knowing:
+
+- Handles resolve only for sessions whose cwd hashes to the same projectKey — a different git worktree of the same repo is a **different** key.
+- Retention is a 24 h TTL plus a 500-entry disk-based LRU per project.
+- Settings namespace `cc-handoff`: `enabled` (default `true`) and `threshold-chars` (8192, advisory only, never enforced).
+
 ## Next
 
 - [/guide/background-tasks](/guide/background-tasks) — running, resuming, and interrupting background agents.

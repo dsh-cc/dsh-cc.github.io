@@ -85,6 +85,21 @@ body. It registers as a global command, so it runs without a model turn.
 It is fully read-only, and the slash input and output are absent from model
 requests — using it consumes no model tokens.
 
+### Distilling failures with `/learn`
+
+While `/memory` inspects memory, `/learn` writes it: the command scans the
+durable session transcripts for recurring failure→success corrections and
+distills them into workspace memory. It is dry-run by default — it renders the
+ranked findings and the proposed memory block and writes nothing. Only
+`/learn apply` writes: it creates the `session-learnings` memory topic as a
+managed marker block that `/learn` owns entirely and regenerates wholesale on
+every apply — hand-written memory elsewhere is untouched — and updates the
+`MEMORY.md` pointer. Empty findings leave existing memory untouched. `/learn
+all` scans every project's sessions instead of the current workspace only, and
+`/learn days=N` overrides the recency window (default 14). Tuning lives in the
+`cc-learn` settings namespace: `enabled` (default `true`), `days` (default
+`14`), `min-occurrences` (default `2`).
+
 ## Recall: how memories surface later
 
 You do not have to ask for memories back. An `agent/pre-step` listener runs a

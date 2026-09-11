@@ -1,7 +1,7 @@
 ---
 title: Settings cascade
 description: How dsh-cc resolves settings.json across five levels, merges them, and applies environment variables safely.
-distilled-from: dsh-cc v0.6.0
+distilled-from: dsh-cc v0.6.2
 ---
 
 # Settings cascade
@@ -100,6 +100,17 @@ Beyond `settings.json`, your profile remains ordinary dsh composition. Local twe
 ```
 
 They are applied after the installed bundles.
+
+## Preset feature namespaces
+
+Several CC preset features are tuned through their own settings namespaces in `~/.dsh/settings.json`:
+
+| Namespace | Keys (defaults) | What it tunes | More |
+| --- | --- | --- | --- |
+| `cc-onboarding` | `suppressed` (unset/false) | Set `true` to permanently skip the first-run onboarding flow; re-arm with `/onboard`. | [Quick start](/quickstart) |
+| `cc-learn` | `enabled` (true), `days` (14), `min-occurrences` (2) | The `/learn` command's recency window and write gating. | [Memory](/guide/memory) |
+| `cc-handoff` | `enabled` (true), `threshold-chars` (8192, advisory) | Subagent handoff store availability and its advisory size threshold. | [Subagents](/guide/subagents) |
+| `cc-context-compression` | `enabled` (false), `mode` (dry-run), `min-bytes` (8192), `min-savings-ratio` (0.4), `protected-tools` | Opt-in reversible compression of large tool results. | [Interactive basics](/guide/interactive-basics) |
 
 ## See also
 

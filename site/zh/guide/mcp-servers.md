@@ -88,18 +88,26 @@ dsh-cc 有一条刻意的 dsh-first 规则，Claude Code 没有对应机制：�
 
 [Serena](https://github.com/oraios/serena) 是一个提供符号级代码智能的 MCP 服务器。当你的 MCP 配置接上它之后，dsh-cc 会自动加以利用：系统提示会引导代码问题优先使用 Serena 的符号工具，内置的 `explore` 子智能体也获得只读符号检索能力。Serena 严格可选——没有它，会话通过内置 Read/Grep 工具的表现完全一致，只是少了这些引导提示。
 
-把它加入 `~/.dsh/.mcp.json`（或项目级 `.mcp.json`）：
+先做一次性安装，让本地 `serena` 二进制进入 `PATH`：
+
+```sh
+$ uv tool install git+https://github.com/oraios/serena@v1.7.0
+```
+
+然后使用本地二进制，把它加入 `~/.dsh/.mcp.json`（或项目级 `.mcp.json`）：
 
 ```json
 {
   "mcpServers": {
     "serena": {
-      "command": "uvx",
-      "args": ["--from", "git+https://github.com/oraios/serena@v1.7.0", "serena", "start-mcp-server", "--context", "claude-code", "--project-from-cwd"]
+      "command": "serena",
+      "args": ["start-mcp-server", "--context", "claude-code", "--project-from-cwd"]
     }
   }
 }
 ```
+
+避免通过 `uvx --from git+…` 启动服务器——每次启动都会写 `~/.cache/uv`，而会话沙箱拒绝该写入。
 
 重启会话后，用 `/doctor` 验证——它会在 `mcp.serena` 检查项下报告该连接。
 

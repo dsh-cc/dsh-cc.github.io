@@ -1,7 +1,7 @@
 ---
 title: 斜杠命令
 description: dsh-cc 全部斜杠命令的参考目录——preset（harness）命令与 TUI 本地命令，附对等状态。
-distilled-from: dsh-cc v0.6.0
+distilled-from: dsh-cc v0.6.2
 ---
 
 # 斜杠命令
@@ -28,6 +28,7 @@ matrix 未声明该命令的状态。
 | `/tasks` | 列出调用方可见的后台作业及其状态。 | Partial |
 | `/agents` | 列出、查看和停止可续接的后台 agent：`/agents <id>` 查看详情，`/agents stop <id>` 中断一个（仍可续接）。`/agents attach <id>` 是保留但未实现的命名空间。 | Partial |
 | `/plan` | Plan mode 通道（通过 `exit_plan_mode` 退出）。 | Full |
+| `/learn [apply\|all\|days=N]` | 把会话中反复出现的失败模式蒸馏进工作区记忆。默认 dry-run——只有 `apply` 会写入。`apply` 写入 `session-learnings` 记忆主题（一个 managed marker block，整体重新生成；块之外的内容不受影响）并更新 `MEMORY.md`；`all` 扫描所有项目而不只是当前工作区；`days=N` 覆盖时间窗口（默认 14）。通过 `cc-learn` 设置命名空间调优（`enabled` 默认 true、`days` 14、`min-occurrences` 2）。 | Full |
 
 ## 模型与 Provider
 
@@ -58,7 +59,8 @@ matrix 未声明该命令的状态。
 | `/doctor` | 会话健康报告（`--verbose` 详细文本，`--json` 在 `$DSH_HOME` 下生成 JSON 文件）。 | Full |
 | `/status` | 会话状态摘要：当前模型、权限 preset、会话 id、工作目录。 | Full |
 | `/diff` | 通过 shell 显示 git diff 摘要或单文件 diff；也用于检查 CLAUDE.md / settings 差异。 | Full |
-| `/cost` | 按模型的会话用量与费用，对照部署价格表折算。 | Full |
+| `/cost` | 按模型的会话用量与费用，对照部署价格表折算。CC preset 内置一张官方公布牌价的起步价格表（USD per 1M tokens）；带路由前缀的运行时 id（如 `llmbox_ant/glm-5.3`）通过 `/` 后缀最长行优先匹配命中裸模型行，且没有 `*` 通配——未匹配的模型会报告 "no price configured"，而不是误导性的零费用。价格在 preset 的 `modelTable` 配置中。 | Full |
+| `/cache-health` | 显示 prompt-cache 前缀稳定性（稳定前缀段数、估算 token 数、自上次调用后是否有变化的标记、漂移表），并与本会话按 provider 计量的 cache 读/写比率联查。被动观察者，仅探测——只报告，从不改写请求。禁用方式是组合配置（CC preset 的 cordis yml 中的 `config.enabled`），不是 settings 命名空间。 | Full |
 | `/stats` | 会话事件统计：轮次与步数、工具调用分布、token 用量合计。 | Full |
 | `/version` | 打印插件包版本，宿主可见时还打印 harness 版本。 | Full |
 | `/release-notes` | 打印内置的 release notes 更新日志。 | Full |
@@ -87,6 +89,7 @@ matrix 未声明该命令的状态。
 | `/export-md <path>` | 将会话转录导出为 Markdown 文件。 | |
 | `/copy` | 将最近的助手回复复制到剪贴板。 | |
 | `/provider [list \| add <preset-id> \| remove <route>]` | 管理 LLM provider 路由与 API key。 | Full |
+| `/onboard` | 重新运行首次运行设置（清除 onboarding 的永久关闭标记）。 | |
 
 ## 说明
 

@@ -50,6 +50,8 @@ The TUI also provides transcript export, usage/context display, todo inspection,
 
 For context handling, `/compact` compacts the session with optional preservation instructions; the TUI-local `/clear` (aliases `/new`, `/reset`) starts a fresh conversation while the previous session stays resumable (see the [slash-command catalog](/reference/commands)). The memory layer (`CLAUDE.md`-style context plus a dedicated write channel for durable memories, isolated by workspace) carries durable knowledge; use `/memory` to inspect memories.
 
+Opt-in CCR (compress-cache-retrieve) compression is also available: when `cc-context-compression.enabled: true` and `mode: on` (the default mode is `dry-run`, which only measures), large grep/log-shaped tool results are replaced by one fresh text block plus a `[dsh-cc compressed BEFORE→AFTER tokens. Original: ccr://<hash>]` marker. The original is cached in a content-addressed store under `$DSH_HOME/ccr/` and restored verbatim via the `context_retrieve` tool. Knobs: `min-bytes` (8192), `min-savings-ratio` (0.4), and `protected-tools` — an explicit list REPLACES the default, it is not a union. Caveat: replay and `/export` keep the compressed form.
+
 ## Working in parallel safely
 
 To isolate experiments from your main checkout, start the session inside a git worktree:

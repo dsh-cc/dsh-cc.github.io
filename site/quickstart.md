@@ -38,7 +38,7 @@ Official packages come only from the `@dsh-cc` npm scope.
 
 The install above is the whole quick start. Two optional official plugins — shipped through the dsh-cc repo's `dsh-cc` marketplace — add preconfigured subagent lanes:
 
-- **`dsh-cc-agents`** — the `dsh-cc-agents:critic` (reasoning and plan review) and `dsh-cc-agents:executor` (mechanical execution) subagents, plus an orchestration routing skill.
+- **`dsh-cc-agents`** — the `dsh-cc-agents:critic` (reasoning and plan review) and `dsh-cc-agents:executor` (mechanical execution) subagents, plus the `dsh-cc-agents:marathon` (long-horizon, repo-wide work) subagent and an orchestration routing skill.
 - **`dsh-cc-shunt`** — gates that redirect bulk file reads and boilerplate generation to cheap-lane worker subagents, keeping large file corpora out of the main context.
 
 Install them inside a session:
@@ -61,6 +61,8 @@ Run `dsh-cc`. On first launch it creates and boots the CC-oriented `tui` profile
 ```sh
 $ DSH_CCTUI_UI_MODE=regular dsh --profile tui
 ```
+
+On a fresh install with no model configured, the TUI opens the provider panel automatically: pick a preset, paste your API key (stored only in the credential store `~/.dsh/.credentials.yaml`), and set the default model. Dismissing with `Esc` skips it for the current session only — it is re-offered on next boot. To opt out permanently, set `cc-onboarding.suppressed: true` under the user settings namespace in `~/.dsh/settings.json`; re-arm any time with `/onboard`. Non-interactive (non-TTY) runs never trigger the flow.
 
 ## Your first task
 

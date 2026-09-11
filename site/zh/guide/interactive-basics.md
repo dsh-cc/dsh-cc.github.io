@@ -50,6 +50,8 @@ TUI 还提供对话导出、用量/上下文显示、todo 查看、审批、排�
 
 上下文处理：`/compact` 可带保留指令压缩会话；TUI 本地的 `/clear`（别名 `/new`、`/reset`）开启全新对话且旧会话仍可恢复（详见[斜杠命令目录](/zh/reference/commands)）。记忆层（`CLAUDE.md` 风格的上下文，外加专门用于持久记忆的写入通道，按工作区隔离）承载长期知识；可用 `/memory` 查看记忆。
 
+还可选开启 CCR（compress-cache-retrieve）压缩：当 `cc-context-compression.enabled: true` 且 `mode: on` 时（默认 mode 是 `dry-run`，只测量不替换），大体量的 grep/日志形工具结果会被替换为一个全新的文本块加一条 `[dsh-cc compressed BEFORE→AFTER tokens. Original: ccr://<hash>]` 标记。原文缓存在 `$DSH_HOME/ccr/` 下的内容寻址存储中，可通过 `context_retrieve` 工具逐字还原。配置项：`min-bytes`（8192）、`min-savings-ratio`（0.4）、`protected-tools`——显式设置会整体替换默认列表，不是并集。注意：回放和 `/export` 保留的是压缩后的形态。
+
 ## 安全地并行开发
 
 若要把实验与主检出隔离开，可在 git worktree 中启动会话：

@@ -88,18 +88,26 @@ If you are coming from Claude Code, `/mcp migrate` imports your Claude Code MCP 
 
 [Serena](https://github.com/oraios/serena) is an MCP server that provides symbol-level code intelligence. When your MCP configuration connects it, dsh-cc automatically takes advantage of it: the system prompt steers toward Serena's symbol tools for code questions, and the bundled `explore` subagent gains read-only symbol retrieval. Serena is strictly optional — without it, sessions behave identically through the built-in Read/Grep tools, minus the steering hints.
 
-Add it to `~/.dsh/.mcp.json` (or a project `.mcp.json`):
+Install Serena once so a local `serena` binary is on `PATH`:
+
+```sh
+$ uv tool install git+https://github.com/oraios/serena@v1.7.0
+```
+
+Add it to `~/.dsh/.mcp.json` (or a project `.mcp.json`) using the local binary:
 
 ```json
 {
   "mcpServers": {
     "serena": {
-      "command": "uvx",
-      "args": ["--from", "git+https://github.com/oraios/serena@v1.7.0", "serena", "start-mcp-server", "--context", "claude-code", "--project-from-cwd"]
+      "command": "serena",
+      "args": ["start-mcp-server", "--context", "claude-code", "--project-from-cwd"]
     }
   }
 }
 ```
+
+Avoid launching the server via `uvx --from git+…` — every server start would write `~/.cache/uv`, which the session sandbox denies.
 
 Restart the session, then verify with `/doctor` — it reports the connection under the `mcp.serena` check.
 

@@ -116,12 +116,13 @@ The `settings` component still depends on a deployment-supplied seam: without on
 
 Two official plugins ship through the `dsh-cc` marketplace.
 
-### dsh-cc-agents — critic and executor subagents
+### dsh-cc-agents — critic, executor, and marathon subagents
 
-Ships two subagents and an orchestration skill that routes between them:
+Ships three subagents and an orchestration skill that routes between them:
 
 - **`dsh-cc-agents:critic`** — reasoning-heavy work: complex analysis, architectural decisions, adversarial plan review, root-cause analysis. Runs on the `opus` model alias and is background-pinned.
 - **`dsh-cc-agents:executor`** — mechanical execution of pre-approved, fully specified plans: formatting, simple refactors, boilerplate, renames, tests, docs, checks. Runs on the `sonnet` model alias, foreground by default.
+- **`dsh-cc-agents:marathon`** — long-horizon, ambiguous, or repo-wide complexity: architecture redesigns, cross-module refactors, extended debugging with no obvious culprit, and re-approaches after the main thread's approach failed. Runs on the `fable` model alias (inherits the main-thread route when unconfigured); mutating persona, foreground by default like executor.
 
 Install from inside a session, then restart:
 
@@ -140,7 +141,7 @@ Updates are two commands — a marketplace re-pull alone does not refresh the in
 Notes:
 
 - If your workspace defines file-based agents named `deep-reasoner` or `fast-worker`, the bare names resolve to your workspace definitions; the plugin copies resolve only by the exact scoped ids. Both appear in the agent catalog, with the plugin copies distinguishable by their descriptions.
-- The agents request the `opus` / `sonnet` aliases but do not require them: an unconfigured alias degrades to inheriting the parent's route — everything works, lane separation is lost.
+- The agents request the `opus` / `sonnet` / `fable` aliases but do not require them: an unconfigured alias degrades to inheriting the parent's route — everything works, lane separation is lost.
 
 ### dsh-cc-shunt — keep bulk reads out of the main context
 
