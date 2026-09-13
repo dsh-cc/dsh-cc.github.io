@@ -1,7 +1,7 @@
 ---
 title: Claude Code 兼容性
 description: dsh-cc 中"Claude Code 兼容性"的含义——以及如何诚实地解读一致性矩阵。
-distilled-from: dsh-cc v0.6.0
+distilled-from: dsh-cc v0.6.3
 ---
 
 # Claude Code 兼容性
@@ -37,11 +37,11 @@ Code 的逐字节模拟，也不以克隆每一个绑定厂商的特性为目标
 本页——的权威。
 
 ::: warning
-下方的例子描述的是 dsh-cc v0.6.0 时的状态。在依赖其中任何一项之前，请先
+下方的例子描述的是 dsh-cc v0.6.3 时的状态。在依赖其中任何一项之前，请先
 查看矩阵了解当前状态。
 :::
 
-## 几个示例亮点（截至 v0.6.0）
+## 几个示例亮点（截至 v0.6.3）
 
 - **Hook 执行器** —— `command` 和 `http` 执行器始终开启；`prompt` 和
   `agent` 执行器由 `enablePromptHooks` / `enableAgentHooks` 控制，默认

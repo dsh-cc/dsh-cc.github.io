@@ -1,7 +1,7 @@
 ---
 title: Environment variables
 description: The environment variables dsh-cc reads and sets, with defaults from the launcher and TUI source.
-distilled-from: dsh-cc v0.6.0
+distilled-from: dsh-cc v0.6.3
 ---
 
 # Environment variables
@@ -11,7 +11,7 @@ home directory the launcher bootstraps into, the resume/worktree contract the
 `dsh-cc` launcher passes to the TUI plugin, and TUI escape hatches. Each name,
 value, and default below is taken verbatim from the
 [`packages/launcher/tui`](https://github.com/dsh-cc/dsh-cc) launcher and TUI
-source at v0.6.0, plus one compatibility variable from the plugin loader.
+source at v0.6.3, plus one compatibility variable from the plugin loader.
 
 ## Reference
 

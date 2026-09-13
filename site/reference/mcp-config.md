@@ -1,7 +1,7 @@
 ---
 title: MCP configuration
 description: The .mcp.json schema, MCP config discovery precedence, the dsh-first gating rule, and the /mcp command for dsh-cc.
-distilled-from: dsh-cc v0.5.0
+distilled-from: dsh-cc v0.6.3
 ---
 
 # MCP configuration

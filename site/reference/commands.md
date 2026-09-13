@@ -1,7 +1,7 @@
 ---
 title: Slash commands
 description: Reference catalog of every slash command in dsh-cc — preset (harness) commands and TUI-local commands, with parity status.
-distilled-from: dsh-cc v0.6.2
+distilled-from: dsh-cc v0.6.3
 ---
 
 # Slash commands

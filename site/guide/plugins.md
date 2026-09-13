@@ -10,7 +10,7 @@ description: How dsh-cc composes itself from dsh profiles and bundles, and how i
 - **Story A — dsh-native composition.** dsh-cc itself is installed as ordinary dsh plugins grouped into `@dsh-cc/bundle-*` packages and mounted into a dsh profile. Your local tweaks live in a `cordis.patch.yml` file.
 - **Story B — Claude Code plugin loading.** Through the cc-plugin-loader, dsh-cc can discover and mount existing on-disk Claude Code plugins (a `plugin.json` manifest plus component directories), so plugin assets you already have keep working.
 
-Prerequisites: dsh >= 0.1.2-rc.1 with the `@dsh-cc/cli` launcher installed (`npm install -g @dsh-cc/cli`).
+Prerequisites: dsh >= 0.1.5-rc.1 with the `@dsh-cc/cli` launcher installed (`npm install -g @dsh-cc/cli`).
 
 ## Story A: dsh profiles and bundles
 

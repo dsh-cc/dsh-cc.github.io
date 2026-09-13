@@ -1,14 +1,14 @@
 ---
 title: 环境变量
 description: dsh-cc 读取和设置的环境变量一览，默认值取自 launcher 与 TUI 源码。
-distilled-from: dsh-cc v0.6.0
+distilled-from: dsh-cc v0.6.3
 ---
 
 # 环境变量
 
 本页汇总启动 dsh-cc 时涉及的环境变量：launcher 引导使用的家目录、`dsh-cc`
 launcher 传递给 TUI 插件的恢复/工作树（worktree）约定，以及 TUI 的紧急开关。
-下列变量名、取值与默认值均逐字摘自 v0.6.0 的
+下列变量名、取值与默认值均逐字摘自 v0.6.3 的
 [`packages/launcher/tui`](https://github.com/dsh-cc/dsh-cc) launcher 与 TUI
 源码，另有一个来自插件加载器的兼容变量。
 

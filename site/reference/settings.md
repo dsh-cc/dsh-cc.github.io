@@ -1,7 +1,7 @@
 ---
 title: Settings cascade
 description: How dsh-cc resolves settings.json across five levels, merges them, and applies environment variables safely.
-distilled-from: dsh-cc v0.6.2
+distilled-from: dsh-cc v0.6.3
 ---
 
 # Settings cascade
