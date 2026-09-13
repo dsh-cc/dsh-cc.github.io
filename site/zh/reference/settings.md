@@ -1,7 +1,7 @@
 ---
 title: 设置级联
 description: dsh-cc 如何在五个层级间解析 settings.json、合并它们，并安全地应用环境变量。
-distilled-from: dsh-cc v0.6.2
+distilled-from: dsh-cc v0.6.3
 ---
 
 # 设置级联

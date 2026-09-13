@@ -10,7 +10,7 @@ description: dsh-cc 如何通过 dsh profile 与 bundle 完成自身组合，以
 - **故事 A —— dsh 原生组合。** dsh-cc 本身以普通 dsh 插件的形式安装，按 `@dsh-cc/bundle-*` 包分组并挂载到 dsh profile 中。你的本地微调放在 `cordis.patch.yml` 文件里。
 - **故事 B —— 加载 Claude Code 插件。** 通过 cc-plugin-loader，dsh-cc 可以发现并挂载磁盘上已有的 Claude Code 插件（一个 `plugin.json` 清单加若干组件目录），让你手头的插件资产继续可用。
 
-前置条件：dsh >= 0.1.2-rc.1，并安装 `@dsh-cc/cli` 启动器（`npm install -g @dsh-cc/cli`）。
+前置条件：dsh >= 0.1.5-rc.1，并安装 `@dsh-cc/cli` 启动器（`npm install -g @dsh-cc/cli`）。
 
 ## 故事 A：dsh profile 与 bundle
 

@@ -1,7 +1,7 @@
 ---
 title: 参考
 description: dsh-cc 参考页速查目录——参数、环境变量、命令与配置。
-distilled-from: dsh-cc v0.5.0
+distilled-from: dsh-cc v0.6.3
 ---
 
 # 参考

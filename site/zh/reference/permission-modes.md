@@ -1,7 +1,7 @@
 ---
 title: 权限模式
 description: 五种权限模式、规则引擎的规则形式与求值顺序、auto 模式的风险分类器，以及 /permissions 命令。
-distilled-from: dsh-cc v0.5.0
+distilled-from: dsh-cc v0.6.3
 ---
 
 # 权限模式

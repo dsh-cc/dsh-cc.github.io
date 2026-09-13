@@ -1,7 +1,7 @@
 ---
 title: Permission modes
 description: The five permission modes, the rule engine's rule forms and evaluation order, the auto-mode risk classifier, and the /permissions command.
-distilled-from: dsh-cc v0.5.0
+distilled-from: dsh-cc v0.6.3
 ---
 
 # Permission modes

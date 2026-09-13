@@ -1,7 +1,7 @@
 ---
 title: Claude Code compatibility
 description: What "Claude Code compatibility" means in dsh-cc — and how to read the parity matrix honestly.
-distilled-from: dsh-cc v0.6.0
+distilled-from: dsh-cc v0.6.3
 ---
 
 # Claude Code compatibility
@@ -42,11 +42,11 @@ It is regenerated from a machine-readable capability manifest, so treat it as
 authoritative over any prose — including this page.
 
 ::: warning
-The examples below describe the state as of dsh-cc v0.6.0. Check the matrix
+The examples below describe the state as of dsh-cc v0.6.3. Check the matrix
 for the current state before relying on any of them.
 :::
 
-## A few example highlights (as of v0.6.0)
+## A few example highlights (as of v0.6.3)
 
 - **Hook executors** — `command` and `http` executors are always on; `prompt`
   and `agent` executors are gated behind `enablePromptHooks` /
