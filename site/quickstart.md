@@ -51,6 +51,15 @@ Install them inside a session:
 
 Restart the session after installing so the new agents and hooks are picked up. Details and configuration: [Plugins](/guide/plugins).
 
+## Upgrading
+
+```sh
+$ npm install -g @dsh-cc/cli@latest
+$ dsh-cc
+```
+
+On the first launch after an upgrade, the launcher re-runs the profile's bundle install at the new version (recorded at `~/.dsh/profiles/tui/.dsh-cc-bootstrap.json`), so the profile converges automatically — no manual step. A failed reconcile (network, or the release still inside npm/pnpm's minimum-release-age window) warns and boots anyway, retrying on the next launch. Dev-synced profiles (via `scripts/sync-local-profile.sh` — `dsh-cc --version` shows `-dev+<commit>[.dirty]`) are never reconciled by the launcher.
+
 ## First run
 
 Run `dsh-cc`. On first launch it creates and boots the CC-oriented `tui` profile, so there is nothing else to configure to get started:

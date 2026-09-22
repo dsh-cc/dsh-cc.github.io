@@ -1,7 +1,7 @@
 ---
 title: CLI flags
 description: The dsh-cc bin and the flags it accepts before spawning dsh --profile tui.
-distilled-from: dsh-cc v0.6.3
+distilled-from: dsh-cc v0.8.0-rc.2
 ---
 
 # CLI flags
@@ -31,12 +31,19 @@ are not recognized — each flag must be its own token.
 | `--new` / `-n` | Start a fresh session: the TUI starts clean and must not read any resume marker. |
 | `--resume <id>` | Resume the session with that id. The `--resume=<id>` form works identically. |
 | `--continue` / `-c` | Continue the previous session; the TUI shows a "no previous session to continue" notice when no marker exists. |
-| `--worktree [name]` | Start the session inside a git worktree at `<repoRoot>/.claude/worktrees/<slug>` on branch `worktree-<slug>` (random slug when no name is given). A newly created worktree starts a fresh session (equivalent to `--new`); re-invoking `--worktree <name>` when that directory already exists reuses it and falls back to the default auto-resume. Requires a git repository with at least one commit. |
+| `--worktree [name]` | Start the session inside a git worktree at `<repoRoot>/.claude/worktrees/<slug>` on branch `worktree-<slug>` (random slug when no name is given). A newly created worktree starts a fresh session (equivalent to `--new`); re-invoking `--worktree <name>` when that directory already exists reuses it and falls back to the default auto-resume. A PR reference also works: `--worktree '#12'` (quote the `#`), a GitHub PR URL, or a GitLab MR URL creates `.claude/worktrees/pr-<n>` on branch `worktree-pr-<n>`, fetching `pull/<n>/head` on github.com, `merge-requests/<n>/head` on gitlab.com (both tried, in order, on other hosts). Requires a git repository with at least one commit. |
 | `--profile` | Not consumed by the launcher itself: it always forwards `dsh --profile tui`, the canonical command. |
 
 When no explicit choice was made, the TUI reads its own project resume marker
 and auto-resumes the project's last session if one exists. `--resume` /
 `--new` override the worktree fallback.
+
+Every launch runs a bounded boot-time sweep of stale `worktree-*` worktrees
+and picks the worktree base via settings — see [/guide/worktrees](/guide/worktrees).
+
+On quit, the TUI prints the session id and the resume command for picking the
+session back up; set `DSH_CC_DISABLE_EXIT_TIP='1'` to disable it
+([/reference/env-vars](/reference/env-vars)).
 
 ## How flags reach the TUI
 

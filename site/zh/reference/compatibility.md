@@ -1,7 +1,7 @@
 ---
 title: Claude Code 兼容性
 description: dsh-cc 中"Claude Code 兼容性"的含义——以及如何诚实地解读一致性矩阵。
-distilled-from: dsh-cc v0.6.3
+distilled-from: dsh-cc v0.8.0-rc.2
 ---
 
 # Claude Code 兼容性
@@ -37,11 +37,11 @@ Code 的逐字节模拟，也不以克隆每一个绑定厂商的特性为目标
 本页——的权威。
 
 ::: warning
-下方的例子描述的是 dsh-cc v0.6.3 时的状态。在依赖其中任何一项之前，请先
+下方的例子描述的是 dsh-cc v0.8.0-rc.2 时的状态。在依赖其中任何一项之前，请先
 查看矩阵了解当前状态。
 :::
 
-## 几个示例亮点（截至 v0.6.3）
+## 几个示例亮点（截至 v0.8.0-rc.2）
 
 - **Hook 执行器** —— `command` 和 `http` 执行器始终开启；`prompt` 和
   `agent` 执行器由 `enablePromptHooks` / `enableAgentHooks` 控制，默认
@@ -53,6 +53,24 @@ Code 的逐字节模拟，也不以克隆每一个绑定厂商的特性为目标
 - **后台任务** —— dsh 的 jobs 工具以 dsh 命名提供等价能力；CC 的
   `TaskCreate`/`TaskOutput`/`TaskStop` 命名未做别名。Partial。
 - **WebSearch** 和 **plan mode** —— 完全一致，默认挂载。
+- **设计上就不同的引擎层能力** —— v0.8.0 新增了若干超出 Claude Code 的
+  引擎行，矩阵中标记为 divergent：`compaction-cost-gate`（behavioral/ux
+  full）、`microcompact`（behavioral/ux full）、`tool-use-summary`
+  （behavioral/ux full）、`post-edit-auto-verify` 和 `edit-recovery-hint`
+  （behavioral full，ux partial），以及 `prompt-suggest`、
+  `reasoning-effort-surface`（即 `model$level` 后缀）、
+  `output-token-continuation` 和 `error-streak-surfacing`
+  （behavioral/ux partial）。
+- **Git worktree** —— worktree 相关行（`workspace.worktree-ecosystem`、
+  `workspace.worktree-launcher`、`workspace.worktree-lifecycle`、
+  `workspace.worktree-tools`）均为 behavioral/ux partial，偏差类型为
+  downgrade（例如 launcher `--worktree` 会话不支持 `.worktreeinclude`
+  拷贝）。参见 [/zh/guide/worktrees](/zh/guide/worktrees)。
+- **Subagent 与插件** —— `subagents.isolation` 为 behavioral/ux partial
+  （downgrade）；`plugins.rules`（Cursor 方言）behavioral divergent、ux
+  partial；`settings.actor-contract` behavioral divergent、ux partial；
+  `hooks.worktree-events`（`WorktreeCreate`/`WorktreeRemove`）为
+  behavioral/ux partial。
 
 ## 下一步
 

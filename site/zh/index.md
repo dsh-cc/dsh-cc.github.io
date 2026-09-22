@@ -19,7 +19,7 @@ features:
   - title: 自由组合模型
     details: 将 `sketch`、`draft`、`blueprint`、`masterplan` 等稳定别名映射到当前 dsh 部署支持的任意 provider/model。
   - title: 覆盖完整编程闭环
-    details: TUI、MCP、记忆、子代理、后台任务、worktree、结构化输出与延迟工具发现——完整闭环，开箱即用。
+    details: TUI、MCP、记忆、子代理、后台任务、worktree、结构化输出、延迟工具发现、可逆的工具输出压缩（`context-crusher` + `context_retrieve`）与成本门控的压缩——完整闭环，开箱即用。
   - title: 保持可组合
     details: 通过 dsh 原生 profile/plugin 系统安装，无需长期维护 DeepSeek Harness fork。
 ---

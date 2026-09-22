@@ -1,7 +1,7 @@
 ---
 title: 扩展格式
 description: 每个 Claude Code 兼容扩展文件（hooks、skills、plugins、subagents）的存放位置、最小骨架，以及指向完整指南的链接。
-distilled-from: dsh-cc v0.6.3
+distilled-from: dsh-cc v0.8.0-rc.2
 ---
 
 # 扩展格式
@@ -107,6 +107,14 @@ home `$DSH_HOME`（否则 `~/.dsh`）是写入根目录，同名键 dsh 条目�
 的组件会被报告为 `skipped`，不会让整个加载失败。agents 以插件名为命名空间
 挂载，因此 Task 工具通过限定 id（`plugin:agent`）派发它们。
 
+Cursor 味插件走同一条管线：清单按 `.claude-plugin/plugin.json` →
+`.cursor-plugin/plugin.json` → 顶层 `plugin.json` 的顺序探测，第一个命中生效
+（两者都在时 CC 的那份获胜并给出警告）。Cursor 的 `rules/*.mdc` 文件渲染成
+每个插件一段的 `cc:plugin-rules` 系统提示，预算 4000 字符；`.txt` 命令文件
+在 cursor 味插件上以纯文本挂载；根目录的 `mcp.json` 默认就会被发现，
+`mcpServers` 接受 Cursor 数组形式；hook 命令里的 `${CURSOR_PLUGIN_ROOT}`
+展开为插件根目录。详见 [/guide/plugins](/zh/guide/plugins)。
+
 **完整内容：** [/guide/plugins](/zh/guide/plugins)
 
 ## subagents — `.claude/agents/*.md`
@@ -131,7 +139,24 @@ The agent's system prompt, written as the markdown body.
 `description` 成为何时使用的指引；`tools`/`disallowedTools` 编译为有效的
 allow/deny 工具限制；`model`（含 `inherit`）通过 `ccModelRoutes` 别名服务
 解析；`effort`、`permissionMode`、`maxTurns`、`initialPrompt`、`background`、
-`memory`、`skills`、`mcpServers`、`hooks` 和 `isolation` 都会透传。未知字段
+`memory`、`skills`、`mcpServers`、`hooks` 和 `isolation` 随定义携带。
+`background: true` 是活字段：`run_in_background` 省略时任务转后台（显式
+`run_in_background: false` 强制前台；契约见
+[/guide/subagents](/zh/guide/subagents)）。`isolation: worktree`
+会把子代理派发到每个子代理独占的隔离 git worktree（生命周期见
+[/guide/worktrees](/zh/guide/worktrees)，契约见
+[/guide/subagents](/zh/guide/subagents)）。`effort` 在 spawn 时生效，但优先
+级低于显式的 `model$level` 后缀和别名目标上的 `reasoningEffort`（见
+[/guide/model-routing](/zh/guide/model-routing)）。
+
+定义可以把一段内容包在 `<!-- actor-contract:start -->` /
+`<!-- actor-contract:end -->` 标记行之间。派发时，只有当子代理解析出的模型
+匹配 `actor-contract` 设置命名空间 `models` 列表里的某个模式——默认
+`['glm-*']`；`[]` 关闭该特性；`['*']` 统一启用；匹配不区分大小写——该块才会
+保留，否则被剥离。`model:` 未设置（inherit）的定义按 fail-closed 处理：块被
+剥离。标记行本身永远不会进入提示词。
+
+未知字段
 被忽略；已知字段的坏值在加载时大声失败。保留类型 `general-purpose`（全新
 spawn）和 `fork`（继承会话的 fork）是哨兵名——名为 `fork.md` 的工作区文件
 不可达。

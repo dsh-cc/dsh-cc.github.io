@@ -46,7 +46,9 @@ The memdir is the durable store. Its layout:
   **global layer** shared by every workspace.
 - Each git repository gets its own workspace directory under
   `<memoryHome>/projects/<slug>/` — linked worktrees and subdirectories are
-  collapsed onto the main checkout first, so they share one store.
+  collapsed onto the main checkout first (`canonicalMemoryRoot`), so they share
+  one store. Session transcripts still group by raw cwd; memory no longer
+  follows that grouping for worktree sessions.
 - Every layer holds an **always-loaded `MEMORY.md` entrypoint** (capped at
   200 lines / 25 KB), each line an index of `.md` **topic files**.
 - Each topic file carries `name`, `description`, and `type` frontmatter
@@ -54,6 +56,11 @@ The memdir is the durable store. Its layout:
 
 Sessions of different repositories never see each other's private memories;
 facts useful everywhere are saved with `scope: "global"`.
+
+The `memory` system-prompt section always renders — a memoryless layer shows
+a placeholder — so the save guidance never disappears. Delegated subagent
+children render it empty, so the section drops out of their prompt; the
+parent prompt must pass any facts the child needs.
 
 ### The `memory_save` channel
 
@@ -99,6 +106,30 @@ all` scans every project's sessions instead of the current workspace only, and
 `/learn days=N` overrides the recency window (default 14). Tuning lives in the
 `cc-learn` settings namespace: `enabled` (default `true`), `days` (default
 `14`), `min-occurrences` (default `2`).
+
+## Automatic consolidation
+
+Memory maintenance runs in the background and never blocks your session. The
+memory layer gates `MEMORY.md` writes with an index gate; when index pressure
+builds, a `.consolidation-needed` marker is written and a forced "dream"
+consolidation is queued.
+
+The consolidation package (`dsh-memory-consolidation`) adds turn-end
+extraction: a background forked subagent with read/search tools only extracts
+durable facts from the turn as structured output, which the plugin validates
+and writes host-side — the forks hold no write tools, so a sandboxed session
+can never write memory directly.
+
+Dream consolidation is a read-only forked subagent that reviews past sessions
+and reports a rewritten `MEMORY.md` + topic file set, applied by the plugin
+the same way. It runs only when three gates all pass:
+
+1. **Time** — at least `minHours` (default 24) since the last consolidation.
+2. **Session count** — at least `minSessions` (default 5) new transcripts.
+3. **Lock** — a `.consolidation-lock` file enforces mutual exclusion; a stale
+   holder older than `lockStaleMs` (default 1 hour) is reclaimed, so a crash
+   mid-consolidation recovers automatically. A failed or killed consolidation
+   rolls the lock back so the time gate re-opens.
 
 ## Recall: how memories surface later
 

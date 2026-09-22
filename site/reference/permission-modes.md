@@ -1,7 +1,7 @@
 ---
 title: Permission modes
 description: The five permission modes, the rule engine's rule forms and evaluation order, the auto-mode risk classifier, and the /permissions command.
-distilled-from: dsh-cc v0.6.3
+distilled-from: dsh-cc v0.8.0-rc.2
 ---
 
 # Permission modes
@@ -22,8 +22,8 @@ is not settable through the rule engine's `setMode`.
 | Mode | Behavior |
 |---|---|
 | `default` | Full evaluation: guards → risk classifier → deny/ask/allow rules by source priority → mode short-circuits → whole-tool allow → passthrough to the approval seam. |
-| `acceptEdits` | Auto-allows file-edit tools (the `fileEditTools` config, default `['edit']`). Everything else evaluates as in `default`. |
-| `plan` | Auto-allows read-only tools (`readOnlyTools`, default `['read']`). Leftover `ask`/`passthrough` on a non-read-only call becomes a deny with the reason `plan mode is read-only; submit via exit_plan_mode`; matching allow/deny rules still stand. |
+| `acceptEdits` | Auto-allows file-edit tools (the `fileEditTools` config, default `['edit', 'write', 'multi_edit', 'notebook_edit', 'str_replace_editor']`). Everything else evaluates as in `default`. |
+| `plan` | Auto-allows read-only tools (`readOnlyTools`, default `['read', 'glob', 'grep', 'search', 'web_fetch', 'web_search']`). Leftover `ask`/`passthrough` on a non-read-only call becomes a deny with the reason `plan mode is read-only; submit via exit_plan_mode`; matching allow/deny rules still stand. |
 | `auto` | Evaluates **identically to `default`** — it is not an evaluate short-circuit. The risk classifier proxies every `ask` at the plugin layer: classifier-LOW calls auto-allow, classifier-MEDIUM still asks. An opt-in LLM risk-classifier stage can be armed via settings (see below). |
 | `bypassPermissions` | Allows everything (unless `disableBypassPermissionsMode` is set). Entering it pins the session sandbox to `danger-full-access` and records `resumeSandbox`; leaving restores the recorded confinement (or a `workspace-write` fallback). |
 

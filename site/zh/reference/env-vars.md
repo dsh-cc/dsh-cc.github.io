@@ -1,14 +1,14 @@
 ---
 title: 环境变量
 description: dsh-cc 读取和设置的环境变量一览，默认值取自 launcher 与 TUI 源码。
-distilled-from: dsh-cc v0.6.3
+distilled-from: dsh-cc v0.8.0-rc.2
 ---
 
 # 环境变量
 
 本页汇总启动 dsh-cc 时涉及的环境变量：launcher 引导使用的家目录、`dsh-cc`
 launcher 传递给 TUI 插件的恢复/工作树（worktree）约定，以及 TUI 的紧急开关。
-下列变量名、取值与默认值均逐字摘自 v0.6.3 的
+下列变量名、取值与默认值均逐字摘自 v0.8.0-rc.2 的
 [`packages/launcher/tui`](https://github.com/dsh-cc/dsh-cc) launcher 与 TUI
 源码，另有一个来自插件加载器的兼容变量。
 
@@ -26,6 +26,11 @@ launcher 传递给 TUI 插件的恢复/工作树（worktree）约定，以及 TU
 | `DSH_CCTUI_UI_MODE` | `regular` | TUI 显示模式：`regular` 或 `fullscreen`。优先级高于插件配置，配置高于默认值——当某个 profile 固定了 fullscreen 而终端无法适应时，用它作为即时逃生门。 |
 | `DSH_CCTUI_ALLOW_NO_TTY` | *（未设置）* | 设为 `'1'` 允许在非交互终端（stdout 不是 TTY）下挂载 TUI。 |
 | `NODE_COMPILE_CACHE` | `<DSH_HOME>/.cache/node-compile-cache` | Node 的模块编译缓存目录。launcher 在派生的 `dsh` 子进程上为其设置默认值，使编译产物跨启动复用；用户已设置的值始终优先。 |
+| `DSH_CC_DISABLE_EXIT_TIP` | *（未设置）* | 设为 `'1'` 关闭 TUI 退出时打印的会话 id / 恢复命令提示。 |
+| `CLAUDE_CODE_OUTPUT_TOKEN_CONTINUATION_CAP` | `3` | 每轮输出 token 上限触发的自动续跑次数上限；`0` 禁用，非法值回退到 3。 |
+| `CLAUDE_CODE_AGENT_ERROR_CONSECUTIVE_CAP` | `3` | 连续多少次 API 错误后展示持久通知。 |
+| `CLAUDE_CODE_AGENT_ERROR_TOTAL_CAP` | `20` | 累计错误的通知阈值。 |
+| `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP` | `8` | Stop hook 连续阻塞达到该次数后会被覆盖并结束本轮；`0` 或非法值回退到 8。 |
 
 ::: warning
 `ANTHROPIC_*` 环境变量**不被**支持。根据 CC parity 矩阵，它们列在模型别名的

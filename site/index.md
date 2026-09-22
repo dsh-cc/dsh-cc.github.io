@@ -19,7 +19,7 @@ features:
   - title: Bring your own model strategy
     details: Route stable aliases like `sketch`, `draft`, `blueprint`, and `masterplan` to any provider/model pair your dsh deployment supports.
   - title: Run a complete coding loop
-    details: TUI, MCP, memory, subagents, background tasks, worktrees, structured output, and deferred tool discovery — the full loop, out of the box.
+    details: TUI, MCP, memory, subagents, background tasks, worktrees, structured output, deferred tool discovery, reversible tool-output compression (`context-crusher` + `context_retrieve`), and cost-gated compaction — the full loop, out of the box.
   - title: Stay composable
     details: Installed through native dsh profiles and plugins — no permanent DeepSeek Harness fork to maintain.
 ---

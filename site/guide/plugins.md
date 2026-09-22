@@ -92,6 +92,7 @@ The loader validates `name` (mandatory, kebab-case), `version`, `description`, `
 | `hooks` | `hooks/hooks.json` or inline | Injects the per-event hook map; in shipped deployments the hook bridge provides the seam, so plugin hooks merge and fire. |
 | `mcpServers` | Inline record or `.mcp.json` | Registers each MCP server; in shipped deployments the cc-shell glue provides the seam, so plugin servers mount for real. |
 | `settings` | Manifest record | Filtered to the allowlist (currently `agent`) and applied. |
+| `rules` | `rules/*.mdc` (cursor flavor only) | Parsed into typed entries and merged via the `rules` seam; rendered as one `cc:plugin-rules` system-prompt section — see the Cursor dialect section below. |
 
 ::: warning
 The `settings` component still depends on a deployment-supplied seam: without one it reports `skipped`. `mcpServers` and `hooks` need no extra setup in shipped deployments. A skipped component never fails the whole plugin load — each component's outcome is reported individually.
@@ -112,17 +113,51 @@ The `settings` component still depends on a deployment-supplied seam: without on
 | `/plugin marketplace update [name]` | Update one or all marketplaces. |
 | `/reload-plugins` | Re-read the `enabledPlugins` cascade and rescan; project and local `enabledPlugins` are boot-cwd-biased |
 
+### Cursor plugin dialect
+
+The same loader also accepts Cursor-flavored plugins — one tolerant pipeline, not a second loader. The manifest is probed in order: `.claude-plugin/plugin.json` → `.cursor-plugin/plugin.json` → top-level `plugin.json`; the first hit wins. When both dialect manifests are present the CC one is used and the report carries the warning `cursor manifest ignored: cc manifest takes precedence`. The winning flavor (`cc` or `cursor`) is recorded on the manifest and the load report.
+
+**Rules.** `rules/*.mdc` files — the manifest-declared `rules` paths or the default `rules/` directory — render into one consolidated `cc:plugin-rules` system-prompt section per plugin: `alwaysApply` entries verbatim under "Rules from plugin `<name>`", glob-scoped entries as "When editing files matching `<globs>`: `<body>`", and scopeless entries as general guidance plus a warning. There is a 4000-character per-plugin budget with explicit truncation. Runtime per-turn glob activation (Claude Code's per-edit matching) is not implemented — scoped rules are delivered as conditional instructions instead.
+
+**Hooks.** camelCase Cursor events map onto CC events:
+
+| Cursor event | CC event |
+|---|---|
+| `sessionStart` | `SessionStart` |
+| `sessionEnd` | `SessionEnd` |
+| `preToolUse` | `PreToolUse` |
+| `postToolUse` | `PostToolUse` |
+| `postToolUseFailure` | `PostToolUseFailure` |
+| `subagentStart` | `SubagentStart` |
+| `subagentStop` | `SubagentStop` |
+| `beforeSubmitPrompt` | `UserPromptSubmit` |
+| `preCompact` | `PreCompact` |
+| `stop` | `Stop` |
+
+Unmapped events (`beforeShellExecution`, `afterShellExecution`, `beforeMCPExecution`, `beforeReadFile`, `afterFileEdit`, `afterAgentResponse`, `afterAgentThought`, and Tab/app hooks) skip with a warning; `loop_limit` warns. `${CURSOR_PLUGIN_ROOT}` in hook command strings expands to the plugin root.
+
+**Commands.** In addition to `.md`, `.txt` command files mount as plain text on the cursor flavor.
+
+**MCP.** A root `mcp.json` is discovered by default, no manifest declaration needed; `mcpServers` also accepts the Cursor array form. An unresolved `${VAR}` fails only that server, with a named warning. `dir/**` glob paths expand directory-recursively; any other glob form is skipped with a warning.
+
+**Warn-only.** `minClientVersions` (client-version gating is not enforced) and `variables` (not prompted; set values via environment) surface as warnings and are otherwise ignored.
+
+On the manager side, `.cursor-plugin` marketplaces and manifests are consumed identically through `add`/`update`/`install`/`enable`; state-file bytes are unchanged.
+
 ## Official plugins
 
 Two official plugins ship through the `dsh-cc` marketplace.
 
 ### dsh-cc-agents — critic, executor, and marathon subagents
 
-Ships three subagents and an orchestration skill that routes between them:
+Ships three subagents and two skills — one that routes between them, one for data-analysis work:
 
 - **`dsh-cc-agents:critic`** — reasoning-heavy work: complex analysis, architectural decisions, adversarial plan review, root-cause analysis. Runs on the `opus` model alias and is background-pinned.
 - **`dsh-cc-agents:executor`** — mechanical execution of pre-approved, fully specified plans: formatting, simple refactors, boilerplate, renames, tests, docs, checks. Runs on the `sonnet` model alias, foreground by default.
 - **`dsh-cc-agents:marathon`** — long-horizon, ambiguous, or repo-wide complexity: architecture redesigns, cross-module refactors, extended debugging with no obvious culprit, and re-approaches after the main thread's approach failed. Runs on the `fable` model alias (inherits the main-thread route when unconfigured); mutating persona, foreground by default like executor.
+
+- **`dsh-cc-agents-orchestration` skill** — routing table for choosing between the agents, the background asymmetry, and their report contracts.
+- **`data-analysis` skill** — data-analysis orchestration (数据分析/口径/对账): data-analysis tasks with caliber doubt, reconciliation, and external-report questions route through critic/executor, with review/verification/execution meta-rules inlined into the dispatch prompts.
 
 Install from inside a session, then restart:
 
@@ -142,6 +177,23 @@ Notes:
 
 - If your workspace defines file-based agents named `deep-reasoner` or `fast-worker`, the bare names resolve to your workspace definitions; the plugin copies resolve only by the exact scoped ids. Both appear in the agent catalog, with the plugin copies distinguishable by their descriptions.
 - The agents request the `opus` / `sonnet` / `fable` aliases but do not require them: an unconfigured alias degrades to inheriting the parent's route — everything works, lane separation is lost.
+
+### Serena hooks (gated)
+
+The plugin also ships optional Serena code-intelligence hooks: a PreToolUse remind on `read`/`grep` (and serena tool calls) that nudges the model toward symbolic tools after a burst of raw reads/greps — a short deny + nudge, at most once per two minutes per session — and a SessionEnd cleanup of the session's hook state, `<project>/.serena/hook_data/<session-id>/`.
+
+Both are double-gated no-ops unless the current session's project is serena-onboarded (`.serena/project.yml` found by walking up from the session cwd through the git toplevel) **and** `serena-hooks` resolves on `PATH`:
+
+```sh
+uv tool install git+https://github.com/oraios/serena@v1.7.0
+```
+
+The gate wrapper pins `SERENA_HOME=<repo>/.serena`: serena's default `~/.serena/hook_data` sits outside the session sandbox and serena swallows the write failure — without the pin the counters never persist and the hooks silently no-op. `.serena/hook_data/` is gitignored; state is per session id and removed at session end.
+
+Two operational notes:
+
+- **One channel per behavior.** If a repository's own `hooks.json` also carries a serena-remind entry, both fire and the shared counter double-counts. Keep the reminder in exactly one place — this plugin or the repo.
+- Non-serena projects pay one ~50 ms gated node spawn per Read/Grep. Disable the plugin to opt out entirely; run `/plugin update` after a dsh-cc release to pick up hook changes.
 
 ### dsh-cc-shunt — keep bulk reads out of the main context
 

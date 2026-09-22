@@ -65,7 +65,7 @@ cwd 加载它）用于自举（dogfooding）。
 
 ## 事件覆盖
 
-桥接层支持 **Claude Code hook 事件中的 18 个**：
+桥接层支持 **Claude Code hook 事件中的 20 个**：
 
 | 事件 | 状态 | 桥接层的行为 |
 | --- | --- | --- |
@@ -87,17 +87,24 @@ cwd 加载它）用于自举（dogfooding）。
 | `TeammateIdle` | 支持（部分） | 只观察；仅对被视作子 agent 的 agent 触发 |
 | `Setup` | 部分 | 首次运行近似：仅对全新（seeded）会话触发 |
 | `SessionResume` | 部分 | 仅在 `resume` 来源时触发 |
+| `WorktreeCreate` | 支持 | 由 worktree 工具、subagent `isolation: worktree` 和 TUI 的 `/quit` 清理通过桥接层的 `hookRun` 缝隙触发；hook 以退出码 0 结束且 stdout 输出路径时，替换默认创建行为 |
+| `WorktreeRemove` | 支持 | 触发点与 `WorktreeCreate` 相同；hook 失败时保留工作树 |
 
 按 parity matrix 的表述：`PreToolUse` 桥接了 matcher 支持和
 `permissionDecision` 决策契约，但 `additionalContext` 被忽略；
 `Notification` 仅桥接 `permission_prompt` 子类型；`Setup` 是首次运行
 近似而非完整的上游契约。
 
-**不支持的事件（14 个）**——它们的配置在分组解析之前就被忽略，因此不会
+要说明一个边界：worktree 事件只在进程内的触发点发出——launcher 的
+`--worktree` 创建和启动时的清扫**不会**触发 hook（预构建的 launcher 没有
+hooks 桥接层），这两个生命周期保持直接的 git 行为。见
+[工作树](/zh/guide/worktrees)。
+
+**不支持的事件（12 个）**——它们的配置在分组解析之前就被忽略，因此不会
 使 hook 注册失效：`PreCompact`、`InstructionsLoaded`、
 `UserPromptExpansion`、`MessageDisplay`、`PostToolBatch`、`TaskCompleted`、
-`ConfigChange`、`CwdChanged`、`FileChanged`、`WorktreeCreate`、
-`WorktreeRemove`、`Elicitation`、`ElicitationResult` 和 `UserPromptCancel`
+`ConfigChange`、`CwdChanged`、`FileChanged`、`Elicitation`、
+`ElicitationResult` 和 `UserPromptCancel`
 （dsh 没有 cancel 缝隙——桥接层不做有损近似）。`Notification` 的
 idle / `auth_success` / `elicitation` 子类型以及 `SessionResume` 的
 `clear`/`compact` 来源同样未映射。
@@ -164,6 +171,32 @@ hook 的 `prompt` 模板，fork 的文本输出按与 command hook 相同的结�
 把文件保存（例如 `./.claude/hooks.json`），把插件的 `configPath` 指向它，
 脚本就会在会话工作区里于每次 `Bash` 工具调用之后运行。阻塞结果会以
 `blocked by PostToolUse hook` 反馈，除非 hook 自行提供理由。
+
+## 错误恢复
+
+有两种恢复行为内置于 hooks 桥接层本身——不需要额外配置：
+
+- **输出 token 上限**：一轮中命中模型的输出 token 上限时，会作为同一轮中的
+  下一步自动继续，最多 3 次。`CLAUDE_CODE_OUTPUT_TOKEN_CONTINUATION_CAP`
+  可覆盖该上限（`0` 表示禁用；非法值回退为 3）。续写通过这句话引导：
+  *"Output token limit hit. Resume directly — no apology, no recap.
+  Pick up mid-thought."*
+- **连续 API 错误**：连续 3 次（`CLAUDE_CODE_AGENT_ERROR_CONSECUTIVE_CAP`）
+  或累计 20 次（`CLAUDE_CODE_AGENT_ERROR_TOTAL_CAP`）错误时会呈现一条持久
+  通知；请求重试仍由 harness 负责。
+
+[Stop hook](#事件覆盖) 的连续阻塞上限仍是 8
+（`CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`），不受上述恢复路径影响。上面的环境
+变量也收录在 [/reference/env-vars](/zh/reference/env-vars) 中。
+
+与 Claude Code 的两处已文档化的差异：
+
+- 输出上限恢复进行期间，Stop hook 被抑制；恢复的步骤完成或续写上限用尽
+  之后，Stop 正常运行。
+- 续写是一条模型可见的插件来源下一步消息（CC 会在同一条逻辑响应里不可见地
+  继续）：每次续写多花一次模型步骤，transcript 仍记录一次携带粘性
+  `max-tokens` 原因的 `turn/end`。错误连击计数也是按 agent 统计的，而 CC
+  的上限是会话级的。
 
 ## 已知限制
 

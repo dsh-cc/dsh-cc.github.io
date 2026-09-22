@@ -59,6 +59,47 @@ dsh-cc 项目本身就使用这套路由进行日常开发——当前开发映�
 别名解析覆盖 Agent frontmatter 和 hook executors。主会话默认模型的别名化是已知的后续事项，且 `ANTHROPIC_*` 环境变量没有 Anthropic 语义——详见 parity matrix 的 Models 章节。
 :::
 
+## 别名解析语义
+
+解析按固定顺序查找：**settings 覆盖层 → config 默认值 → 内置回退**。别名键不区分大小写（合并和查找时统一折叠为小写）。
+
+别名条目有两种写法：
+
+- 字符串形式——`sonnet: deepseek-v4-flash`：只写模型 id，provider 继承。
+- 对象形式——`opus: { provider: deepseek-official, model: deepseek-v4-pro, reasoningEffort: max }`：显式路由，可附带 effort。
+
+几个值得了解的边界行为：
+
+- `inherit`（任意大小写）表示不覆盖——子 agent 继承父路由。
+- 只有 **settings** 层可以把条目设为 `null`，用来删除同名的 config 默认条目（按条目浅删除）。删除内置别名时会落到内置回退，即继承父路由——config 不允许出现 `null`。
+- 未配置的内置别名（`fable`/`opus`/`sonnet`/`haiku` 和 dsh-cc 通道）继承父路由。未配置的**自定义**别名（如 `turbo`）没有回退：它作为字面模型 id 原样透传，并记录一条警告。
+- 字符串形式的目标如果指向另一个别名，只跟随**一跳**——这一跳会携带 `reasoningEffort`。对象形式的目标是具体路由，不会再被当作名字跟随。
+
+## 廉价通道的可观测性
+
+未配置的内置别名静默继承父路由时，解析器会记录一条警告——每个别名只记一次。该警告由 `model-aliases` settings 命名空间中的 `warnOnInherit` 键控制（默认 `true`；设为 `false` 可关闭）。
+
+## `model$level`：在模型引用上指定 effort
+
+任何模型引用——agent frontmatter 的 `model:`、别名目标的 `model` id、或 auto-mode 分类器的 `route`——都可以带一个 `` `$<level>` `` 后缀（`opus$high`、`glm-5.3$xhigh`）：
+
+- 后缀在 id 离开解析器之前被剥离，所以定价、熔断器和 pin 都按裸模型 id 记账。
+- level 挂在解析路由的 `reasoningEffort` 上，并**覆盖**别名目标已声明的 `reasoningEffort`。
+- 未知的 level 拼写不会被剥离或丢弃，而是带到 harness 边界，请求以 `UNSUPPORTED_REASONING_EFFORT` 失败。
+- 畸形后缀（末尾悬空的 `$`、空或含非法字符的 level、provider 段里出现 `$`）原样透传。
+
+## effort 优先级
+
+多个来源同时声明 reasoning effort 时，按以下顺序取值（高优先级不会改动低优先级的值）：
+
+1. 显式的 `` `$level` `` 后缀。
+2. 别名目标声明的 `reasoningEffort`。
+3. agent frontmatter 的 `effort`（spawn 时应用）。
+4. `/effort` 的会话选择。
+5. catalog/harness 的路由默认值。
+
+见 [/reference/commands](/zh/reference/commands) 中的 `/effort` 行。
+
 ## 示例：端到端演练
 
 从一个空部署到让任务跑在快速通道上的最短路径：

@@ -1,7 +1,7 @@
 ---
 title: CLI 参数
 description: dsh-cc 可执行文件在启动 dsh --profile tui 之前接受的参数。
-distilled-from: dsh-cc v0.6.3
+distilled-from: dsh-cc v0.8.0-rc.2
 ---
 
 # CLI 参数
@@ -29,11 +29,17 @@ $ dsh-cc
 | `--new` / `-n` | 开始全新会话：TUI 全新启动，不读取任何 resume 标记。 |
 | `--resume <id>` | 恢复指定 id 的会话。`--resume=<id>` 形式效果相同。 |
 | `--continue` / `-c` | 继续上一个会话；当标记不存在时，TUI 会显示 "no previous session to continue" 提示。 |
-| `--worktree [name]` | 在位于 `<repoRoot>/.claude/worktrees/<slug>`、分支为 `worktree-<slug>` 的 git worktree 内启动会话（未给名称时使用随机 slug）。新建的 worktree 会开始全新会话（等价于 `--new`）；当目录已存在时再次执行 `--worktree <name>` 会复用它，并回退到默认的自动恢复。要求 git 仓库中至少有一个提交。 |
+| `--worktree [name]` | 在位于 `<repoRoot>/.claude/worktrees/<slug>`、分支为 `worktree-<slug>` 的 git worktree 内启动会话（未给名称时使用随机 slug）。新建的 worktree 会开始全新会话（等价于 `--new`）；当目录已存在时再次执行 `--worktree <name>` 会复用它，并回退到默认的自动恢复。也支持 PR 引用：`--worktree '#12'`（给 `#` 加引号）、GitHub PR URL 或 GitLab MR URL 会在分支 `worktree-pr-<n>` 上创建 `.claude/worktrees/pr-<n>`，在 github.com 上抓取 `pull/<n>/head`，在 gitlab.com 上抓取 `merge-requests/<n>/head`（其他主机按顺序两者都试）。要求 git 仓库中至少有一个提交。 |
 | `--profile` | 启动器本身不消费它：它总是转发 `dsh --profile tui`，即规范命令。 |
 
 如果没有做出明确选择，TUI 会读取自己的项目 resume 标记，并在存在时自动
 恢复该项目的上一个会话。`--resume` / `--new` 优先于 worktree 的回退行为。
+
+每次启动都会对过期的 `worktree-*` worktree 运行一次有上限的启动期清扫，
+并依据 settings 选择 worktree 基底——详见 [/guide/worktrees](/zh/guide/worktrees)。
+
+退出时，TUI 会打印会话 id 和恢复命令，方便下次接着聊；设
+`DSH_CC_DISABLE_EXIT_TIP='1'` 可关闭该提示（[/reference/env-vars](/zh/reference/env-vars)）。
 
 ## 参数如何传递给 TUI
 

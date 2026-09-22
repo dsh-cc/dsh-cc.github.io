@@ -30,8 +30,9 @@ description: 在 .claude/agents 下编写 Claude Code 风格的代理定义，�
 | `model` | Claude Code 风格的模型别名（`sonnet`、`opus`、`haiku`、`fable`、`inherit` 等）。在 spawn 时通过 `ccModelRoutes` 服务解析，见 [/guide/model-routing](/zh/guide/model-routing)。 |
 | `tools` | 收窄子代理的工具集（allow/deny），见下文工具一节。 |
 | `background` | 将该代理固定为可继续的后台代理启动，见下文。 |
+| `isolation` | `isolation: worktree` 会把子代理调度进它自己的 git worktree，见下文。 |
 
-加载器也会解析 `permissionMode`、`isolation`、`memory`、`effort` 等 CC frontmatter 字段，但 v1 不会把它们投影到子代理上——使用了这些字段的定义，其行为等同于字段不存在。
+加载器也会解析 `permissionMode`、`memory`、`effort` 等 CC frontmatter 字段，但 v1 不会把它们投影到子代理上——使用了这些字段的定义，其行为等同于字段不存在。（`isolation: worktree` 和 `background: true` 是会被消费的，见下文。）
 
 省略的字段有合理的回退：省略 `model` 则继承父代理的路由；省略 `tools` 则子代理获得完整的父级工具视图。
 
@@ -102,6 +103,20 @@ frontmatter 的 `tools:` 值会收窄子代理的工具集，并针对 spawn 时
 
 后台代理的运行、恢复、中断与查看（`send_message` / `interrupt` / `list`、`/tasks`、`/agents`）见 [/guide/background-tasks](/zh/guide/background-tasks)。
 
+### `isolation: worktree`
+
+frontmatter 中标记 `isolation: worktree` 的定义，其子代理会被调度进一个专属的 git worktree，而不是父目录树：
+
+1. **创建**——在 `<mainRepoRoot>/.claude/worktrees/subagent-<childId>` 下、`worktree-subagent-<childId>` 分支上创建 worktree，走的是与 `EnterWorktree` 相同的加固路径（公共目录根定位、local-config 扫描、filter-driver 中和；LFS 内容以指针文件形式到达），并在运行期间加锁。任何创建失败都会拒绝本次调度——子代理绝不会悄悄回落到父目录树。
+2. **接管**——子代理的第一个步骤会把它的会话 cwd 移入 worktree；同时向人设追加一段契约说明，并在提示的第一行前置一条提示。
+3. **清理**——`subagent/end` 时会探测工作区是否有未提交改动、以及是否有超出记录基线 HEAD 的提交。干净且无提交 → worktree 解锁并连同分支一起删除；否则该树会**留在磁盘上**，并在子代理的最终输出中说明这一点。
+
+如实说明限制（该功能是**部分的**）：子代理的 `header.cwd`、harness 沙箱根和 bash 默认工作目录仍沿用父级的；当约定目录无法落入沙箱根时（父 cwd 在仓库根的子目录下），调度会被拒绝；被委派的子代理无法回应审批提示，沙箱拒绝的写入会直接硬失败；Serena（用户自行挂载）固定一个项目根，不会跟随子代理。文件格式见 [/reference/extension-formats](/zh/reference/extension-formats)；启动器与会话内 worktree 生命周期见 [/guide/worktrees](/zh/guide/worktrees)。
+
+### Actor-contract 区块
+
+定义可以把正文的一部分包在 `<!-- actor-contract:start -->` … `<!-- actor-contract:end -->` 标记行之间。只有当子代理解析出的模型 id 匹配 `actor-contract` 设置命名空间中 `models` 的某个模式时（默认 `['glm-*']`，大小写不敏感），该区块才会进入子代理的系统提示。`[]` 表示禁用，`['*']` 表示对所有模型生效。`model:` 未设置（继承）的定义按 fail-closed 处理：区块被剥离。标记行本身永远不会进入提示。典型用途：插件自带的代理中针对特定模型的证据或契约段落。
+
 ## 说明与限制
 
 截至 dsh-cc v0.6.0：
@@ -122,6 +137,7 @@ frontmatter 的 `tools:` 值会收窄子代理的工具集，并针对 spawn 时
 
 ## 下一步
 
+- [/guide/worktrees](/zh/guide/worktrees) —— 围绕 git worktree 的启动器参数、会话内工具与子代理隔离。
 - [/guide/background-tasks](/zh/guide/background-tasks) —— 运行、恢复和中断后台代理。
 - [/guide/skills](/zh/guide/skills) —— `SKILL.md` 技能，另一种扩展面。
 - [/reference/extension-formats](/zh/reference/extension-formats) —— dsh-cc 读取的文件格式，包括 `.claude/agents`。

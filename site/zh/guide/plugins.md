@@ -92,6 +92,7 @@ dsh-cc 内置一个兼容插件加载器，读取 Claude Code 插件的 `plugin.
 | `hooks` | `hooks/hooks.json` 或内联 | 注入按事件划分的 hook 映射；在发布部署中 hook 桥提供该接缝，插件 hooks 会被合并并真正触发。 |
 | `mcpServers` | 内联记录或 `.mcp.json` | 注册每个 MCP 服务器；在发布部署中 cc-shell 胶水提供该接缝，插件服务器会真正挂载。 |
 | `settings` | 清单记录 | 按允许列表过滤（当前为 `agent`）后应用。 |
+| `rules` | `rules/*.mdc`（仅 cursor 味插件） | 解析成带类型的条目并经 `rules` 接缝合并；渲染为一段 `cc:plugin-rules` 系统提示——见下方 Cursor 方言一节。 |
 
 ::: warning
 `settings` 组件仍依赖部署方提供的接缝：没有它时会报告为 `skipped`。`mcpServers` 与 `hooks` 在发布部署中无需额外配置即可工作。被跳过的组件不会让整个插件加载失败——每个组件的结果都会单独报告。
@@ -112,17 +113,51 @@ dsh-cc 内置一个兼容插件加载器，读取 Claude Code 插件的 `plugin.
 | `/plugin marketplace update [name]` | 更新一个或全部 marketplace。 |
 | `/reload-plugins` | 重新读取 `enabledPlugins` 级联并重新扫描；项目级与本地 `enabledPlugins` 以启动时工作目录为准 |
 
+### Cursor 插件方言
+
+同一个加载器也接受 Cursor 味的插件——一条宽容的解析管线，而不是第二个加载器。清单按以下顺序探测：`.claude-plugin/plugin.json` → `.cursor-plugin/plugin.json` → 顶层 `plugin.json`，第一个命中生效。两种方言清单同时存在时使用 CC 的那份，报告会带上警告 `cursor manifest ignored: cc manifest takes precedence`。胜出的方言（`cc` 或 `cursor`）记录在清单和加载报告上。
+
+**Rules。** `rules/*.mdc` 文件——清单声明的 `rules` 路径或默认的 `rules/` 目录——渲染成每个插件一段的 `cc:plugin-rules` 系统提示：`alwaysApply` 条目原样出现在 "Rules from plugin `<name>`" 之下，带 glob 的条目渲染为 "When editing files matching `<globs>`: `<body>`"，无作用域条目作为一般性指引出现并附带一条警告。每个插件有 4000 字符预算，超限会明确截断。运行期按轮次激活 glob（Claude Code 的逐次编辑匹配）没有实现——带作用域的规则以条件指令的形式交付。
+
+**Hooks。** camelCase 的 Cursor 事件映射到 CC 事件：
+
+| Cursor 事件 | CC 事件 |
+|---|---|
+| `sessionStart` | `SessionStart` |
+| `sessionEnd` | `SessionEnd` |
+| `preToolUse` | `PreToolUse` |
+| `postToolUse` | `PostToolUse` |
+| `postToolUseFailure` | `PostToolUseFailure` |
+| `subagentStart` | `SubagentStart` |
+| `subagentStop` | `SubagentStop` |
+| `beforeSubmitPrompt` | `UserPromptSubmit` |
+| `preCompact` | `PreCompact` |
+| `stop` | `Stop` |
+
+未映射的事件（`beforeShellExecution`、`afterShellExecution`、`beforeMCPExecution`、`beforeReadFile`、`afterFileEdit`、`afterAgentResponse`、`afterAgentThought`，以及 Tab 和 app 类 hook）会跳过并警告；`loop_limit` 也会警告。hook 命令串里的 `${CURSOR_PLUGIN_ROOT}` 展开为插件根目录。
+
+**Commands。** 除 `.md` 外，`.txt` 命令文件在 cursor 味插件上也会以纯文本挂载。
+
+**MCP。** 插件根目录下的 `mcp.json` 默认就会被发现，无需清单声明；`mcpServers` 也接受 Cursor 的数组形式。某个未解析的 `${VAR}` 只让那一个服务器失败，并给出点名警告。`dir/**` 形式的 glob 路径递归展开；其他 glob 形式会跳过并警告。
+
+**仅警告。** `minClientVersions`（不执行客户端版本门槛）和 `variables`（不做提示式输入；通过环境变量设置）只产生警告，其余忽略。
+
+管理侧通过 `add`/`update`/`install`/`enable` 以同样的方式消费 `.cursor-plugin` marketplace 与清单；状态文件字节不变。
+
 ## 官方插件
 
 两个官方插件通过 `dsh-cc` marketplace 发布。
 
 ### dsh-cc-agents —— critic、executor 与 marathon 子代理
 
-包含三个子代理和一个在它们之间做路由的编排技能：
+包含三个子代理和两个技能——一个在子代理之间做路由，一个用于数据分析工作：
 
 - **`dsh-cc-agents:critic`** —— 重推理工作：复杂分析、架构决策、对抗性方案评审、根因分析。运行在 `opus` 模型别名上，默认后台运行。
 - **`dsh-cc-agents:executor`** —— 执行已获批、完全明确的计划中的机械性工作：格式化、简单重构、样板代码、改名、测试、文档、检查。运行在 `sonnet` 模型别名上，默认前台运行。
 - **`dsh-cc-agents:marathon`** —— 长周期、模糊或全仓库级的复杂任务：架构重设计、跨模块重构、没有明显线索的长时间调试，以及在主线方案失败后的重新进攻。运行在 `fable` 模型别名上（未配置时继承主线程路由）；会执行修改操作的人设，与 executor 一样默认前台运行。
+
+- **`dsh-cc-agents-orchestration` 技能**——在子代理之间做选择的路由表、后台不对称性，以及它们的报告契约。
+- **`data-analysis` 技能**——数据分析编排（数据分析/口径/对账）：带有口径存疑、对账、外部报告问题的数据分析任务经 critic/executor 处理，评审/核验/执行元规则内联进派发提示词。
 
 在会话内安装，然后重启会话：
 
@@ -142,6 +177,23 @@ dsh-cc 内置一个兼容插件加载器，读取 Claude Code 插件的 `plugin.
 
 - 如果你的 workspace 定义了名为 `deep-reasoner` 或 `fast-worker` 的文件型 agent，裸名会解析到你的 workspace 定义；插件副本只能通过精确的限定 id 寻址。两者都会出现在 agent 目录中，插件副本可通过其描述区分。
 - 这三个 agent 请求 `opus` / `sonnet` / `fable` 别名但不要求其存在：未配置的别名会退化为继承父级路由——功能不受影响，只是失去快慢通道分离。
+
+### Serena hooks（带门槛）
+
+插件还附带可选的 Serena 代码智能 hooks：PreToolUse 提醒挂在 `read`/`grep`（以及 serena 工具调用）上，在一连串原始读取/grep 之后把模型往符号工具方向推一把——短 deny 加提醒，每个会话最多每两分钟一次；SessionEnd 则清理该会话的 hook 状态目录 `<project>/.serena/hook_data/<session-id>/`。
+
+两者都是双重门槛下的静默空操作，除非当前会话的项目已完成 serena 接入（从会话工作目录向上、经过 git 顶层找到 `.serena/project.yml`）**并且** `serena-hooks` 在 `PATH` 上可解析：
+
+```sh
+uv tool install git+https://github.com/oraios/serena@v1.7.0
+```
+
+门槛包装器把 `SERENA_HOME` 钉在 `<repo>/.serena`：serena 默认的 `~/.serena/hook_data` 在会话沙箱之外，而 serena 会吞掉写入失败——不钉住的话计数器永远不落盘，hooks 静默失效。`.serena/hook_data/` 已加入 gitignore；状态按会话 id 存放，会话结束时移除。
+
+两条运行注意事项：
+
+- **一种行为只留一个通道。** 如果仓库自己的 `hooks.json` 里也有 serena-remind 条目，两处都会触发，共享计数器会重复计数。提醒只留在一个地方——本插件或仓库，二选一。
+- 非 serena 项目每次 Read/Grep 多付一次约 50 毫秒的门槛化 node 进程。想彻底省掉就禁用本插件；dsh-cc 发版后跑一次 `/plugin update` 以获取 hook 变更。
 
 ### dsh-cc-shunt —— 让大文件内容不进入主上下文
 
