@@ -1,7 +1,7 @@
 ---
 title: Claude Code compatibility
 description: What "Claude Code compatibility" means in dsh-cc — and how to read the parity matrix honestly.
-distilled-from: dsh-cc v0.6.3
+distilled-from: dsh-cc v0.8.0-rc.2
 ---
 
 # Claude Code compatibility
@@ -42,11 +42,11 @@ It is regenerated from a machine-readable capability manifest, so treat it as
 authoritative over any prose — including this page.
 
 ::: warning
-The examples below describe the state as of dsh-cc v0.6.3. Check the matrix
+The examples below describe the state as of dsh-cc v0.8.0-rc.2. Check the matrix
 for the current state before relying on any of them.
 :::
 
-## A few example highlights (as of v0.6.3)
+## A few example highlights (as of v0.8.0-rc.2)
 
 - **Hook executors** — `command` and `http` executors are always on; `prompt`
   and `agent` executors are gated behind `enablePromptHooks` /
@@ -59,6 +59,24 @@ for the current state before relying on any of them.
   dsh names; CC's `TaskCreate`/`TaskOutput`/`TaskStop` naming is not aliased.
   Partial.
 - **WebSearch** and **plan mode** — full parity, mounted by default.
+- **Divergent-by-design engine surfaces** — v0.8.0 adds several engine rows
+  that are dsh-cc extensions beyond Claude Code, marked divergent in the
+  matrix: `compaction-cost-gate` (behavioral/ux full), `microcompact`
+  (behavioral/ux full), `tool-use-summary` (behavioral/ux full),
+  `post-edit-auto-verify` and `edit-recovery-hint` (behavioral full, ux
+  partial), and `prompt-suggest`, `reasoning-effort-surface` (the
+  `model$level` suffix), `output-token-continuation`, and
+  `error-streak-surfacing` (behavioral/ux partial).
+- **Git worktrees** — the worktree rows (`workspace.worktree-ecosystem`,
+  `workspace.worktree-launcher`, `workspace.worktree-lifecycle`,
+  `workspace.worktree-tools`) are behavioral/ux partial, with downgrade-kind
+  deviations (for example, no `.worktreeinclude` include-copy in launcher
+  `--worktree` sessions). See [/guide/worktrees](/guide/worktrees).
+- **Subagents and plugins** — `subagents.isolation` is behavioral/ux partial
+  (downgrade); `plugins.rules` (the Cursor dialect) is behavioral divergent
+  with partial ux; `settings.actor-contract` is behavioral divergent with
+  partial ux; `hooks.worktree-events` (`WorktreeCreate`/`WorktreeRemove`) is
+  behavioral/ux partial.
 
 ## Next
 

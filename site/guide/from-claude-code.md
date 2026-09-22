@@ -79,6 +79,7 @@ Honest differences worth knowing before your team commits. Each row of the full 
 - **Some slash commands are host-owned.** `/model` and `/exit` are deliberately not preset commands — the dsh-native TUI equivalents (`/model`, `/effort`, the idle double Ctrl+C gesture) serve those roles. Others are partial, e.g. `/config` is a text-only render/patch with an allowlisted key set, and `/init` drives a follow-up turn that writes/refreshes `CLAUDE.md`.
 - **Status line is close but not identical.** The command output is rendered as up to 3 rows (CC renders every row), dsh-cc appends its own mode row below the command output, and a subset of stdin payload fields is supplied — only the fields dsh-cc can source truthfully.
 - **`ANTHROPIC_*` env vars are not honored** (see above) — provider and API-key configuration follows dsh-cc's own credential and routing model.
+- **Git worktree support is broad but partial.** It is wired through the launcher `--worktree` flag, the in-session worktree tools, and subagent isolation, with a few documented downgrades — see [/guide/worktrees](/guide/worktrees).
 
 ## Migration checklist
 

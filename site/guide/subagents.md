@@ -30,8 +30,9 @@ Only the fields the loader actually consumes:
 | `model` | A Claude-Code-style model alias (`sonnet`, `opus`, `haiku`, `fable`, `inherit`, …). Resolved through the `ccModelRoutes` service at spawn time; see [/guide/model-routing](/guide/model-routing). |
 | `tools` | Restricts the child's tool set (allow/deny). See the tools section below. |
 | `background` | Pin the agent to launch as a continuable background agent. See below. |
+| `isolation` | `isolation: worktree` dispatches the child into its own git worktree. See below. |
 
-The loader also parses CC frontmatter fields such as `permissionMode`, `isolation`, `memory`, and `effort`, but v1 does not project them onto the child — a definition using them behaves as if the field were absent.
+The loader also parses CC frontmatter fields such as `permissionMode`, `memory`, and `effort`, but v1 does not project them onto the child — a definition using them behaves as if the field were absent. (`isolation: worktree` and `background: true` are consumed — see below.)
 
 Fields that are omitted fall back sensibly: an omitted `model` inherits the parent's route; an omitted `tools` leaves the child with the full parent tool view.
 
@@ -102,6 +103,20 @@ By default a `Task` call is **foreground**: the tool waits for the child to fini
 
 Running, resuming, interrupting, and inspecting background agents (`send_message` / `interrupt` / `list`, `/tasks`, `/agents`) is covered in [/guide/background-tasks](/guide/background-tasks).
 
+### `isolation: worktree`
+
+A definition whose frontmatter pins `isolation: worktree` is dispatched into a per-child git worktree instead of the parent tree:
+
+1. **Create** — a worktree under `<mainRepoRoot>/.claude/worktrees/subagent-<childId>` on branch `worktree-subagent-<childId>`, created through the same hardened path as `EnterWorktree` (common-dir root pin, local-config scan, filter-driver neutralization; LFS content arrives as pointer files), then locked for the run. Any creation failure refuses the dispatch — the child never silently falls back to the parent tree.
+2. **Adopt** — on the child's first step, the child's session cwd moves into the worktree; a contract paragraph is appended to the persona and a first-line note is prepended to the prompt.
+3. **Clean up** — on `subagent/end`, the tree is probed for a dirty status and commits beyond the recorded base HEAD. Clean and no commits → the worktree is unlocked, removed with its branch. Otherwise the tree is **left on disk** and the child's final text says so.
+
+Honest limits (the feature is **partial**): the child's `header.cwd`, the harness sandbox root, and the bash default workdir remain the parent's; a parent cwd under which the worktree convention directory does not fit the sandbox root refuses the dispatch; delegated children cannot answer approval prompts, so a sandbox-denied write hard-fails; and Serena (user-mounted) pins one project root and does not follow the child. File formats: [/reference/extension-formats](/reference/extension-formats); launcher and in-session worktree lifecycle: [/guide/worktrees](/guide/worktrees).
+
+### Actor-contract blocks
+
+A definition may wrap part of its body in `<!-- actor-contract:start -->` … `<!-- actor-contract:end -->` marker lines. The block reaches the child's system prompt only when the child's resolved model id matches a pattern in the `actor-contract` settings namespace `models` — default `['glm-*']`, matched case-insensitively. `[]` disables the contract, `['*']` applies it to every model. A definition whose `model:` is unset (inherit) is fail-closed: the block is stripped. The marker lines themselves never reach the prompt. Typical use: model-specific evidence or contract sections in plugin-owned agents.
+
 ## Notes and limits
 
 As of dsh-cc v0.6.0:
@@ -122,6 +137,7 @@ A child can park a long report or plan in the handoff store with `handoff_put` a
 
 ## Next
 
+- [/guide/worktrees](/guide/worktrees) — the launcher flag, in-session tools, and subagent isolation around git worktrees.
 - [/guide/background-tasks](/guide/background-tasks) — running, resuming, and interrupting background agents.
 - [/guide/skills](/guide/skills) — `SKILL.md`-based skills, the other extension surface.
 - [/reference/extension-formats](/reference/extension-formats) — the file formats dsh-cc reads, including `.claude/agents`.

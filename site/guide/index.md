@@ -30,3 +30,4 @@ These pages walk through concrete dsh-cc workflows: running interactive sessions
 ## Advanced
 
 - [Background tasks](/guide/background-tasks) — run, inspect, and continue background work.
+- [Worktrees](/guide/worktrees) — run sessions, tools, and subagents in isolated git worktrees.

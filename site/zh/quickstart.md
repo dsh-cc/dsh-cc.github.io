@@ -51,6 +51,15 @@ $ dsh-cc
 
 安装后重启会话，新的 agent 和 hook 才会被加载。细节与配置见 [插件](/zh/guide/plugins)。
 
+## 升级
+
+```sh
+$ npm install -g @dsh-cc/cli@latest
+$ dsh-cc
+```
+
+升级后的首次启动，启动器会以新版本重新执行 profile 的 bundle 安装（记录在 `~/.dsh/profiles/tui/.dsh-cc-bootstrap.json`），profile 会自动收敛——无需手动操作。对账失败（网络问题，或新版本仍在 npm/pnpm 的 minimum-release-age 窗口内）只会警告并照常启动，下次启动时重试。通过 `scripts/sync-local-profile.sh` 同步的 dev profile（`dsh-cc --version` 显示 `-dev+<commit>[.dirty]`）永远不会被启动器对账。
+
 ## 首次运行
 
 运行 `dsh-cc`。首次启动时会创建并运行面向 CC 工作流的 `tui` profile，无需其他配置即可开始：

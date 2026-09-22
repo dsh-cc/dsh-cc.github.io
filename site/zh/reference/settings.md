@@ -1,7 +1,7 @@
 ---
 title: 设置级联
 description: dsh-cc 如何在五个层级间解析 settings.json、合并它们，并安全地应用环境变量。
-distilled-from: dsh-cc v0.6.3
+distilled-from: dsh-cc v0.8.0-rc.2
 ---
 
 # 设置级联
@@ -99,7 +99,7 @@ PATH
 ~/.dsh/profiles/tui/cordis.patch.yml
 ```
 
-它们在已安装的 bundle 之后应用。
+它们在已安装的 bundle 之后应用。微压缩 pass（`@dsh-cc/compaction-micro`：`retainResults` 10、`auto` false、`placeholderChars` 256、`failureCap` 3）与其他 preset 行一样，通过这份 profile cordis 配置调优——它没有 settings 命名空间。
 
 ## Preset 功能命名空间
 
@@ -110,7 +110,15 @@ PATH
 | `cc-onboarding` | `suppressed`（未设置/false） | 设为 `true` 可永久跳过首次运行的 onboarding 流程；用 `/onboard` 重新开启。 | [快速开始](/zh/quickstart) |
 | `cc-learn` | `enabled`（true）、`days`（14）、`min-occurrences`（2） | `/learn` 命令的时间窗口与写入门槛。 | [记忆体系](/zh/guide/memory) |
 | `cc-handoff` | `enabled`（true）、`threshold-chars`（8192，仅提示） | 子代理 handoff 存储的开关及其提示性大小阈值。 | [子代理](/zh/guide/subagents) |
-| `cc-context-compression` | `enabled`（false）、`mode`（dry-run）、`min-bytes`（8192）、`min-savings-ratio`（0.4）、`protected-tools` | 可选开启的可逆工具结果压缩。 | [交互基础](/zh/guide/interactive-basics) |
+| `cc-context-compression` | `enabled`（false）、`mode`（dry-run）、`min-bytes`（8192）、`min-savings-ratio`（0.4）、`protected-tools`、`reducer-enabled`（false）、`reducer-max-input-tokens`（30000）、`reducer-min-savings-ratio`（0.5）、`reducer-max-tokens`（1024）、`reducer-timeout-ms`（10000）、`reducer-alias`（haiku）、`reducer-commands` | 可选开启的可逆工具结果压缩。`reducer-*` 键调优一条保证据的压缩通道，把超大结果交给廉价通道的 side query；默认全部处于关闭状态（`reducer-enabled` 默认 false）。 | [交互基础](/zh/guide/interactive-basics) |
+| `model-aliases` | 别名条目，外加 `warnOnInherit`（true） | 别名解析背后的 settings 覆盖层；设 `warnOnInherit: false` 可在别名回退到父路由时关掉廉价通道的继承警告。 | [模型路由](/zh/guide/model-routing) |
+| `worktree` | `baseRef`（fresh）、`cleanupPeriodDays`（30） | worktree 的基底选择（`fresh` 使用带过期刷新的缓存 `origin/HEAD`），以及启动时对过期 `worktree-*` worktree 的清扫。 | [Worktree](/zh/guide/worktrees) |
+| `actor-contract` | `models`（['glm-*']） | 哪些模型会在 agent 定义中收到 `<!-- actor-contract -->` 人格块；列表为空则关闭该契约。 | [子代理](/zh/guide/subagents) |
+| `cc-tool-use-summary` | `enabled`（true）、`topLevelOnly`（true）、`minResultBytes`（4096）、`retentionDays`（7）等 | 大型工具结果的廉价通道摘要，供 compaction 消费；`topLevelOnly` 会跳过子代理会话，`retentionDays: 0` 表示只在内存中保留。 | [交互基础](/zh/guide/interactive-basics) |
+| `cc-prompt-suggest` | `enabled`（false）、`alias`（haiku）、`timeoutMs`（4000）、`maxTokens`（128） | 可选开启的下一轮输入建议。读取完整的 settings 级联（不像下面两个插件那样仅限用户层）。 | [交互基础](/zh/guide/interactive-basics) |
+| `cc-post-edit-verify` | `enabled`（false）、`rules`（[]）、`debounce-ms`（5000） | 在 `edit`/`write` 结果被接受后运行你声明的验证命令，并把结果追加到同一条工具结果中。**仅限用户层**（`~/.dsh/settings.json`）；project 层的规则永远不会被读取。 | [交互基础](/zh/guide/interactive-basics) |
+| `cc-edit-recovery-hint` | `enabled`（false） | 当 `edit` 因多行 `old_string` 找不到匹配而失败时，追加一条固定的恢复建议。**仅限用户层**；project 层永远不会被读取。 | [交互基础](/zh/guide/interactive-basics) |
+| `cc-compaction-cost-gate` | `enabled`（false）、`mode`（dry-run）、`margin`（1.0）、`cooldown-ms`（600000） | 默认关闭；在真正执行 compaction 前先评估压缩收益是否抵得过重写成本，每次真实压缩后进入冷却期。 | [交互基础](/zh/guide/interactive-basics) |
 
 ## 另请参阅
 

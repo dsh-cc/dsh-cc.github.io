@@ -30,3 +30,4 @@ description: 面向具体任务的 dsh-cc 工作流指南，从首次启动到�
 ## 进阶
 
 - [后台任务](/zh/guide/background-tasks) — 运行、检查并继续后台工作。
+- [工作树](/zh/guide/worktrees) — 在隔离的 git 工作树中运行会话、工具与子代理。

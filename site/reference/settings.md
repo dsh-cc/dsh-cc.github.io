@@ -1,7 +1,7 @@
 ---
 title: Settings cascade
 description: How dsh-cc resolves settings.json across five levels, merges them, and applies environment variables safely.
-distilled-from: dsh-cc v0.6.3
+distilled-from: dsh-cc v0.8.0-rc.2
 ---
 
 # Settings cascade
@@ -99,7 +99,7 @@ Beyond `settings.json`, your profile remains ordinary dsh composition. Local twe
 ~/.dsh/profiles/tui/cordis.patch.yml
 ```
 
-They are applied after the installed bundles.
+They are applied after the installed bundles. The microcompaction pass (`@dsh-cc/compaction-micro`: `retainResults` 10, `auto` false, `placeholderChars` 256, `failureCap` 3) is tuned through this profile cordis config like the other preset rows above — it has no settings namespace.
 
 ## Preset feature namespaces
 
@@ -110,7 +110,15 @@ Several CC preset features are tuned through their own settings namespaces in `~
 | `cc-onboarding` | `suppressed` (unset/false) | Set `true` to permanently skip the first-run onboarding flow; re-arm with `/onboard`. | [Quick start](/quickstart) |
 | `cc-learn` | `enabled` (true), `days` (14), `min-occurrences` (2) | The `/learn` command's recency window and write gating. | [Memory](/guide/memory) |
 | `cc-handoff` | `enabled` (true), `threshold-chars` (8192, advisory) | Subagent handoff store availability and its advisory size threshold. | [Subagents](/guide/subagents) |
-| `cc-context-compression` | `enabled` (false), `mode` (dry-run), `min-bytes` (8192), `min-savings-ratio` (0.4), `protected-tools` | Opt-in reversible compression of large tool results. | [Interactive basics](/guide/interactive-basics) |
+| `cc-context-compression` | `enabled` (false), `mode` (dry-run), `min-bytes` (8192), `min-savings-ratio` (0.4), `protected-tools`, `reducer-enabled` (false), `reducer-max-input-tokens` (30000), `reducer-min-savings-ratio` (0.5), `reducer-max-tokens` (1024), `reducer-timeout-ms` (10000), `reducer-alias` (haiku), `reducer-commands` | Opt-in reversible compression of large tool results. The `reducer-*` keys tune an evidence-preserving pass that sends oversized results to a cheap-lane side query; all ship dark (`reducer-enabled` false by default). | [Interactive basics](/guide/interactive-basics) |
+| `model-aliases` | alias entries plus `warnOnInherit` (true) | The settings overlay backing alias resolution; `warnOnInherit: false` suppresses the cheap-lane inherit warning when an alias falls back to the parent route. | [Model routing](/guide/model-routing) |
+| `worktree` | `baseRef` (fresh), `cleanupPeriodDays` (30) | Worktree base selection (`fresh` uses a cached `origin/HEAD` with a stale refresh) and the boot-time sweep of stale `worktree-*` worktrees. | [Worktrees](/guide/worktrees) |
+| `actor-contract` | `models` (['glm-*']) | Which models receive `<!-- actor-contract -->` persona blocks in agent definitions; an empty list disables the contract. | [Subagents](/guide/subagents) |
+| `cc-tool-use-summary` | `enabled` (true), `topLevelOnly` (true), `minResultBytes` (4096), `retentionDays` (7), and more | Cheap-lane digests of large tool results, consumed at compaction; `topLevelOnly` skips subagent sessions and `retentionDays: 0` keeps the ledger in memory only. | [Interactive basics](/guide/interactive-basics) |
+| `cc-prompt-suggest` | `enabled` (false), `alias` (haiku), `timeoutMs` (4000), `maxTokens` (128) | Opt-in next-prompt suggestion at turn-stop. Read through the full settings cascade (not restricted to the user layer, unlike the two plugins below). | [Interactive basics](/guide/interactive-basics) |
+| `cc-post-edit-verify` | `enabled` (false), `rules` ([]), `debounce-ms` (5000) | Runs a user-declared verification command after accepted `edit`/`write` results and appends the outcome to the same tool result. **User layer only** (`~/.dsh/settings.json`); project-scope rules are never read. | [Interactive basics](/guide/interactive-basics) |
+| `cc-edit-recovery-hint` | `enabled` (false) | Appends static recovery advice when `edit` fails with a not-found error on a multi-line `old_string`. **User layer only**; project scope is never read. | [Interactive basics](/guide/interactive-basics) |
+| `cc-compaction-cost-gate` | `enabled` (false), `mode` (dry-run), `margin` (1.0), `cooldown-ms` (600000) | Ships dark; evaluates whether projected compaction savings justify the rewrite cost before calling `/compact`-style compaction, with a cooldown after each real pass. | [Interactive basics](/guide/interactive-basics) |
 
 ## See also
 

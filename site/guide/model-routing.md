@@ -59,6 +59,47 @@ The same resolution applies elsewhere aliases are resolved: hook executors that 
 Alias resolution covers agent frontmatter and hook executors. Aliasing the main-session default model is a known follow-up, and `ANTHROPIC_*` env vars have no Anthropic semantics — see the Models section of the parity matrix.
 :::
 
+## Alias semantics
+
+Resolution follows a fixed lookup order: **settings overlay → config defaults → builtin fallback**. Alias key matching is **case-insensitive** (keys are folded to lowercase at merge and at lookup).
+
+An alias entry comes in two shapes:
+
+- String form — `sonnet: deepseek-v4-flash`: the model id only, the provider inherits.
+- Object form — `opus: { provider: deepseek-official, model: deepseek-v4-pro, reasoningEffort: max }`: an explicit route with an optional effort.
+
+A few boundary behaviors worth knowing:
+
+- `inherit` (any case) means no override — the child inherits the parent route.
+- Only the **settings** layer may set an entry to `null`, which deletes a same-named config-default entry (entry-shallow). Deleting a builtin alias falls through to the builtin fallback, i.e. inherit — config may never hold `null`.
+- Unconfigured builtin aliases (`fable`/`opus`/`sonnet`/`haiku` and the dsh-cc lanes) inherit the parent route. An unconfigured **custom** alias such as `turbo` has no fallback: it passes through verbatim as a literal model id, with a warning logged.
+- A configured string-form target that names another alias is followed **one hop** — the hop carries `reasoningEffort`. Object-form targets are concrete routes and are not followed as names.
+
+## Cheap-lane observability
+
+When an unconfigured builtin alias silently inherits the parent route, the resolver logs a warning — once per alias. The warning is gated by the `warnOnInherit` key in the `model-aliases` settings namespace (default `true`; set it to `false` to suppress).
+
+## `model$level`: effort on the reference
+
+Any model reference — agent frontmatter `model:`, an alias target's `model` id, or the auto-mode classifier's `route` — may carry a `` `$<level>` `` suffix (`opus$high`, `glm-5.3$xhigh`):
+
+- The suffix is stripped before the id leaves the resolver, so pricing, breakers, and pins key on bare model ids.
+- The level rides `reasoningEffort` on the resolved route and **overrides** an alias target's declared `reasoningEffort`.
+- Unknown level spellings are carried to the harness boundary, which fails the request with `UNSUPPORTED_REASONING_EFFORT`.
+- Malformed suffixes (a trailing `$`, an empty or bad-charset level, a `$` inside a provider segment) pass the reference through verbatim.
+
+## Effort precedence
+
+When several sources declare a reasoning effort, the effective value is picked by this order (higher rungs never mutate lower ones):
+
+1. An explicit `` `$level` `` suffix.
+2. The alias target's declared `reasoningEffort`.
+3. Agent frontmatter `effort` (applied at spawn).
+4. The `/effort` session selection.
+5. The catalog/harness route default.
+
+See the `/effort` row in [/reference/commands](/reference/commands).
+
 ## Example: end-to-end walkthrough
 
 A minimal path from a bare deployment to running a task on the fast lane:

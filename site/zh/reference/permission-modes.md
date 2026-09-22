@@ -1,7 +1,7 @@
 ---
 title: 权限模式
 description: 五种权限模式、规则引擎的规则形式与求值顺序、auto 模式的风险分类器，以及 /permissions 命令。
-distilled-from: dsh-cc v0.6.3
+distilled-from: dsh-cc v0.8.0-rc.2
 ---
 
 # 权限模式
@@ -21,8 +21,8 @@ dsh-cc 的权限引擎（`@dsh-cc/permission-rules`）与 Claude Code 兼容：�
 | 模式 | 行为 |
 |---|---|
 | `default` | 完整求值：guards → 风险分类器 → 按来源优先级的 deny/ask/allow 规则 → 模式短路 → 整工具 allow → 透传到审批缝。 |
-| `acceptEdits` | 自动允许文件编辑工具（`fileEditTools` 配置，默认 `['edit']`）。其余与 `default` 相同。 |
-| `plan` | 自动允许只读工具（`readOnlyTools`，默认 `['read']`）。非只读调用上遗留的 `ask`/`passthrough` 变为 deny，理由是 `plan mode is read-only; submit via exit_plan_mode`；已匹配的 allow/deny 规则仍然生效。 |
+| `acceptEdits` | 自动允许文件编辑工具（`fileEditTools` 配置，默认 `['edit', 'write', 'multi_edit', 'notebook_edit', 'str_replace_editor']`）。其余与 `default` 相同。 |
+| `plan` | 自动允许只读工具（`readOnlyTools`，默认 `['read', 'glob', 'grep', 'search', 'web_fetch', 'web_search']`）。非只读调用上遗留的 `ask`/`passthrough` 变为 deny，理由是 `plan mode is read-only; submit via exit_plan_mode`；已匹配的 allow/deny 规则仍然生效。 |
 | `auto` | 求值**与 `default` 完全相同**——它不是求值短路。风险分类器在插件层代理每一个 `ask`：classifier-LOW 的调用自动允许，classifier-MEDIUM 仍然询问。可通过设置启用一个可选的 LLM 风险分类器阶段（见下文）。 |
 | `bypassPermissions` | 允许一切（除非设置了 `disableBypassPermissionsMode`）。进入时把会话沙箱固定为 `danger-full-access` 并记录 `resumeSandbox`；离开时恢复记录的沙箱限制（或回退到 `workspace-write`）。 |
 

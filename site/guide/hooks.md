@@ -72,7 +72,7 @@ header values.
 
 ## Event coverage
 
-The bridge supports **18 of Claude Code's hook events**:
+The bridge supports **20 of Claude Code's hook events**:
 
 | Event | Status | What the bridge does |
 | --- | --- | --- |
@@ -94,17 +94,24 @@ The bridge supports **18 of Claude Code's hook events**:
 | `TeammateIdle` | supported (partial) | observe-only; fires only for agents seen as subagents |
 | `Setup` | partial | first-run approximation: emits only for a brand-new (seeded) session |
 | `SessionResume` | partial | fires only on a `resume` source |
+| `WorktreeCreate` | supported | fired through the bridge's `hookRun` seam by the worktree tools, subagent `isolation: worktree`, and the TUI `/quit` cleanup; a hook exiting 0 with a stdout path replaces default creation |
+| `WorktreeRemove` | supported | same emit points as `WorktreeCreate`; a failing hook keeps the worktree |
 
 Per the parity matrix, `PreToolUse` is bridged with matcher support and the
 `permissionDecision` decision contract but `additionalContext` is ignored;
 `Notification` is bridged for the `permission_prompt` subtype only; `Setup` is
 a first-run approximation rather than the full upstream contract.
 
-**Unsupported events (14)** — config for them is ignored before group parsing,
+One honest boundary: the worktree events fire only at the in-process points —
+launcher `--worktree` creation and the boot-time sweep do **not** fire hooks
+(the pre-build launcher has no hooks bridge), so those two lifecycles keep
+their git-direct behavior. See [Worktrees](/guide/worktrees).
+
+**Unsupported events (12)** — config for them is ignored before group parsing,
 so they cannot invalidate or register hooks: `PreCompact`,
 `InstructionsLoaded`, `UserPromptExpansion`, `MessageDisplay`, `PostToolBatch`,
-`TaskCompleted`, `ConfigChange`, `CwdChanged`, `FileChanged`, `WorktreeCreate`,
-`WorktreeRemove`, `Elicitation`, `ElicitationResult`, and `UserPromptCancel`
+`TaskCompleted`, `ConfigChange`, `CwdChanged`, `FileChanged`,
+`Elicitation`, `ElicitationResult`, and `UserPromptCancel`
 (dsh has no cancel seam — the bridge does not do a lossy approximation). The
 `Notification` idle / `auth_success` / `elicitation` subtypes and
 `SessionResume`'s `clear`/`compact` sources are also unmapped.
@@ -175,6 +182,38 @@ Save the file (e.g. as `./.claude/hooks.json`), point the plugin's
 `configPath` at it, and the script runs after each `Bash` tool call in the
 session workspace. A blocking outcome feeds back as
 `blocked by PostToolUse hook` unless the hook supplies its own reason.
+
+## Error recovery
+
+Two recovery behaviors are built into the hooks bridge itself — no extra
+configuration needed:
+
+- **Output-token ceiling**: a turn that hits the model's output-token ceiling
+  continues automatically as a next step in the same turn, up to 3 times.
+  `CLAUDE_CODE_OUTPUT_TOKEN_CONTINUATION_CAP` overrides the cap (`0` disables;
+  an invalid value falls back to 3). The continuation is steered with the
+  wording *"Output token limit hit. Resume directly — no apology, no recap.
+  Pick up mid-thought."*
+- **Repeated API errors**: a durable notice is surfaced at 3 consecutive
+  (`CLAUDE_CODE_AGENT_ERROR_CONSECUTIVE_CAP`) or 20 cumulative
+  (`CLAUDE_CODE_AGENT_ERROR_TOTAL_CAP`) errors; request retry stays
+  harness-owned.
+
+The [Stop hook's](#event-coverage) consecutive-block cap stays 8
+(`CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`); it is unaffected by these recovery paths.
+The env vars above are also listed in
+[/reference/env-vars](/reference/env-vars).
+
+Two documented divergences from Claude Code:
+
+- Stop hooks are suppressed while output-ceiling recovery is in progress; Stop
+  runs normally once the recovered step completes or the continuation cap is
+  reached.
+- The continuation is a model-visible plugin-source next-step message (CC
+  continues the same logical response invisibly): each continuation costs one
+  extra model step, and the transcript records one `turn/end` carrying the
+  sticky `max-tokens` reason. The error streak counters are also per-agent,
+  where CC's caps are session-wide.
 
 ## Known limitations
 

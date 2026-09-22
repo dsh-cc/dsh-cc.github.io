@@ -1,7 +1,7 @@
 ---
 title: Slash commands
 description: Reference catalog of every slash command in dsh-cc — preset (harness) commands and TUI-local commands, with parity status.
-distilled-from: dsh-cc v0.6.3
+distilled-from: dsh-cc v0.8.0-rc.2
 ---
 
 # Slash commands
@@ -30,7 +30,7 @@ the matrix does not state a status for that command.
 | `/tasks` | List caller-visible background jobs and their status. | Partial |
 | `/agents` | List, inspect, and stop continuable background agents: `/agents <id>` for detail, `/agents stop <id>` to interrupt one (it stays resumable). `/agents attach <id>` is a reserved, unimplemented namespace. | Partial |
 | `/plan` | Plan mode channel (exit via `exit_plan_mode`). | Full |
-| `/learn [apply\|all\|days=N]` | Distill recurring session failure patterns into workspace memory. Dry-run by default — only `apply` writes. `apply` writes the `session-learnings` memory topic (a managed marker block, regenerated wholesale; content outside the block is untouched) and updates `MEMORY.md`; `all` scans every project instead of the current workspace; `days=N` overrides the recency window (default 14). Tuned via the `cc-learn` settings namespace (`enabled` default true, `days` 14, `min-occurrences` 2). | Full |
+| `/learn [apply\|all\|days=N]` | Distill recurring session failure patterns into workspace memory. Dry-run by default — only `apply` writes. `apply` writes the `session-learnings` memory topic (a managed marker block, regenerated wholesale; content outside the block is untouched) and updates `MEMORY.md`; `all` scans every project instead of the current workspace; `days=N` overrides the recency window (default 14). Scanning walks the durable session store, decompressing recent `session.v3.jsonl.zstd` logs within the window (with legacy `session.jsonl.zstd` fallback). Tuned via the `cc-learn` settings namespace (`enabled` default true, `days` 14, `min-occurrences` 2). | Full |
 
 ## Model & provider
 
@@ -38,7 +38,7 @@ the matrix does not state a status for that command.
 | --- | --- | --- |
 | `/provider` | Manage LLM providers and API keys. Subcommands: `/provider list` prints current routes, `/provider add <preset-id>` walks a wizard for built-in presets (Moonshot, Z.AI/Zhipu, DeepSeek) or a custom endpoint, `/provider remove <route>` removes a route. The detail view rotates keys, refreshes the model list, and sets the default. Keys go to the credential store (`~/.dsh/.credentials.yaml`), never settings. | Full |
 | `/model <n\|provider/id>` | List or switch the active model. | Full |
-| `/effort <level\|default>` | Set reasoning effort for the current model. | — |
+| `/effort <level\|default>` | Set reasoning effort for the current model. Where this sits in effort precedence: [Model routing](/guide/model-routing). | — |
 
 ## Configuration
 
@@ -77,7 +77,7 @@ these local commands.
 
 | Command | What it does | Parity |
 | --- | --- | --- |
-| `/quit` | Exit the TUI session. | |
+| `/quit` | Exit the TUI session. On a launcher worktree session, offers to keep or remove the worktree. | |
 | `/exit` | Exit the TUI session. | |
 | `/clear` | Start a new conversation (empty context). Previous session stays resumable. | |
 | `/new` | Alias of `/clear`. | |
@@ -85,7 +85,7 @@ these local commands.
 | `/tui-help` | Show TUI keyboard and command help. | |
 | `/resume <sessionId>` | Switch to a resumed session (picker or by id). | |
 | `/model <n\|provider/id>` | List or switch the active model. | |
-| `/effort <level\|default>` | Set reasoning effort for the current model. | |
+| `/effort <level\|default>` | Set reasoning effort for the current model. Where this sits in effort precedence: [Model routing](/guide/model-routing). | |
 | `/agents [<id>\|stop <id>]` | List, inspect, or stop background agents. | |
 | `/cost` | Show token usage. | |
 | `/usage` | Open the live token and context usage panel. | |

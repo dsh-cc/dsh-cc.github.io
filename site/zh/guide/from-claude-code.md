@@ -79,6 +79,7 @@ MCP: dsh config takes precedence — skipped Claude Code MCP config: ~/.claude/.
 - **部分斜杠命令由宿主负责。** `/model` 和 `/exit` 刻意不作为 preset 命令——dsh 原生的 TUI 等价物（`/model`、`/effort`、空闲双击 Ctrl+C）承担这些角色。另一些是部分对齐，例如 `/config` 是仅文本的渲染/修补，键集在白名单内；`/init` 通过追加一轮对话来写入/刷新 `CLAUDE.md`。
 - **状态栏接近但不完全一致。** 命令输出最多渲染 3 行（CC 会渲染每一行），dsh-cc 会在命令输出下方追加一行自己的模式行，stdin 负载只提供 dsh-cc 能真实取到来源的字段子集。
 - **`ANTHROPIC_*` 环境变量不被支持**（见上文）——provider 与 API key 配置遵循 dsh-cc 自己的凭证与路由模型。
+- **Git worktree 支持覆盖面广但有部分差异。** 它通过 launcher 的 `--worktree` 旗标、会话内 worktree 工具和子代理隔离接入，并有少数已记录的降级——参见 [/zh/guide/worktrees](/zh/guide/worktrees)。
 
 ## 迁移清单
 

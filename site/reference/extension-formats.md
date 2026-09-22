@@ -1,7 +1,7 @@
 ---
 title: Extension formats
 description: Where each Claude Code-compatible extension file lives (hooks, skills, plugins, subagents), with minimal skeletons and links to the full guides.
-distilled-from: dsh-cc v0.6.3
+distilled-from: dsh-cc v0.8.0-rc.2
 ---
 
 # Extension formats
@@ -115,6 +115,16 @@ component mounts onto its host seam (`commands`, `subagents`, `skills`,
 `skipped`, never failing the whole load. Agents mount namespaced under the
 plugin name, so the Task tool dispatches them by scoped id (`plugin:agent`).
 
+Cursor-flavored plugins load through the same pipeline: the manifest is
+probed in order `.claude-plugin/plugin.json` → `.cursor-plugin/plugin.json` →
+top-level `plugin.json`, first hit wins (both present → the CC one wins with
+a warning). Cursor `rules/*.mdc` files render into one `cc:plugin-rules`
+system-prompt section per plugin under a 4000-character budget; `.txt`
+command files mount as plain text on the cursor flavor; a root `mcp.json` is
+discovered by default and `mcpServers` accepts the Cursor array form;
+`${CURSOR_PLUGIN_ROOT}` in hook commands expands to the plugin root. Details
+in [/guide/plugins](/guide/plugins).
+
 **Full story:** [/guide/plugins](/guide/plugins)
 
 ## subagents — `.claude/agents/*.md`
@@ -141,7 +151,25 @@ The agent's system prompt, written as the markdown body.
 compile to an effective allow/deny restriction; `model` (with `inherit`)
 resolves through the `ccModelRoutes` alias service; `effort`,
 `permissionMode`, `maxTurns`, `initialPrompt`, `background`, `memory`,
-`skills`, `mcpServers`, `hooks`, and `isolation` are carried through. Unknown
+`skills`, `mcpServers`, `hooks`, and `isolation` are carried in the
+definition. `background: true` is live: when `run_in_background` is omitted
+the run backgrounds (explicit `run_in_background: false` forces foreground;
+the contract is covered in [/guide/subagents](/guide/subagents)). `isolation:
+worktree` dispatches the child into a per-child isolated git worktree
+(lifecycle in [/guide/worktrees](/guide/worktrees), contract in
+[/guide/subagents](/guide/subagents)). `effort` applies at spawn, but sits
+below an explicit `model$level` suffix and alias-target `reasoningEffort` in
+the precedence order (see [/guide/model-routing](/guide/model-routing)).
+
+Definitions may wrap a section in `<!-- actor-contract:start -->` /
+`<!-- actor-contract:end -->` marker lines. At dispatch the block is stripped
+unless the child's resolved model matches a pattern in the `actor-contract`
+settings namespace `models` list — default `['glm-*']`; `[]` disables the
+feature; `['*']` applies it uniformly; matching is case-insensitive. A
+definition with `model:` unset (inherit) is fail-closed: the block is
+stripped. Marker lines never reach the prompt itself.
+
+Unknown
 fields are ignored; a bad known value fails loudly at load. The reserved
 types `general-purpose` (fresh spawn) and `fork` (conversation-inheriting
 fork) are sentinels — a workspace file named `fork.md` is unreachable.

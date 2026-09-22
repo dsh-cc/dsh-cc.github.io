@@ -1,7 +1,7 @@
 ---
 title: 斜杠命令
 description: dsh-cc 全部斜杠命令的参考目录——preset（harness）命令与 TUI 本地命令，附对等状态。
-distilled-from: dsh-cc v0.6.3
+distilled-from: dsh-cc v0.8.0-rc.2
 ---
 
 # 斜杠命令
@@ -28,7 +28,7 @@ matrix 未声明该命令的状态。
 | `/tasks` | 列出调用方可见的后台作业及其状态。 | Partial |
 | `/agents` | 列出、查看和停止可续接的后台 agent：`/agents <id>` 查看详情，`/agents stop <id>` 中断一个（仍可续接）。`/agents attach <id>` 是保留但未实现的命名空间。 | Partial |
 | `/plan` | Plan mode 通道（通过 `exit_plan_mode` 退出）。 | Full |
-| `/learn [apply\|all\|days=N]` | 把会话中反复出现的失败模式蒸馏进工作区记忆。默认 dry-run——只有 `apply` 会写入。`apply` 写入 `session-learnings` 记忆主题（一个 managed marker block，整体重新生成；块之外的内容不受影响）并更新 `MEMORY.md`；`all` 扫描所有项目而不只是当前工作区；`days=N` 覆盖时间窗口（默认 14）。通过 `cc-learn` 设置命名空间调优（`enabled` 默认 true、`days` 14、`min-occurrences` 2）。 | Full |
+| `/learn [apply\|all\|days=N]` | 把会话中反复出现的失败模式蒸馏进工作区记忆。默认 dry-run——只有 `apply` 会写入。`apply` 写入 `session-learnings` 记忆主题（一个 managed marker block，整体重新生成；块之外的内容不受影响）并更新 `MEMORY.md`；`all` 扫描所有项目而不只是当前工作区；`days=N` 覆盖时间窗口（默认 14）。扫描会遍历持久化的会话存储，把窗口内最近的 `session.v3.jsonl.zstd` 日志解压后读取（并兼容旧的 `session.jsonl.zstd`）。通过 `cc-learn` 设置命名空间调优（`enabled` 默认 true、`days` 14、`min-occurrences` 2）。 | Full |
 
 ## 模型与 Provider
 
@@ -36,7 +36,7 @@ matrix 未声明该命令的状态。
 | --- | --- | --- |
 | `/provider` | 管理 LLM provider 与 API key。子命令：`/provider list` 打印当前路由，`/provider add <preset-id>` 走内置 preset（Moonshot、Z.AI/Zhipu、DeepSeek）或自定义端点的向导，`/provider remove <route>` 移除路由。详情视图可轮换 key、刷新模型列表、设置默认。Key 存入凭据存储（`~/.dsh/.credentials.yaml`），绝不进 settings。 | Full |
 | `/model <n\|provider/id>` | 列出或切换当前模型。 | Full |
-| `/effort <level\|default>` | 为当前模型设置推理努力级别。 | — |
+| `/effort <level\|default>` | 为当前模型设置推理努力级别。它在 effort 优先级中的位置见[模型路由](/zh/guide/model-routing)。 | — |
 
 ## 配置
 
@@ -74,7 +74,7 @@ matrix 未声明该命令的状态。
 
 | Command | What it does | Parity |
 | --- | --- | --- |
-| `/quit` | 退出 TUI 会话。 | |
+| `/quit` | 退出 TUI 会话。在 launcher worktree 会话中，会询问保留还是移除该 worktree。 | |
 | `/exit` | 退出 TUI 会话。 | |
 | `/clear` | 开启新对话（清空上下文）。之前的会话仍可恢复。 | |
 | `/new` | `/clear` 的别名。 | |
@@ -82,7 +82,7 @@ matrix 未声明该命令的状态。
 | `/tui-help` | 显示 TUI 键盘与命令帮助。 | |
 | `/resume <sessionId>` | 切换到被恢复的会话（选择器或按 id）。 | |
 | `/model <n\|provider/id>` | 列出或切换当前模型。 | |
-| `/effort <level\|default>` | 为当前模型设置推理努力级别。 | |
+| `/effort <level\|default>` | 为当前模型设置推理努力级别。它在 effort 优先级中的位置见[模型路由](/zh/guide/model-routing)。 | |
 | `/agents [<id>\|stop <id>]` | 列出、查看或停止后台 agent。 | |
 | `/cost` | 显示 token 用量。 | |
 | `/usage` | 打开实时的 token 与上下文用量面板。 | |

@@ -1,7 +1,7 @@
 ---
 title: Environment variables
 description: The environment variables dsh-cc reads and sets, with defaults from the launcher and TUI source.
-distilled-from: dsh-cc v0.6.3
+distilled-from: dsh-cc v0.8.0-rc.2
 ---
 
 # Environment variables
@@ -11,7 +11,7 @@ home directory the launcher bootstraps into, the resume/worktree contract the
 `dsh-cc` launcher passes to the TUI plugin, and TUI escape hatches. Each name,
 value, and default below is taken verbatim from the
 [`packages/launcher/tui`](https://github.com/dsh-cc/dsh-cc) launcher and TUI
-source at v0.6.3, plus one compatibility variable from the plugin loader.
+source at v0.8.0-rc.2, plus one compatibility variable from the plugin loader.
 
 ## Reference
 
@@ -27,6 +27,12 @@ source at v0.6.3, plus one compatibility variable from the plugin loader.
 | `DSH_CCTUI_UI_MODE` | `regular` | TUI display mode: `regular` or `fullscreen`. Beats plugin config, config beats the default — use it as the instant escape hatch when a profile pins fullscreen and the terminal cannot cope. |
 | `DSH_CCTUI_ALLOW_NO_TTY` | *(unset)* | Set to `'1'` to allow mounting the TUI without an interactive terminal (stdout not a TTY). |
 | `NODE_COMPILE_CACHE` | `<DSH_HOME>/.cache/node-compile-cache` | Node's module-compile cache directory. The launcher defaults it on the spawned `dsh` child so compiled modules are reused across boots; a user-set value always wins. |
+
+| `DSH_CC_DISABLE_EXIT_TIP` | *(unset)* | Set to `'1'` to disable the session-id/resume-command tip the TUI prints when it quits. |
+| `CLAUDE_CODE_OUTPUT_TOKEN_CONTINUATION_CAP` | `3` | Max output-token-ceiling auto-continuations per turn; `0` disables the behavior, an invalid value falls back to 3. |
+| `CLAUDE_CODE_AGENT_ERROR_CONSECUTIVE_CAP` | `3` | Consecutive API errors at which a durable notice is surfaced. |
+| `CLAUDE_CODE_AGENT_ERROR_TOTAL_CAP` | `20` | Cumulative-error notice threshold. |
+| `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP` | `8` | Consecutive Stop-hook blocks before the hook is overridden and the turn ends; `0` or an invalid value falls back to 8. |
 
 ::: warning
 `ANTHROPIC_*` environment variables are **not** honored. Per the CC parity
