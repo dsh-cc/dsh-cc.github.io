@@ -1,7 +1,7 @@
 ---
 title: Slash commands
 description: Reference catalog of every slash command in dsh-cc — preset (harness) commands and TUI-local commands, with parity status.
-distilled-from: dsh-cc v0.8.0-rc.2
+distilled-from: dsh-cc v0.8.1-rc.1 (main 82576b5)
 ---
 
 # Slash commands
@@ -26,7 +26,7 @@ the matrix does not state a status for that command.
 | `/branch [note]` | Fork the current session into a new child branch and report the child session id. Switching to the child requires a restart. | Partial |
 | `/compact` | Compact the session, with optional preservation instructions. | Full |
 | `/rename <title>` | Pin an explicit user title on the current session. | Full |
-| `/export` | Write the current session transcript to a file as markdown (default) or lossless JSON. | Full |
+| `/export` | Write the current session transcript to a file as markdown (default) or lossless JSON. Pasted credentials are redacted one-way before the file is written (a dsh-cc extension; extra patterns via the `cc-secrets` namespace). Known gap: on web profiles the native CC `/export` bypasses this redaction. | Partial |
 | `/tasks` | List caller-visible background jobs and their status. | Partial |
 | `/agents` | List, inspect, and stop continuable background agents: `/agents <id>` for detail, `/agents stop <id>` to interrupt one (it stays resumable). `/agents attach <id>` is a reserved, unimplemented namespace. | Partial |
 | `/plan` | Plan mode channel (exit via `exit_plan_mode`). | Full |
@@ -45,7 +45,8 @@ the matrix does not state a status for that command.
 | Command | What it does | Parity |
 | --- | --- | --- |
 | `/config` | Show or update effective configuration namespaces (text-only render/patch with an allowlisted key set, not an interactive editor). | Partial |
-| `/permissions [mode]` | Inspect or change permission mode/rules (CC rule-engine modes); the bare invocation opens a TUI overlay. | Full |
+| `/permissions [mode]` | Inspect or change permission mode/rules (CC rule-engine modes); the bare invocation opens a TUI overlay. In `auto` mode, suspended allow rules are annotated "suspended in auto mode". `/permissions lint` reports rule-hygiene findings (malformed rules, exact duplicates, prefix-subsumed rules, bare whole-tool `Bash` allows, unknown tool names) grouped by source with a proposed before/after diff; `--apply` cleans the user settings layer only. | Full |
+| `/auto-mode` | Read-only introspection of the `auto`-mode classifier, no model call: `/auto-mode defaults` prints the built-in slot lists as JSON; `/auto-mode config` prints the effective trusted-scoped `permissions.autoMode` slice; `/auto-mode review [full]` shows the current session's last 20 classifier/probe verdicts (`full` prints the stored inputs when `auditFullText` is on). See [Permission modes](/reference/permission-modes). | Partial |
 | `/memory` | List memdir memory files (name, type, first line) or print one memory's body by name. | Full |
 | `/skills` | List every available skill with description, source, and invocation policy (model, user, or both). | Full |
 | `/init` | Scan a project and scaffold CLAUDE.md via a queued model turn. | Partial |
@@ -61,6 +62,7 @@ the matrix does not state a status for that command.
 | `/doctor` | Session health report (`--verbose` for the verbose rendering, `--json` for a JSON file under `$DSH_HOME`). | Full |
 | `/status` | Session status summary: current model, permission preset, session id, working directory. | Full |
 | `/diff` | Show git diff summary or a file diff via the shell; also inspects CLAUDE.md / settings differences. | Full |
+| `/commit-split` | Advisory dry-run: reads the working-tree change (status, staged, unstaged) and asks the `blueprint` lane for an ordered atomic-commit split plan (message, files, dependency edges). It never commits; lockfiles go to a trailing `chore(deps)` group. When `blueprint` is unconfigured, a note reports the inherited main-model route. | Full |
 | `/cost` | Per-model session usage and cost, folded against the deployment price table. The CC preset ships a starter table of official published list prices (USD per 1M tokens); a runtime id with a route prefix (e.g. `llmbox_ant/glm-5.3`) matches the bare model row via `/`-suffix longest-row-wins matching, and there is no `*` wildcard — unmatched models report "no price configured" instead of a misleading zero cost. Prices live in the preset's `modelTable` config. | Full |
 | `/cache-health` | Shows prompt-cache prefix stability (stable prefix segment count, estimated tokens, changed-since-last-call flag, drift table) joined with provider-metered cache read/write ratios for this session. A passive observer, detector-only: it reports, never rewrites requests. Disabling is composition config (`config.enabled` in the CC preset's cordis yml), not a settings namespace. | Full |
 | `/stats` | Session event statistics: turn and step counts, tool-call distribution, token usage totals. | Full |
@@ -102,6 +104,10 @@ these local commands.
 - Plugin commands in the colon form `plugin:command` (e.g. `codex:review`)
   dispatch through the `ccPlugins` service and are treated as local commands by
   the TUI.
+- Saved workflows (`.claude/workflows/<name>.js` in the project, shadowing
+  `$DSH_HOME/workflows/<name>.js`) mount as `/<name>` commands at session
+  start; new saves mount next session. See
+  [Background tasks](/guide/background-tasks).
 - A hand-typed unknown `/name` that no registered command matches falls through
   to a user prompt, so user-invocable skills reach the model the same way a
   menu pick would.

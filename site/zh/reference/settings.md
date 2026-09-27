@@ -1,7 +1,7 @@
 ---
 title: 设置级联
 description: dsh-cc 如何在五个层级间解析 settings.json、合并它们，并安全地应用环境变量。
-distilled-from: dsh-cc v0.8.0-rc.2
+distilled-from: dsh-cc v0.8.1-rc.1 (main 82576b5)
 ---
 
 # 设置级联
@@ -108,7 +108,7 @@ PATH
 | 命名空间 | 键（默认值） | 调优对象 | 更多 |
 | --- | --- | --- | --- |
 | `cc-onboarding` | `suppressed`（未设置/false） | 设为 `true` 可永久跳过首次运行的 onboarding 流程；用 `/onboard` 重新开启。 | [快速开始](/zh/quickstart) |
-| `cc-learn` | `enabled`（true）、`days`（14）、`min-occurrences`（2） | `/learn` 命令的时间窗口与写入门槛。 | [记忆体系](/zh/guide/memory) |
+| `cc-learn` | `enabled`（true）、`days`（14）、`min-occurrences`（2） | `/learn` 命令的时间窗口与写入门槛；`enabled` 同时控制 `manage_skill` 工具。 | [记忆体系](/zh/guide/memory) |
 | `cc-handoff` | `enabled`（true）、`threshold-chars`（8192，仅提示） | 子代理 handoff 存储的开关及其提示性大小阈值。 | [子代理](/zh/guide/subagents) |
 | `cc-context-compression` | `enabled`（false）、`mode`（dry-run）、`min-bytes`（8192）、`min-savings-ratio`（0.4）、`protected-tools`、`reducer-enabled`（false）、`reducer-max-input-tokens`（30000）、`reducer-min-savings-ratio`（0.5）、`reducer-max-tokens`（1024）、`reducer-timeout-ms`（10000）、`reducer-alias`（haiku）、`reducer-commands` | 可选开启的可逆工具结果压缩。`reducer-*` 键调优一条保证据的压缩通道，把超大结果交给廉价通道的 side query；默认全部处于关闭状态（`reducer-enabled` 默认 false）。 | [交互基础](/zh/guide/interactive-basics) |
 | `model-aliases` | 别名条目，外加 `warnOnInherit`（true） | 别名解析背后的 settings 覆盖层；设 `warnOnInherit: false` 可在别名回退到父路由时关掉廉价通道的继承警告。 | [模型路由](/zh/guide/model-routing) |
@@ -119,6 +119,12 @@ PATH
 | `cc-post-edit-verify` | `enabled`（false）、`rules`（[]）、`debounce-ms`（5000） | 在 `edit`/`write` 结果被接受后运行你声明的验证命令，并把结果追加到同一条工具结果中。**仅限用户层**（`~/.dsh/settings.json`）；project 层的规则永远不会被读取。 | [交互基础](/zh/guide/interactive-basics) |
 | `cc-edit-recovery-hint` | `enabled`（false） | 当 `edit` 因多行 `old_string` 找不到匹配而失败时，追加一条固定的恢复建议。**仅限用户层**；project 层永远不会被读取。 | [交互基础](/zh/guide/interactive-basics) |
 | `cc-compaction-cost-gate` | `enabled`（false）、`mode`（dry-run）、`margin`（1.0）、`cooldown-ms`（600000） | 默认关闭；在真正执行 compaction 前先评估压缩收益是否抵得过重写成本，每次真实压缩后进入冷却期。 | [交互基础](/zh/guide/interactive-basics) |
+| `cc-turn-rules` | `enabled`（true）、`max-result-bytes`（200000）、`regex-cache-size`（64）、`judged.enabled`（false） | Turn rules：带 `trigger` 正则的 Cursor 插件规则在正则命中时作为建议性提醒注入。默认开启，但在存在这类规则之前没有任何效果。**仅用户层。** | [插件](/zh/guide/plugins) |
+| `cc-advisor` | `enabled`（false）、`alias`（haiku）、`budget`（2）、`immune-turns`（3）、`session-cap`（24）、`severities`（三种全选）、`subagents`（off） | 可选的 advisor watchdog：由第二个模型审查每个完成的轮次。**仅用户层。** | [交互基础](/zh/guide/interactive-basics) |
+| `cc-lsp-on-write` | `enabled`（false）、`server-name`（serena）、`timeout-ms`（1500）、`max-diagnostics`（8）、`min-severity`（warning）、`tool-names` | 可选：从运行中的 serena MCP server 拉取 LSP 诊断，追加到 `edit`/`write`/`NotebookEdit` 结果。**仅用户层。** | [交互基础](/zh/guide/interactive-basics) |
+| `cc-secrets` | `extraPatterns`、`redactCrusherStore` | 为单向密钥脱敏追加正则源；脱敏作用于 `/export` 输出和 context-crusher 存储。 | [斜杠命令](/zh/reference/commands) |
+| `cc-foreign-rules` | `disabled` | 关闭从会话 cwd 收集其他 agent 规则文件（cline/windsurf/copilot）并放入 `cc:foreign-rules` 提示段的行为。 | [兼容性](/zh/reference/compatibility) |
+| `cc-model-cycling` | `cycleOrder` | TUI 中 `Ctrl+P` / `Shift+Ctrl+P` 循环切换的别名列表。 | [模型路由](/zh/guide/model-routing) |
 
 ## 另请参阅
 

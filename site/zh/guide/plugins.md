@@ -119,6 +119,20 @@ dsh-cc 内置一个兼容插件加载器，读取 Claude Code 插件的 `plugin.
 
 **Rules。** `rules/*.mdc` 文件——清单声明的 `rules` 路径或默认的 `rules/` 目录——渲染成每个插件一段的 `cc:plugin-rules` 系统提示：`alwaysApply` 条目原样出现在 "Rules from plugin `<name>`" 之下，带 glob 的条目渲染为 "When editing files matching `<globs>`: `<body>`"，无作用域条目作为一般性指引出现并附带一条警告。每个插件有 4000 字符预算，超限会明确截断。运行期按轮次激活 glob（Claude Code 的逐次编辑匹配）没有实现——带作用域的规则以条件指令的形式交付。
 
+**Turn rules。** 带 `trigger`（JS 正则源）的规则在正则命中已完成的工具调用/结果或用户提示词之前不占任何上下文。首次命中时，规则正文会在那个位置作为建议性提醒注入：
+
+```yaml
+---
+description: Prefer Arc<str> over Box::leak in production paths
+trigger: \bBox::leak\b          # JS regex source; quote it if it contains YAML-significant characters
+triggerOn: [tool-results, user-prompts]   # default: both
+repeat: once                    # once | after-gap (default: once)
+repeatGap: 10                   # turn stops before re-arm; default 10
+---
+```
+
+`repeat: after-gap` 会在 `repeatGap` 次轮次结束后重新武装规则。不带 `trigger` 的规则行为与上文完全相同。只有顶层会话会触发 turn rules，而且它们从不阻止工具调用。该引擎由用户层 settings 文件中的 `cc-turn-rules` 命名空间调优（见[设置](/zh/reference/settings)）。
+
 **Hooks。** camelCase 的 Cursor 事件映射到 CC 事件：
 
 | Cursor 事件 | CC 事件 |
@@ -146,7 +160,7 @@ dsh-cc 内置一个兼容插件加载器，读取 Claude Code 插件的 `plugin.
 
 ## 官方插件
 
-两个官方插件通过 `dsh-cc` marketplace 发布。
+四个官方插件通过 `dsh-cc` marketplace 发布。
 
 ### dsh-cc-agents —— critic、executor 与 marathon 子代理
 
@@ -216,6 +230,29 @@ uv tool install git+https://github.com/oraios/serena@v1.7.0
 | `SHUNT_DISABLED` | 未设置 | 设为 `1`/`true`/`yes` 可完全关闭两条门禁 |
 
 shunt worker 固定 `model: haiku`。如果你的部署没有配置 haiku 别名，worker 会静默继承父级路由——功能不受影响，但**省不到任何 token**。请配置 haiku 别名以获得实际节省。
+
+子代理调用方会绕过两条门禁：来自存活子代理的 hook payload 带有 `agent_id`（由 hooks bridge 注入，无法通过 `tool_input` 设置），因此 critic、executor、marathon 以及 shunt worker 等可以自由读文件。Read 门禁还会嗅探图片魔数（PNG、JPEG、GIF、WEBP），大图片无论多大都放行；名为 `*.png` 的大文本文件仍会被拦截。
+
+### cc-codex-bridge 与 cc-grok-bridge —— 免审批通道
+
+每个 bridge 让会话无需权限询问即可运行恰好一种规范化、锁死的调用 `node <launcher> [--last] <prompt>`：一个 PreToolUse hook 自动放行这一种命令形式，其他任何形式都回落到正常的审批流程。dsh 外层沙箱仍是唯一的写边界（工作区加临时目录）。
+
+| 插件 | 通道 | 命令 |
+| --- | --- | --- |
+| `cc-codex-bridge` | Codex rescue。Codex 在关闭内部沙箱的情况下运行，因为嵌套沙箱无法叠加。 | `/cc-codex-bridge:rescue` |
+| `cc-grok-bridge` | Grok review。运行期间绕过 Grok 自身的工具审批。 | `/cc-grok-bridge:review` |
+
+```text
+/plugin install cc-codex-bridge@dsh-cc
+/plugin install cc-grok-bridge@dsh-cc
+```
+
+- 一个 SessionStart hook 会注入 `cc-codex-bridge:` 或 `cc-grok-bridge:` 块，说明通道是 **ARMED**（附带确切的规范调用）还是 **NOT armed**（附带原因）。块缺失或显示 NOT armed 时，通道回落到需要审批的路径。
+- 多行提示词走 `--prompt-file <path>`，文件放在工作区或规范 tmpdir 中。只有在你明确要求继续上一次运行时才使用 `--last`。
+- 对 Grok，`grok login --device-code` 会写入 `~/.grok/auth.json`，bridge 每次运行时把它植入按工作区划分的影子 `GROK_HOME`；环境中的 `XAI_API_KEY` 也会透传。Grok 通道没有轮次上限；每次成功运行会在 stderr 打印一行 `grok-review: session=… cost_usd=… turns=…`。已针对 grok 1.0.41 验证。
+- 非空的 `BASH_ENV` 或 `ENV` 会解除通道武装。在 dsh-cc 自身仓库的开发会话中会拒绝武装（`anchor-under-writable-root`）。
+
+**安全模型。** 安装 bridge 意味着对这一种命令形式放弃人工检查点。无人值守的 CLI 可以运行外层沙箱允许的任何子进程，包括 git push、ssh、云 CLI 和不受限的网络；只有文件系统写边界成立。恶意的提示词或仓库内容可以读取影子凭据。卸载或禁用插件就是关闭开关。
 
 ## 编写一个插件
 

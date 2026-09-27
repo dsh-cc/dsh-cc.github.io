@@ -90,6 +90,32 @@ Dispatch a reviewer in the background, keep working, then steer it:
 4. **Continue it.** With `send_message` and the `agentId`, send a follow-up — for example narrowing the review to one file. It is the same conversation; the child keeps its context.
 5. **Interrupt when it goes wrong.** If the reviewer goes off track, `interrupt` stops its current turn (it stays resumable), or `/agents stop <agentId>` does the same from the human side. Resume it later with `send_message`.
 
+## Workflows
+
+The `workflow` tool runs a Claude Code-style workflow script in the
+background. The script can be inline (with a leading
+`export const meta = { name, description }` block), a saved file addressed by
+`name`, or any `scriptPath`; precedence is `scriptPath > script > name`. A
+`name` resolves against `<cwd>/.claude/workflows/<name>.js` first, which
+shadows `$DSH_HOME/workflows/<name>.js`.
+
+- The tool returns at once with a receipt (`status: "async_launched"`,
+  `taskId`, `taskType: "local_workflow"`, `workflowName`, `runId`, `summary`).
+  The consolidated result arrives later as exactly one delivery: folded into
+  the next step when the session is busy, or one wake when it is idle.
+- One run is active at a time. A second concurrent run is refused with an
+  error naming the in-flight `runId`.
+- A run started with `resumeFromRunId` in the same session replays the
+  unchanged prefix of the earlier run from its journal
+  (`$DSH_HOME/workflows/runs/<sessionId>/<runId>.jsonl`) and spawns live from
+  the first mismatch. Cross-session replay is not implemented.
+- Saved workflows mount as `/<name>` slash commands at session start, and a
+  passive TUI progress row shows phase, elapsed time, and agent counts.
+
+Unlike Claude Code, the per-user directory is `$DSH_HOME/workflows/` (not
+`~/.claude/workflows/`), only the cwd-level `.claude/workflows/` is scanned,
+and built-in workflows are absent.
+
 ## Next
 
 - [/guide/subagents](/guide/subagents) — authoring `.claude/agents` definitions, including the `background: true` pin.

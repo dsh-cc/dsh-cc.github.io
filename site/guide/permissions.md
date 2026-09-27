@@ -7,8 +7,8 @@ description: Control what the agent may do — five permission modes, a Claude C
 
 Every tool call an agent makes passes through dsh-cc's permission layer. You
 can run wide open, lock everything down, or land anywhere between — with
-durable rules that survive restarts and, if you opt in, an LLM risk classifier
-that quietly auto-approves low-risk work in `auto` mode. This page explains the
+durable rules that survive restarts and a strict-rule `auto` mode that, if you
+opt in, lets an LLM risk classifier decide calls no rule matched. This page explains the
 five modes, how rules are written and evaluated, and how approvals surface in
 the TUI.
 
@@ -38,7 +38,7 @@ model transcript.
 | `default` | The engine evaluates rules; anything unmatched falls through to the approval seam, which may ask you. | Everyday work with normal guardrails. |
 | `acceptEdits` | File-edit tools are auto-allowed; everything else evaluates as in `default`. | Long editing sessions where you trust file writes but still want to gate commands. |
 | `plan` | Read-only tools are auto-allowed; leftover `ask`/passthrough on a non-read-only call becomes a deny with the reason `plan mode is read-only; submit via exit_plan_mode`. Matching allow/deny rules still stand. | Reviewing or designing — plan mode is write-deny by construction. `plan` is owned by plan-mode; the rule engine refuses to set it directly. |
-| `auto` | Evaluates identically to `default`; the risk classifier proxies every `ask` at the plugin layer (see below). | Automated runs where you want low-risk asks resolved without you. |
+| `auto` | Evaluates like `default`, but strict-rule: matched ask rules always prompt and broad allow rules are suspended (see below). | Automated runs where an opt-in classifier decides unmatched calls. |
 | `bypassPermissions` | Allows everything — unless `disableBypassPermissionsMode` is set. Entering it pins the session sandbox to `danger-full-access`; leaving restores the recorded confinement (`workspace-write` as fallback). | Fully trusted tasks where you accept the risk. |
 
 The UI honors `permissions.defaultMode` from settings: the statusline, session
@@ -66,8 +66,8 @@ Rules can come from two places, merged by source priority (settings win):
   whenever the plugin is mounted.
 - **Settings** — the `permissions` namespace: `permissions.allow`,
   `permissions.deny`, `permissions.ask`, `permissions.defaultMode`, plus
-  `additionalDirectories` / `protectedFiles` / `dangerousPatterns` feeding the
-  risk classifier. Rules carry a source label (default `userSettings`); a
+  `additionalDirectories` / `protectedFiles` / `dangerousPatterns` /
+  `mediumPatterns` feeding the risk classifier. Rules carry a source label (default `userSettings`); a
   stored change re-runs the merge and re-registers guards immediately (hot
   reload). A malformed settings rule fails loud at the settings boundary.
 
@@ -79,47 +79,73 @@ Three properties matter for durability:
 1. **Bypass-immune rules always deny.** Rules like `Edit(~/.bashrc)` are
    registered as monotonic guards — neither a mode switch nor
    `bypassPermissions` can override them.
-2. **Evaluation is ordered.** Bypass-immune denies first, then the risk
-   classifier, then whole-tool deny/ask, then content-level rules by source
-   priority (first match decides), then mode short-circuits, then whole-tool
-   allow as the coarse default. No match passes through to downstream
+2. **Evaluation is ordered and deny-first.** Bypass-immune denies first, then
+   the risk classifier, then whole-tool deny and content deny, then whole-tool
+   ask, content ask, and content allow by source priority, then mode
+   short-circuits, then whole-tool allow as the coarse default. A content deny
+   beats any allow in every mode. Shell commands are matched per segment: an
+   allow must match every segment of `a && b`. No match passes through to downstream
    listeners — ultimately the approval seam, which may still ask.
 3. **Modes are session events.** The `permission/mode` event type is
    registered at plugin load so persistence resumes it; settings changes reset
    classifier state via `rebuild()`.
 
-## The `auto` mode LLM risk classifier
+## The risk classifier
 
-`auto` is opt-in and escalate-only. Without configuration it does nothing
-special: an absent `autoMode` key keeps the LLM stage disarmed, and `auto`
-evaluates identically to `default`. Even armed, read-only tool calls are
-exempt — they never reach the model, so read traffic gains zero latency.
+The static risk classifier runs in every mode (`classifierEnabled`, default
+on) and sorts shell commands into three tiers:
 
-When armed (`permissions.autoMode` with `enabled`, an `llm` service mounted,
-and the alias `route` resolving), every `ask` is proxied through a one-shot
-auxiliary-model verdict over the tool name + rendered parameters — never tool
-results, with the input wrapped as an explicit DATA block the model is
-instructed never to repeat, quote, or follow:
+- **HIGH** (catastrophic commands such as `rm -rf /` or `sudo`, and writes to
+  protected files) is a hard deny in every mode.
+- **MEDIUM** (destructive but recoverable, such as `git push --force`,
+  `git reset --hard`, or `npm publish`) asks you unless a rule or session
+  grant already allowed it. Replace the curated list with
+  `permissions.mediumPatterns`.
+- **LOW** evaluates normally.
 
-- Classifier-LOW calls auto-allow; classifier-MEDIUM still asks you.
-- Every classifier failure fails to `ask` (fail-to-ask), and verdict parsing
-  is strict and fail-closed: a malformed output yields the constant reason
-  `classifier output unparseable` — model output is never shown, and audit
-  records are digest-only.
-- `$defaults` soft-deny prose rules (with expansion) and a verdict LRU cache
-  apply; verdicts produce durable `permission/classifier` session audit
-  events.
-- Defaults: `timeoutMs` 8000, verdict budget 1024 tokens. Configure via
-  `autoMode.classifier` (`enabled` / `route` / `timeoutMs` / `cacheMaxEntries`).
+A small critical tier (force-removing root or home, the fork bomb) plus your
+`permissions.criticalDeny` entries deny even under `bypassPermissions`.
 
-A **per-route circuit breaker** guards the stage: after 3 consecutive
-failures on a lane (keyed `provider/model`), the stage opens for that route —
-no further classifier calls on it, one warn per process, one `breaker` audit
-event per session. The breaker is restart-durable within a session: the first
-call seeds the per-route streak from the durable log. An open breaker surfaces
-one visible TUI fallback notice per session; caller-cancelled classifications
-are tagged `cancelled` and never breaker-counted. A settings change
-(`rebuild()`) resets breaker state and re-arms.
+## `auto` mode
+
+`auto` is strict-rule. A matched ask rule prompts at any risk level, and
+broad allow rules are suspended while `auto` is active: whole-tool Bash
+allows, blanket Bash content allows, interpreter and package-runner prefixes
+such as `python` or `npx`, and any `Task`/`Agent` allow. `/permissions` marks
+them "suspended in auto mode". "Allow for this session" grants work for
+rule-derived asks in every non-plan mode.
+
+Without more configuration, calls no rule matched still reach the approval
+seam. To have a model decide them, arm the opt-in **LLM risk-classifier
+stage** through `permissions.autoMode.classifier` (`enabled` / `route` /
+`timeoutMs` / `cacheMaxEntries`). The stage is armed only when enabled, an
+`llm` service is mounted, and the alias route resolves.
+
+- It judges passthrough-class LOW and MEDIUM calls only. Rule-derived asks
+  always reach you, and read-only tool calls never reach the model.
+- An enabled but unavailable stage (route missing, breaker open) asks you with
+  a reason instead of allowing silently.
+- Verdicts are `allow`, `ask`, or `deny`. A `deny` must cite an exact
+  `hard_deny` rule, or it downgrades to `ask`. Parsing is fail-closed: a
+  malformed output yields `classifier output unparseable`.
+- Policy lives in the `hard_deny`, `soft_deny`, `allow`, and `environment`
+  slots of `permissions.autoMode`, each accepting `"$defaults"`. Only trusted
+  layers (user, `--settings` flag, managed policy) can set `autoMode`, so a
+  cloned repository cannot widen its own trust boundary.
+- 3 consecutive or 20 total denies in a session pause auto mode and drop the
+  session to `default`; re-enter with `/permissions auto`.
+- A per-route circuit breaker opens after 3 consecutive failures and admits
+  one probe call after a 60s cooldown. A settings change resets it.
+
+In `auto` mode an advisory prompt-injection probe also scans the text of
+tool results such as `read`, `bash`, `web_fetch`, and `mcp__*` tools, and
+attaches a security notice to a flagged result.
+
+Verdicts are audited as digest-only session events by default.
+`permissions.autoMode.classifier.auditFullText: true` stores the raw input,
+which may include secrets. Inspect the setup and the audit with `/auto-mode`
+(`defaults`, `config`, `review [full]`). The full key list is in [Permission
+modes](/reference/permission-modes).
 
 ::: tip
 Debug raw model output with the opt-in `DSH_PERMISSION_CLASSIFIER_DEBUG=1`
@@ -135,6 +161,11 @@ switches among `default | acceptEdits | plan | auto | bypassPermissions`.
 Plan-mode entry and exit branches live in the host command channel, so the
 picker, the browser popup, and typed `/permissions …` all submit through the
 same path.
+
+`/permissions lint` reports rule-hygiene findings (malformed rules,
+duplicates, rules subsumed by a broader prefix, bare whole-tool `Bash`
+allows, unknown tool names) with a proposed diff. Add `--apply` to clean the
+user settings layer; other layers are never edited.
 
 The full command catalog — including the parity status — lives in the [slash
 commands reference](/reference/commands); it is not duplicated here.
