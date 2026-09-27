@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+# control-app: launch, check, drive, and stop a local preview of the built dsh-cc docs site.
+set -euo pipefail
+
+SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO="$(cd "$SKILL_DIR/../../.." && pwd)"
+[ -n "${CONTROL_APP_NODE_DIR:-}" ] && export PATH="$CONTROL_APP_NODE_DIR:$PATH"
+STATE_DIR="${CONTROL_APP_STATE:-${TMPDIR:-/tmp}/control-app-$(basename "$REPO")-$(id -u)}"
+TOOLS_DIR="${CONTROL_APP_TOOLS:-$HOME/.cache/control-app/tools}"
+PLAYWRIGHT_VERSION="1.63.0"
+DIST="$REPO/site/.vitepress/dist"
+
+die() { echo "control-app: $*" >&2; exit 1; }
+
+node_ok() {
+  command -v node >/dev/null || return 1
+  node -e 'const [a,b]=process.versions.node.split(".").map(Number); process.exit(a>22||(a===22&&b>=19)?0:1)'
+}
+
+free_port() { node -e 'const s=require("net").createServer();s.listen(0,"127.0.0.1",()=>{console.log(s.address().port);s.close()})'; }
+
+pid_is_ours() {
+  local pid="$1"
+  kill -0 "$pid" 2>/dev/null || return 1
+  ps -o args= --sid "$pid" 2>/dev/null | grep -q "vitepress preview site"
+}
+
+load_state() {
+  [ -f "$STATE_DIR/instance.env" ] || return 1
+  # shellcheck disable=SC1091
+  . "$STATE_DIR/instance.env"
+}
+
+cmd_setup() {
+  node_ok || die "need Node >= 22.19 on PATH (or set CONTROL_APP_NODE_DIR)"
+  mkdir -p "$TOOLS_DIR"
+  [ -f "$TOOLS_DIR/package.json" ] || echo '{"private":true}' > "$TOOLS_DIR/package.json"
+  if ! (cd "$TOOLS_DIR" && node -e "process.exit(require('playwright/package.json').version==='$PLAYWRIGHT_VERSION'?0:1)" 2>/dev/null); then
+    (cd "$TOOLS_DIR" && npm i --no-audit --no-fund "playwright@$PLAYWRIGHT_VERSION")
+  fi
+  (cd "$TOOLS_DIR" && npx playwright install chromium)
+  (cd "$REPO" && pnpm install --frozen-lockfile)
+  echo "setup: playwright $PLAYWRIGHT_VERSION + chromium in $TOOLS_DIR; site deps installed"
+}
+
+cmd_launch() {
+  local port="${1:-}"
+  node_ok || die "need Node >= 22.19 on PATH (or set CONTROL_APP_NODE_DIR)"
+  if load_state && pid_is_ours "$PID"; then
+    die "an instance is already running at $URL (pid $PID); run 'control-app stop' first or set CONTROL_APP_STATE"
+  fi
+  rm -rf "$STATE_DIR" && mkdir -p "$STATE_DIR"
+  [ -n "$port" ] || port="$(free_port)"
+  (cd "$REPO" && pnpm docs:build) > "$STATE_DIR/build.log" 2>&1 || { tail -30 "$STATE_DIR/build.log" >&2; die "pnpm docs:build failed (log: $STATE_DIR/build.log)"; }
+  (cd "$REPO" && exec setsid pnpm docs:preview --port "$port") > "$STATE_DIR/preview.log" 2>&1 &
+  local pid=$!
+  local url="http://127.0.0.1:$port"
+  local build_hash
+  build_hash="$(sha256sum "$DIST/index.html" | cut -d' ' -f1)"
+  printf 'PID=%s\nPORT=%s\nURL=%s\nREPO=%s\nBUILD_HASH=%s\nSTARTED_AT=%s\n' \
+    "$pid" "$port" "$url" "$REPO" "$build_hash" "$(date -u +%FT%TZ)" > "$STATE_DIR/instance.env"
+  for _ in $(seq 1 60); do
+    if grep -q "served at http://localhost:$port/" "$STATE_DIR/preview.log" && kill -0 "$pid" 2>/dev/null \
+      && curl -sf -o /dev/null "$url/" && curl -sf -o /dev/null "$url/zh/"; then
+      echo "ready: $url (pid $pid, state $STATE_DIR)"
+      return 0
+    fi
+    kill -0 "$pid" 2>/dev/null || break
+    sleep 0.5
+  done
+  cat "$STATE_DIR/preview.log" >&2
+  cmd_stop >/dev/null 2>&1 || true
+  die "preview did not become ready on port $port"
+}
+
+cmd_doctor() {
+  local fail=0
+  ok() { echo "ok:   $*"; }
+  bad() { echo "FAIL: $*"; fail=1; }
+  warn() { echo "warn: $*"; }
+  if node_ok; then ok "node $(node -v)"; else bad "node $(node -v 2>/dev/null || echo missing) < 22.19"; fi
+  if (cd "$TOOLS_DIR" 2>/dev/null && node -e "const {chromium}=require('playwright');process.exit(require('fs').existsSync(chromium.executablePath())?0:1)" 2>/dev/null); then
+    ok "playwright + chromium in $TOOLS_DIR"
+  else
+    bad "playwright/chromium missing in $TOOLS_DIR (run 'control-app setup')"
+  fi
+  if ! load_state; then
+    bad "no instance state at $STATE_DIR (run 'control-app launch')"
+    return 1
+  fi
+  if pid_is_ours "$PID"; then ok "pid $PID is our vitepress preview"; else bad "pid $PID is not a running vitepress preview"; fi
+  for p in / /zh/; do
+    local code
+    code="$(curl -s -o /dev/null -w '%{http_code}' "$URL$p" || true)"
+    if [ "$code" = 200 ]; then ok "GET $URL$p -> 200"; else bad "GET $URL$p -> $code"; fi
+  done
+  local served
+  served="$(curl -sf "$URL/index.html" | sha256sum | cut -d' ' -f1 || true)"
+  if [ "$served" = "$BUILD_HASH" ]; then ok "served index.html matches this checkout's build"; else bad "served index.html does not match the build recorded at launch"; fi
+  local newer
+  newer="$(find "$REPO/site" -path "$REPO/site/.vitepress/dist" -prune -o -path "$REPO/site/.vitepress/cache" -prune -o -type f -newer "$DIST/index.html" -print | head -3)"
+  if [ -z "$newer" ]; then ok "build is newer than every site/ source"; else warn "sources changed after the build (relaunch to rebuild): $newer"; fi
+  return "$fail"
+}
+
+cmd_drive() {
+  local plan="" evidence=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --plan) plan="$2"; shift 2 ;;
+      --evidence) evidence="$2"; shift 2 ;;
+      *) die "unknown drive flag: $1" ;;
+    esac
+  done
+  load_state || die "no running instance (run 'control-app launch')"
+  pid_is_ours "$PID" || die "instance pid $PID is not running; relaunch"
+  [ -n "$evidence" ] || evidence="$HOME/control-app-evidence/$(date -u +%Y%m%dT%H%M%SZ)"
+  mkdir -p "$evidence"
+  CONTROL_APP_TOOLS="$TOOLS_DIR" BASE_URL="$URL" PLAN="$plan" EVIDENCE="$(cd "$evidence" && pwd)" \
+    node "$SKILL_DIR/scripts/drive.mjs"
+}
+
+cmd_stop() {
+  if load_state; then
+    if pid_is_ours "$PID"; then
+      kill -- "-$PID" 2>/dev/null || kill "$PID" 2>/dev/null || true
+      for _ in $(seq 1 20); do kill -0 "$PID" 2>/dev/null || break; sleep 0.25; done
+      echo "stopped pid $PID ($URL)"
+    else
+      echo "pid $PID not running; clearing state"
+    fi
+  else
+    echo "no instance state at $STATE_DIR"
+  fi
+  rm -rf "$STATE_DIR"
+}
+
+cmd_prove() {
+  local port="" args=()
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --port) port="$2"; shift 2 ;;
+      *) args+=("$1"); shift ;;
+    esac
+  done
+  cmd_launch "$port"
+  trap 'cmd_stop' EXIT
+  cmd_doctor
+  cmd_drive "${args[@]}"
+}
+
+case "${1:-}" in
+  setup) shift; cmd_setup "$@" ;;
+  launch) shift; cmd_launch "${1:-}" ;;
+  doctor) shift; cmd_doctor ;;
+  drive) shift; cmd_drive "$@" ;;
+  stop) shift; cmd_stop ;;
+  prove) shift; cmd_prove "$@" ;;
+  *) echo "usage: control-app setup | launch [port] | doctor | drive [--plan FILE] [--evidence DIR] | stop | prove [--port N] [--plan FILE] [--evidence DIR]" >&2; exit 2 ;;
+esac
