@@ -68,6 +68,11 @@ TUI 还提供对话导出、用量/上下文显示、todo 查看、审批、排�
 - **post-edit-verify**（`cc-post-edit-verify`，`enabled` false）：一次被接受的 edit/write 之后，运行第一条匹配的 `rules` 条目 `{glob, command, timeout-ms?}`（POSIX sh，会话工作目录），并把结果以 `[auto-verify]` 块追加到同一个工具结果上。配置项：`rules` `[]`、`debounce-ms` 5000（只用于突发标记——每次匹配的编辑仍会执行）、`max-output-bytes` 4096、`verbose-on-success` false、每条规则的 `timeout-ms` 60000，上限 120000。成功时只静默输出一行，除非开启 verbose。
 - **edit-recovery-hint**（`cc-edit-recovery-hint`，`enabled` false）：当 edit 因多行 `old_string` 未找到而失败时，作为旁带上下文追加一段固定的静态建议（改用单行锚点重试，或按 hunk 拆分编辑；只有锚点也失败时，才重新读取目标区域）。歧义失败（"appears more than once"）刻意不匹配；提示文本是静态的——不会插入任何工具输出。
 
+另有两项可选功能遵循同样的仅用户层规则：
+
+- **advisor watchdog**（`cc-advisor`，`enabled` false）：由第二个模型审查每个完成的轮次。每轮结束后它询问一个廉价通道（`alias` `'haiku'`；未配置的别名绝不会回落到主路由），并把保留下来的 `nit` / `concern` / `blocker` 注记作为一条注入消息送达，绝不会在工具批次中途插入，也不会唤醒空闲会话。约束：每次运行 `budget` 2 条非 blocker 注记，`immune-turns` 3，`session-cap` 24。`subagents` `'off'` 只审查顶层会话。每次运行记录到 `$DSH_HOME/advisor/<sessionId>.jsonl`。
+- **lsp-on-write**（`cc-lsp-on-write`，`enabled` false）：`edit`/`write`/`NotebookEdit` 成功后，从运行中的 serena 语言服务器（MCP 连接 `server-name` `serena`）拉取该文件的诊断，并把紧凑的 `[lsp]` 块追加到同一个工具结果。参数：`timeout-ms` 1500，`max-diagnostics` 8，`min-severity` `warning`。任何失败都静默丢弃；连续丢弃 3 次后，本会话内自动停用。
+
 ## 安全地并行开发
 
 若要把实验与主检出隔离开，可在 git worktree 中启动会话：

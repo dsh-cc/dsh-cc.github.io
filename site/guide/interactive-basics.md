@@ -68,6 +68,11 @@ Three previews are user-layer-only: their namespace lives ONLY in the user-layer
 - **post-edit-verify** (`cc-post-edit-verify`, `enabled` false): after an accepted edit/write, runs the first matching `rules` entry `{glob, command, timeout-ms?}` (POSIX sh, session cwd) and appends the outcome as an `[auto-verify]` block to the SAME tool result. Keys: `rules` `[]`, `debounce-ms` 5000 (burst labeling only — every matching edit still runs), `max-output-bytes` 4096, `verbose-on-success` false, per-rule `timeout-ms` 60000 capped at 120000. Success is a near-silent one-liner unless verbose.
 - **edit-recovery-hint** (`cc-edit-recovery-hint`, `enabled` false): when an edit fails multi-line-`old_string` not-found, appends fixed static advice (retry with a single-line anchor, or split one edit per hunk; only if the anchor also fails, re-read the target region) as sideband context. Ambiguity failures ("appears more than once") are deliberately unmatched; the text is static — no tool output is ever interpolated.
 
+Two more opt-in features follow the same user-layer-only rule:
+
+- **advisor watchdog** (`cc-advisor`, `enabled` false): a second model reviews every completed turn. After each turn it asks a cheap lane (`alias` `'haiku'`; an unconfigured alias never falls back to the main route) and delivers surviving `nit` / `concern` / `blocker` notes as one injected message, never mid-tool-batch and never waking an idle session. Guards: `budget` 2 non-blocker notes per run, `immune-turns` 3, `session-cap` 24. `subagents` `'off'` reviews top-level sessions only. Each run is journaled to `$DSH_HOME/advisor/<sessionId>.jsonl`.
+- **lsp-on-write** (`cc-lsp-on-write`, `enabled` false): after a successful `edit`/`write`/`NotebookEdit`, pulls the file's diagnostics from the running serena language servers (MCP connection `server-name` `serena`) and appends a compact `[lsp]` block to the same tool result. Knobs: `timeout-ms` 1500, `max-diagnostics` 8, `min-severity` `warning`. Any failure drops silently; after 3 consecutive drops it disables itself for the session.
+
 ## Working in parallel safely
 
 To isolate experiments from your main checkout, start the session inside a git worktree:

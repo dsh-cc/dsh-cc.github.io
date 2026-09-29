@@ -159,6 +159,21 @@ Reference the skill directory for extra context: ${CLAUDE_SKILL_DIR}/notes.md
 
 由于该名称注册在项目根目录（rank 200）下，它会覆盖同名的内置技能——同名的 user 根目录技能也会输给它。
 
+## 习得技能：`manage_skill`
+
+面向模型的 `manage_skill` 工具把习得技能保存在 `$DSH_HOME/learned-skills/` 下：
+
+| 操作 | 作用 |
+| --- | --- |
+| `create` | 需要 `name`、`description` 和 `body`。 |
+| `update` | 需要 `name`，外加 `body` 和/或 `description`；其他 frontmatter 键保持不变。 |
+| `delete` | 删除整个技能目录。 |
+| `list` | 每个习得技能一行，含描述、大小和路径。 |
+
+写入是原子的，每次成功修改都会刷新技能注册表。该工具由 `cc-learn.enabled`（默认
+true）控制；关闭时，工具返回一条停用提示而不是错误。它的描述会告诉模型只提升
+程序性、可重复的经验（"在这里怎样做 X"）；事实和密钥留在[记忆](/zh/guide/memory)中。
+
 ## 下一步
 
 - [/guide/hooks](/zh/guide/hooks) —— 响应会话与工具事件

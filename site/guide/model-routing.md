@@ -23,10 +23,13 @@ opus / blueprint    -> <provider>/<reasoning model>
 haiku / sketch      -> <provider>/<fast model>
 fable / masterplan  -> <provider>/<maximum-reasoning model>
 architect           -> parent agent route (planning / orchestration)
+gauge               -> typed-decision cheap lane (System One models; not generative)
 inherit             -> parent agent route
 ```
 
 The key point: **aliases are configuration, not hard-coded vendor bindings.** This lets you preserve familiar agent definitions while choosing the models that fit your own environment.
+
+`gauge` is a decision-only lane for System One models, used by typed-decision consumers such as the permission classifier. **Never use it as agent frontmatter `model:`.** When unconfigured it follows `haiku`. The routes service rejects any chat request for a System One model with `SystemOneChatModelError` (code `SYSTEMONE_NOT_CHAT_MODEL`).
 
 ::: tip
 The dsh-cc project itself is developed with dsh-cc using this exact routing — see the current development mapping in the project README's [Dogfooding dsh-cc](https://github.com/dsh-cc/dsh-cc#dogfooding-dsh-cc) section. It is a real project configuration, not a required default.
@@ -78,6 +81,10 @@ A few boundary behaviors worth knowing:
 ## Cheap-lane observability
 
 When an unconfigured builtin alias silently inherits the parent route, the resolver logs a warning — once per alias. The warning is gated by the `warnOnInherit` key in the `model-aliases` settings namespace (default `true`; set it to `false` to suppress).
+
+## Cycling models with Ctrl+P
+
+In the TUI, `Ctrl+P` / `Shift+Ctrl+P` cycles through the alias list in `cc-model-cycling.cycleOrder`, resolved through the same alias resolver. Entries that do not resolve, or are not advertised, are skipped with a toast. The switch is in-memory only; nothing is written to settings.
 
 ## `model$level`: effort on the reference
 

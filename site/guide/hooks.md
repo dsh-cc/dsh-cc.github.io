@@ -98,7 +98,8 @@ The bridge supports **20 of Claude Code's hook events**:
 | `WorktreeRemove` | supported | same emit points as `WorktreeCreate`; a failing hook keeps the worktree |
 
 Per the parity matrix, `PreToolUse` is bridged with matcher support and the
-`permissionDecision` decision contract but `additionalContext` is ignored;
+`permissionDecision` decision contract; `additionalContext` is injected for a
+non-deny decision as post-result context, and only `updatedInput` is ignored;
 `Notification` is bridged for the `permission_prompt` subtype only; `Setup` is
 a first-run approximation rather than the full upstream contract.
 
@@ -124,9 +125,20 @@ point in the set. Multiple file-configured hooks on one point run serially, in
 config order, and fold most-restrictively (`deny > ask > allow`).
 
 Every agent-scoped stdin payload carries `session_id` and a string-shaped
-`transcript_path` (resolved when session persistence is available, `''`
-otherwise). Hook issues (`timeout`, `exit-code`, `parse-failure`,
-`spawn-failure`, `stop-cap`, `config`) are appended to
+`transcript_path`, which is always `''`: the pinned persistence seam exposes no
+public artifact-path accessor.
+
+When the calling agent is a live in-process subagent, the `PreToolUse`,
+`PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `UserPromptSubmit`,
+`Stop`, `StopFailure`, and `TeammateIdle` payloads also carry `agent_id` (the
+same id as the child's `SubagentStart` payload) and a constant
+`agent_type: 'general-purpose'`; kind-specific types remain a parity gap.
+Payloads from the main session are unchanged. Unlike Claude Code, `session_id`
+is the calling agent's own session, so on a subagent payload `agent_id`
+equals `session_id`. A child that ended and is resumed as a top-level session
+carries no identity fields.
+
+Hook issues (`timeout`, `exit-code`, `parse-failure`, `spawn-failure`, `stop-cap`, `config`) are appended to
 `<dsh home>/hooks/diagnostics.jsonl` and visible in `/doctor`.
 
 ## Executor kinds

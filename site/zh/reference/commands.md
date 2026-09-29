@@ -1,7 +1,7 @@
 ---
 title: 斜杠命令
 description: dsh-cc 全部斜杠命令的参考目录——preset（harness）命令与 TUI 本地命令，附对等状态。
-distilled-from: dsh-cc v0.8.0-rc.2
+distilled-from: dsh-cc v0.8.1-rc.1 (main 82576b5)
 ---
 
 # 斜杠命令
@@ -24,7 +24,7 @@ matrix 未声明该命令的状态。
 | `/branch [note]` | 将当前会话分叉为新的子分支并报告子会话 id。切换到子分支需要重启。 | Partial |
 | `/compact` | 压缩会话，可附带保留指令。 | Full |
 | `/rename <title>` | 为当前会话固定一个明确的用户标题。 | Full |
-| `/export` | 将当前会话转录写为文件，markdown（默认）或无损 JSON。 | Full |
+| `/export` | 将当前会话转录写为文件，markdown（默认）或无损 JSON。写文件前会单向脱敏粘贴进来的凭据（dsh-cc 扩展；额外模式通过 `cc-secrets` 命名空间配置）。已知缺口：在 web profile 上，原生 CC `/export` 会绕过这层脱敏。 | Partial |
 | `/tasks` | 列出调用方可见的后台作业及其状态。 | Partial |
 | `/agents` | 列出、查看和停止可续接的后台 agent：`/agents <id>` 查看详情，`/agents stop <id>` 中断一个（仍可续接）。`/agents attach <id>` 是保留但未实现的命名空间。 | Partial |
 | `/plan` | Plan mode 通道（通过 `exit_plan_mode` 退出）。 | Full |
@@ -43,7 +43,8 @@ matrix 未声明该命令的状态。
 | Command | What it does | Parity |
 | --- | --- | --- |
 | `/config` | 查看或更新生效的配置命名空间（仅文本渲染/补丁，键集合有白名单，不是交互式编辑器）。 | Partial |
-| `/permissions [mode]` | 查看或修改权限模式/规则（CC 规则引擎模式）；裸调用会打开 TUI 覆盖层。 | Full |
+| `/permissions [mode]` | 查看或修改权限模式/规则（CC 规则引擎模式）；裸调用会打开 TUI 覆盖层。在 `auto` 模式下，被挂起的 allow 规则会标注 "suspended in auto mode"。`/permissions lint` 按来源分组报告规则卫生问题（格式错误的规则、完全重复、被前缀包含的规则、整工具 `Bash` allow、未知工具名），并给出修改前后的 diff 建议；`--apply` 只清理用户 settings 层。 | Full |
+| `/auto-mode` | `auto` 模式分类器的只读自检，不调用模型：`/auto-mode defaults` 以 JSON 打印内置槽位列表；`/auto-mode config` 打印生效的、仅取可信层的 `permissions.autoMode` 片段；`/auto-mode review [full]` 显示当前会话最近 20 条分类器/探针裁决（`auditFullText` 开启时，`full` 会打印存储的输入）。见[权限模式](/zh/reference/permission-modes)。 | Partial |
 | `/memory` | 列出 memdir 记忆文件（名称、类型、首行），或按名称打印某条记忆的正文。 | Full |
 | `/skills` | 列出每个可用 skill 及其描述、来源和调用策略（model、user 或两者）。 | Full |
 | `/init` | 扫描项目并通过排队的模型轮次生成 CLAUDE.md。 | Partial |
@@ -59,6 +60,7 @@ matrix 未声明该命令的状态。
 | `/doctor` | 会话健康报告（`--verbose` 详细文本，`--json` 在 `$DSH_HOME` 下生成 JSON 文件）。 | Full |
 | `/status` | 会话状态摘要：当前模型、权限 preset、会话 id、工作目录。 | Full |
 | `/diff` | 通过 shell 显示 git diff 摘要或单文件 diff；也用于检查 CLAUDE.md / settings 差异。 | Full |
+| `/commit-split` | 建议性的 dry-run：读取工作区变更（status、staged、unstaged），请 `blueprint` 通道给出有序的原子提交拆分方案（message、文件、依赖边）。它从不提交；lockfile 归入末尾的 `chore(deps)` 组。`blueprint` 未配置时，会有一条说明报告继承的主模型路由。 | Full |
 | `/cost` | 按模型的会话用量与费用，对照部署价格表折算。CC preset 内置一张官方公布牌价的起步价格表（USD per 1M tokens）；带路由前缀的运行时 id（如 `llmbox_ant/glm-5.3`）通过 `/` 后缀最长行优先匹配命中裸模型行，且没有 `*` 通配——未匹配的模型会报告 "no price configured"，而不是误导性的零费用。价格在 preset 的 `modelTable` 配置中。 | Full |
 | `/cache-health` | 显示 prompt-cache 前缀稳定性（稳定前缀段数、估算 token 数、自上次调用后是否有变化的标记、漂移表），并与本会话按 provider 计量的 cache 读/写比率联查。被动观察者，仅探测——只报告，从不改写请求。禁用方式是组合配置（CC preset 的 cordis yml 中的 `config.enabled`），不是 settings 命名空间。 | Full |
 | `/stats` | 会话事件统计：轮次与步数、工具调用分布、token 用量合计。 | Full |
@@ -97,6 +99,9 @@ matrix 未声明该命令的状态。
   无需模型轮次即可打印其用法、参数和子命令；`/help` 索引中对此有提示。
 - 冒号形式的插件命令 `plugin:command`（例如 `codex:review`）通过
   `ccPlugins` 服务分发，TUI 将其视为本地命令。
+- 保存的 workflow（项目内的 `.claude/workflows/<name>.js`，会遮蔽
+  `$DSH_HOME/workflows/<name>.js`）在会话启动时挂载为 `/<name>` 命令；新保存的
+  workflow 下个会话才挂载。见[后台任务](/zh/guide/background-tasks)。
 - 手工输入的未知 `/name` 若没有匹配的已注册命令，会作为用户提示词透传，因此
   user-invocable skill 到达模型的方式与菜单选择相同。
 - dsh-cc 不是 Claude Code，也不是 Claude Code 的包装器。

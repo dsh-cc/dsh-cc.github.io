@@ -1,7 +1,7 @@
 ---
 title: Settings cascade
 description: How dsh-cc resolves settings.json across five levels, merges them, and applies environment variables safely.
-distilled-from: dsh-cc v0.8.0-rc.2
+distilled-from: dsh-cc v0.8.1-rc.1 (main 82576b5)
 ---
 
 # Settings cascade
@@ -108,7 +108,7 @@ Several CC preset features are tuned through their own settings namespaces in `~
 | Namespace | Keys (defaults) | What it tunes | More |
 | --- | --- | --- | --- |
 | `cc-onboarding` | `suppressed` (unset/false) | Set `true` to permanently skip the first-run onboarding flow; re-arm with `/onboard`. | [Quick start](/quickstart) |
-| `cc-learn` | `enabled` (true), `days` (14), `min-occurrences` (2) | The `/learn` command's recency window and write gating. | [Memory](/guide/memory) |
+| `cc-learn` | `enabled` (true), `days` (14), `min-occurrences` (2) | The `/learn` command's recency window and write gating; `enabled` also gates the `manage_skill` tool. | [Memory](/guide/memory) |
 | `cc-handoff` | `enabled` (true), `threshold-chars` (8192, advisory) | Subagent handoff store availability and its advisory size threshold. | [Subagents](/guide/subagents) |
 | `cc-context-compression` | `enabled` (false), `mode` (dry-run), `min-bytes` (8192), `min-savings-ratio` (0.4), `protected-tools`, `reducer-enabled` (false), `reducer-max-input-tokens` (30000), `reducer-min-savings-ratio` (0.5), `reducer-max-tokens` (1024), `reducer-timeout-ms` (10000), `reducer-alias` (haiku), `reducer-commands` | Opt-in reversible compression of large tool results. The `reducer-*` keys tune an evidence-preserving pass that sends oversized results to a cheap-lane side query; all ship dark (`reducer-enabled` false by default). | [Interactive basics](/guide/interactive-basics) |
 | `model-aliases` | alias entries plus `warnOnInherit` (true) | The settings overlay backing alias resolution; `warnOnInherit: false` suppresses the cheap-lane inherit warning when an alias falls back to the parent route. | [Model routing](/guide/model-routing) |
@@ -119,6 +119,12 @@ Several CC preset features are tuned through their own settings namespaces in `~
 | `cc-post-edit-verify` | `enabled` (false), `rules` ([]), `debounce-ms` (5000) | Runs a user-declared verification command after accepted `edit`/`write` results and appends the outcome to the same tool result. **User layer only** (`~/.dsh/settings.json`); project-scope rules are never read. | [Interactive basics](/guide/interactive-basics) |
 | `cc-edit-recovery-hint` | `enabled` (false) | Appends static recovery advice when `edit` fails with a not-found error on a multi-line `old_string`. **User layer only**; project scope is never read. | [Interactive basics](/guide/interactive-basics) |
 | `cc-compaction-cost-gate` | `enabled` (false), `mode` (dry-run), `margin` (1.0), `cooldown-ms` (600000) | Ships dark; evaluates whether projected compaction savings justify the rewrite cost before calling `/compact`-style compaction, with a cooldown after each real pass. | [Interactive basics](/guide/interactive-basics) |
+| `cc-turn-rules` | `enabled` (true), `max-result-bytes` (200000), `regex-cache-size` (64), `judged.enabled` (false) | Turn rules: Cursor-plugin rules carrying a `trigger` regex are injected as an advisory reminder when it matches. On by default with zero effect until such a rule exists. **User layer only.** | [Plugins](/guide/plugins) |
+| `cc-advisor` | `enabled` (false), `alias` (haiku), `budget` (2), `immune-turns` (3), `session-cap` (24), `severities` (all three), `subagents` (off) | Opt-in advisor watchdog: a second model reviews every completed turn. **User layer only.** | [Interactive basics](/guide/interactive-basics) |
+| `cc-lsp-on-write` | `enabled` (false), `server-name` (serena), `timeout-ms` (1500), `max-diagnostics` (8), `min-severity` (warning), `tool-names` | Opt-in LSP diagnostics appended to `edit`/`write`/`NotebookEdit` results, pulled from a running serena MCP server. **User layer only.** | [Interactive basics](/guide/interactive-basics) |
+| `cc-secrets` | `extraPatterns`, `redactCrusherStore` | Extra regex sources for the one-way secret redaction applied to `/export` output and the context-crusher store. | [Slash commands](/reference/commands) |
+| `cc-foreign-rules` | `disabled` | Opts out of harvesting other agents' rule files (cline/windsurf/copilot) from the session cwd into a `cc:foreign-rules` prompt section. | [Compatibility](/reference/compatibility) |
+| `cc-model-cycling` | `cycleOrder` | The alias list `Ctrl+P` / `Shift+Ctrl+P` cycles through in the TUI. | [Model routing](/guide/model-routing) |
 
 ## See also
 

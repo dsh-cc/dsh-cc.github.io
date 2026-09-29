@@ -119,6 +119,20 @@ The same loader also accepts Cursor-flavored plugins — one tolerant pipeline, 
 
 **Rules.** `rules/*.mdc` files — the manifest-declared `rules` paths or the default `rules/` directory — render into one consolidated `cc:plugin-rules` system-prompt section per plugin: `alwaysApply` entries verbatim under "Rules from plugin `<name>`", glob-scoped entries as "When editing files matching `<globs>`: `<body>`", and scopeless entries as general guidance plus a warning. There is a 4000-character per-plugin budget with explicit truncation. Runtime per-turn glob activation (Claude Code's per-edit matching) is not implemented — scoped rules are delivered as conditional instructions instead.
 
+**Turn rules.** A rule that carries a `trigger` (a JS regex source) costs no context until the regex matches a completed tool call/result or a user prompt. On the first match, its body is injected as an advisory reminder at that point:
+
+```yaml
+---
+description: Prefer Arc<str> over Box::leak in production paths
+trigger: \bBox::leak\b          # JS regex source; quote it if it contains YAML-significant characters
+triggerOn: [tool-results, user-prompts]   # default: both
+repeat: once                    # once | after-gap (default: once)
+repeatGap: 10                   # turn stops before re-arm; default 10
+---
+```
+
+`repeat: after-gap` re-arms the rule after `repeatGap` turn stops. Rules without a `trigger` behave exactly as above. Only top-level sessions fire turn rules, and they never block a tool call. The engine is tuned by the `cc-turn-rules` namespace in the user-layer settings file (see [Settings](/reference/settings)).
+
 **Hooks.** camelCase Cursor events map onto CC events:
 
 | Cursor event | CC event |
@@ -146,7 +160,7 @@ On the manager side, `.cursor-plugin` marketplaces and manifests are consumed id
 
 ## Official plugins
 
-Two official plugins ship through the `dsh-cc` marketplace.
+Four official plugins ship through the `dsh-cc` marketplace.
 
 ### dsh-cc-agents — critic, executor, and marathon subagents
 
@@ -216,6 +230,29 @@ Configure via the top-level `"env"` object in settings.json:
 | `SHUNT_DISABLED` | unset | Set to `1`/`true`/`yes` to disable both gates entirely |
 
 The shunt workers pin `model: haiku`. If your deployment's haiku alias is unconfigured, the workers silently inherit the parent's route — everything works, but you get zero token savings. Configure the haiku alias for actual savings.
+
+Subagent callers bypass both gates: a hook payload from a live subagent carries `agent_id` (injected by the hooks bridge, not settable through `tool_input`), so workers such as critic, executor, marathon, and the shunt workers read files freely. The Read gate also sniffs image magic bytes (PNG, JPEG, GIF, WEBP) and allows large images regardless of size; a large text file named `*.png` is still gated.
+
+### cc-codex-bridge and cc-grok-bridge — approval-free lanes
+
+Each bridge lets a session run exactly one canonical, locked-down invocation, `node <launcher> [--last] <prompt>`, with no permission prompt: a PreToolUse hook auto-allows that single command form, and every other shape falls back to the normal approval flow. The dsh outer sandbox stays the single write boundary (workspace plus temp areas).
+
+| Plugin | Lane | Command |
+| --- | --- | --- |
+| `cc-codex-bridge` | Codex rescue. Codex runs with its internal sandbox off, because nested sandboxes cannot stack. | `/cc-codex-bridge:rescue` |
+| `cc-grok-bridge` | Grok review. Grok's tool approvals are bypassed inside the run. | `/cc-grok-bridge:review` |
+
+```text
+/plugin install cc-codex-bridge@dsh-cc
+/plugin install cc-grok-bridge@dsh-cc
+```
+
+- A SessionStart hook injects a `cc-codex-bridge:` or `cc-grok-bridge:` block stating whether the lane is **ARMED**, with the exact canonical invocation, or **NOT armed** with the reason. When the block is absent or NOT armed, the lane falls back to the approval-requiring path.
+- Multi-line prompts go through `--prompt-file <path>`, with the file inside the workspace or the canonical tmpdir. `--last` is used only when you explicitly ask to continue the previous run.
+- For Grok, `grok login --device-code` writes `~/.grok/auth.json`, which the bridge seeds into a per-workspace shadow `GROK_HOME` for each run; an ambient `XAI_API_KEY` also passes through. The Grok lane has no turn cap; each successful run prints a `grok-review: session=… cost_usd=… turns=…` line on stderr. It was verified against grok 1.0.41.
+- A non-empty `BASH_ENV` or `ENV` disarms the lane. In dsh-cc's own repo dev sessions arming is refused (`anchor-under-writable-root`).
+
+**Security model.** Installing a bridge drops the human checkpoint for that one command form. The unattended CLI may run any subprocess the outer sandbox permits, including git push, ssh, cloud CLIs, and unlimited networking; only the filesystem write boundary holds. A hostile prompt or repository content can read the shadowed credential. Uninstalling or disabling the plugin is the kill switch.
 
 ## Authoring a plugin
 

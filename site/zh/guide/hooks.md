@@ -91,7 +91,8 @@ cwd 加载它）用于自举（dogfooding）。
 | `WorktreeRemove` | 支持 | 触发点与 `WorktreeCreate` 相同；hook 失败时保留工作树 |
 
 按 parity matrix 的表述：`PreToolUse` 桥接了 matcher 支持和
-`permissionDecision` 决策契约，但 `additionalContext` 被忽略；
+`permissionDecision` 决策契约；非 deny 决策的 `additionalContext` 会作为结果后
+上下文注入，只有 `updatedInput` 被忽略；
 `Notification` 仅桥接 `permission_prompt` 子类型；`Setup` 是首次运行
 近似而非完整的上游契约。
 
@@ -117,7 +118,18 @@ idle / `auth_success` / `elicitation` 子类型以及 `SessionResume` 的
 合并（`deny > ask > allow`）。
 
 每个 agent 作用域的 stdin 载荷都携带 `session_id` 和字符串形态的
-`transcript_path`（会话持久化可用时解析，否则为 `''`）。hook 问题
+`transcript_path`，后者始终为 `''`：固定版本的持久化接缝没有公开的产物路径
+访问器。
+
+当调用方是存活的进程内子代理时，`PreToolUse`、`PostToolUse`、
+`PostToolUseFailure`、`PermissionRequest`、`UserPromptSubmit`、`Stop`、
+`StopFailure` 和 `TeammateIdle` 载荷还会携带 `agent_id`（与该子代理
+`SubagentStart` 载荷中的 id 相同）和固定的 `agent_type: 'general-purpose'`；
+按种类区分的真实类型仍是 parity 缺口。主会话的载荷保持不变。与 Claude Code
+不同，`session_id` 是调用方 agent 自己的会话，所以在子代理载荷上 `agent_id`
+等于 `session_id`。已结束、又作为顶层会话恢复的子代理不带身份字段。
+
+hook 问题
 （`timeout`、`exit-code`、`parse-failure`、`spawn-failure`、`stop-cap`、
 `config`）会追加写入 `<dsh home>/hooks/diagnostics.jsonl`，并可在
 `/doctor` 中查看。

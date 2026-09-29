@@ -23,10 +23,13 @@ opus / blueprint    -> <provider>/<reasoning model>
 haiku / sketch      -> <provider>/<fast model>
 fable / masterplan  -> <provider>/<maximum-reasoning model>
 architect           -> parent agent route (planning / orchestration)
+gauge               -> typed-decision cheap lane (System One models; not generative)
 inherit             -> parent agent route
 ```
 
 关键点：**别名只是配置，不会硬编码到某家模型供应商。** 你可以保留熟悉的 Agent 定义，同时根据自己的环境选择合适的模型。
+
+`gauge` 是面向 System One 模型的纯决策通道，供权限分类器这类类型化决策的使用方选用。**绝不要把它用作 Agent frontmatter 的 `model:`。** 未配置时它跟随 `haiku`。routes 服务会以 `SystemOneChatModelError`（code `SYSTEMONE_NOT_CHAT_MODEL`）拒绝任何发往 System One 模型的聊天请求。
 
 ::: tip
 dsh-cc 项目本身就使用这套路由进行日常开发——当前开发映射见项目 README 的 [Dogfooding dsh-cc](https://github.com/dsh-cc/dsh-cc#dogfooding-dsh-cc) 章节。那只是项目自身的真实配置，不是强制默认值。
@@ -78,6 +81,10 @@ dsh-cc 项目本身就使用这套路由进行日常开发——当前开发映�
 ## 廉价通道的可观测性
 
 未配置的内置别名静默继承父路由时，解析器会记录一条警告——每个别名只记一次。该警告由 `model-aliases` settings 命名空间中的 `warnOnInherit` 键控制（默认 `true`；设为 `false` 可关闭）。
+
+## 用 Ctrl+P 循环切换模型
+
+在 TUI 中，`Ctrl+P` / `Shift+Ctrl+P` 会在 `cc-model-cycling.cycleOrder` 的别名列表中循环切换，并通过同一个别名解析器解析。无法解析或未被公布的条目会被跳过并弹出提示。切换只在内存中生效，不会写入 settings。
 
 ## `model$level`：在模型引用上指定 effort
 

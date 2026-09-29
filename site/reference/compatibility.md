@@ -1,7 +1,7 @@
 ---
 title: Claude Code compatibility
 description: What "Claude Code compatibility" means in dsh-cc — and how to read the parity matrix honestly.
-distilled-from: dsh-cc v0.8.0-rc.2
+distilled-from: dsh-cc v0.8.1-rc.1 (main 82576b5)
 ---
 
 # Claude Code compatibility
@@ -42,11 +42,11 @@ It is regenerated from a machine-readable capability manifest, so treat it as
 authoritative over any prose — including this page.
 
 ::: warning
-The examples below describe the state as of dsh-cc v0.8.0-rc.2. Check the matrix
+The examples below describe the state as of dsh-cc v0.8.1-rc.1 (main 82576b5). Check the matrix
 for the current state before relying on any of them.
 :::
 
-## A few example highlights (as of v0.8.0-rc.2)
+## A few example highlights (as of v0.8.1-rc.1)
 
 - **Hook executors** — `command` and `http` executors are always on; `prompt`
   and `agent` executors are gated behind `enablePromptHooks` /
@@ -77,6 +77,22 @@ for the current state before relying on any of them.
   with partial ux; `settings.actor-contract` is behavioral divergent with
   partial ux; `hooks.worktree-events` (`WorktreeCreate`/`WorktreeRemove`) is
   behavioral/ux partial.
+- **Permissions and auto mode** — auto mode is now strict-rule and content
+  evaluation is deny-first, matching Claude Code; `permissions.rules` stays
+  partial. `/auto-mode` is partial by design: read-only introspection rather
+  than Claude Code's config-file editor. See
+  [/reference/permission-modes](/reference/permission-modes).
+- **Workflow engine** — `engine.workflow` is behavioral divergent with partial
+  ux (same-session replay only, per-user directory under `$DSH_HOME`); the
+  Ralph loop is now its own full-parity row.
+- **Hooks** — `SubagentStart` / `SubagentStop` are now partial: they report a
+  constant `agent_type` of `general-purpose` and a child-scoped `session_id`.
+- **New dsh-cc extensions** — `plugins.codex-bridge` and
+  `plugins.grok-bridge` (first-party plugins, see [/guide/plugins](/guide/plugins)),
+  `plugins.foreign-rules` (imports cline/windsurf/copilot rule files from the
+  session cwd; opt out with `cc-foreign-rules.disabled`), and
+  `engine.advisor-watchdog` are marked divergent. `/export` is now divergent
+  because it redacts secrets, which Claude Code does not.
 
 ## Next
 

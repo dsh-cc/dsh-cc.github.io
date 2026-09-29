@@ -210,6 +210,24 @@ Because the name is registered under the project root (rank 200), it would
 override a bundled skill of the same name — and any user-root skill with the
 same name loses to it.
 
+## Learned skills: `manage_skill`
+
+The model-facing `manage_skill` tool keeps learned skills under
+`$DSH_HOME/learned-skills/`:
+
+| Action | What it does |
+| --- | --- |
+| `create` | Requires `name`, `description`, and `body`. |
+| `update` | Requires `name` plus `body` and/or `description`; other frontmatter keys are preserved. |
+| `delete` | Removes the whole skill directory. |
+| `list` | One line per learned skill with its description, size, and path. |
+
+Writes are atomic, and every successful change refreshes the skill registry.
+The tool is gated by `cc-learn.enabled` (default true); when it is off, the
+tool answers with a disabled notice instead of an error. Its description tells
+the model to promote only procedural, repeatable lessons ("how to do X here");
+facts and secrets stay in [memory](/guide/memory).
+
 ## Next
 
 - [/guide/hooks](/guide/hooks) — reacting to session and tool events

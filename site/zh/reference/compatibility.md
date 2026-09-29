@@ -1,7 +1,7 @@
 ---
 title: Claude Code 兼容性
 description: dsh-cc 中"Claude Code 兼容性"的含义——以及如何诚实地解读一致性矩阵。
-distilled-from: dsh-cc v0.8.0-rc.2
+distilled-from: dsh-cc v0.8.1-rc.1 (main 82576b5)
 ---
 
 # Claude Code 兼容性
@@ -37,11 +37,11 @@ Code 的逐字节模拟，也不以克隆每一个绑定厂商的特性为目标
 本页——的权威。
 
 ::: warning
-下方的例子描述的是 dsh-cc v0.8.0-rc.2 时的状态。在依赖其中任何一项之前，请先
+下方的例子描述的是 dsh-cc v0.8.1-rc.1（main 82576b5）时的状态。在依赖其中任何一项之前，请先
 查看矩阵了解当前状态。
 :::
 
-## 几个示例亮点（截至 v0.8.0-rc.2）
+## 几个示例亮点（截至 v0.8.1-rc.1）
 
 - **Hook 执行器** —— `command` 和 `http` 执行器始终开启；`prompt` 和
   `agent` 执行器由 `enablePromptHooks` / `enableAgentHooks` 控制，默认
@@ -71,6 +71,20 @@ Code 的逐字节模拟，也不以克隆每一个绑定厂商的特性为目标
   partial；`settings.actor-contract` behavioral divergent、ux partial；
   `hooks.worktree-events`（`WorktreeCreate`/`WorktreeRemove`）为
   behavioral/ux partial。
+- **权限与 auto 模式** —— auto 模式现在是严格规则的，内容求值为 deny 优先，
+  与 Claude Code 一致；`permissions.rules` 仍为 partial。`/auto-mode` 按设计
+  为 partial：它是只读自检，而不是 Claude Code 那样的配置文件编辑器。参见
+  [/zh/reference/permission-modes](/zh/reference/permission-modes)。
+- **Workflow 引擎** —— `engine.workflow` 为 behavioral divergent、ux partial
+  （只支持同会话重放，用户级目录位于 `$DSH_HOME` 下）；Ralph loop 现在单独
+  成行，完全一致。
+- **Hooks** —— `SubagentStart` / `SubagentStop` 现在为 partial：它们报告固定的
+  `agent_type`（`general-purpose`）和子代理作用域的 `session_id`。
+- **新的 dsh-cc 扩展** —— `plugins.codex-bridge` 和 `plugins.grok-bridge`
+  （第一方插件，见 [/zh/guide/plugins](/zh/guide/plugins)）、
+  `plugins.foreign-rules`（从会话 cwd 导入 cline/windsurf/copilot 规则文件；
+  用 `cc-foreign-rules.disabled` 关闭）以及 `engine.advisor-watchdog` 都标记为
+  divergent。`/export` 现在是 divergent，因为它会脱敏密钥，而 Claude Code 不会。
 
 ## 下一步
 

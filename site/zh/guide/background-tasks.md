@@ -90,6 +90,29 @@ TUI 消费同一份快照，并在详情视图中追加折叠派生的装饰（p
 4. **继续它。** 用 `send_message` 加上 `agentId` 发送后续消息——例如把审查范围收窄到某个文件。这是同一会话；子代理保留其上下文。
 5. **偏离时中断。** 如果审查者跑偏了，`interrupt` 停止其当前回合（仍可恢复），人工侧的 `/agents stop <agentId>` 等效。之后用 `send_message` 恢复。
 
+## Workflow
+
+`workflow` 工具在后台运行 Claude Code 风格的 workflow 脚本。脚本可以是内联的
+（以 `export const meta = { name, description }` 块开头）、按 `name` 引用的已保存
+文件，或任意 `scriptPath`；优先级为 `scriptPath > script > name`。`name` 先在
+`<cwd>/.claude/workflows/<name>.js` 中解析，它会遮蔽
+`$DSH_HOME/workflows/<name>.js`。
+
+- 工具立即返回一张回执（`status: "async_launched"`、`taskId`、
+  `taskType: "local_workflow"`、`workflowName`、`runId`、`summary`）。汇总结果
+  随后恰好送达一次：会话忙时并入下一步，空闲时唤醒一次。
+- 同一时间只运行一个 workflow。第二个并发运行会被拒绝，错误中会写明正在运行的
+  `runId`。
+- 在同一会话中用 `resumeFromRunId` 启动的运行，会从旧运行的日志
+  （`$DSH_HOME/workflows/runs/<sessionId>/<runId>.jsonl`）重放未变化的前缀，从
+  第一个不匹配处开始实时派生。跨会话重放尚未实现。
+- 已保存的 workflow 在会话启动时挂载为 `/<name>` 斜杠命令，TUI 中还有一行被动
+  进度显示阶段、耗时和 agent 数量。
+
+与 Claude Code 不同：用户级目录是 `$DSH_HOME/workflows/`（而非
+`~/.claude/workflows/`），只扫描 cwd 这一级的 `.claude/workflows/`，也没有内置
+workflow。
+
 ## 下一步
 
 - [/guide/subagents](/zh/guide/subagents) — 编写 `.claude/agents` 定义，包括 `background: true` 固定。
