@@ -44,16 +44,17 @@ Related controls, as documented in the parity matrix:
 
 - **Ctrl+B promotion (TUI only).** While the TUI is busy, pressing Ctrl+B promotes an armed foreground collect to the background: the pending tool call resolves `{ status: 'async_launched', agentId, backgroundedByUser: true }` and the child keeps running. There is no promotion path in non-TUI clients. Under tmux, Ctrl+B is the default prefix — a double-press passes a literal Ctrl+B through.
 - **Kill switch.** A non-empty `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS` value other than `0`/`false` (case-insensitive) disables the backgrounding-by-default pins; explicit `run_in_background` arguments stay honored both ways.
-- **Capacity guard.** The Task tool refuses a new continuable child when the parent already has 25 live children, with an actionable error suggesting `/agents stop <id>`.
+- **Capacity guard.** The Task tool refuses a new continuable child when the parent already has 25 live children — and only *running* children hold guard slots (idle activations free no slot). The error names the real slot-freer: free a slot with `release_agent` on a running child (or `/agents release <id>` interactively), or let children settle; `/agents stop` interrupts a turn but never frees a slot.
 
 ## Inspecting and intervening
 
-**`/agents`** (partial parity) is a thin snapshot over running agents — list, detail, stop:
+**`/agents`** (partial parity) is a thin snapshot over running agents — list, detail, stop, release:
 
 ```text
 /agents              # list running background agents
 /agents <id>         # detail for one agent
 /agents stop <id>    # interrupt one (it stays resumable)
+/agents release <id> # evict a continuable child's resident activation (frees its slot; not continuable in this session afterwards)
 ```
 
 The TUI consumes the same snapshot and adds fold-derived decorations to the detail view (provider, prompt excerpt, last stopReason). `/agents attach <id>` is a reserved, **unimplemented** namespace.
@@ -63,6 +64,7 @@ The TUI consumes the same snapshot and adds fold-derived decorations to the deta
 - `send_message` — continue the same background agent's conversation with a follow-up prompt.
 - `interrupt` — stop the child's current turn; the persisted session survives and can be continued.
 - `list` — enumerate children with their status.
+- `release_agent` — evict a running continuable child's resident activation to free its capacity slot; same-session continuation afterwards is unavailable (`send_message` resolves but runs no turn), while the persisted session survives on disk.
 
 **`/tasks`** (partial parity) lists background **jobs** only; the todo-list seam is pending.
 
@@ -71,7 +73,7 @@ The TUI consumes the same snapshot and adds fold-derived decorations to the deta
 What happens around exits and resumes, phrased as the sources do:
 
 - **Parent exit drains the in-flight turn.** Exiting your session drains a background child's in-flight turn; its persisted session survives.
-- **Cold resume.** The child's persisted session cold-resumes on the next `send_message`.
+- **Cold resume.** The child's persisted session cold-resumes on the next `send_message` — for children that merely settled. A child whose turn was DRAINED at parent exit or that was RELEASED cannot be continued in the same session (`send_message` resolves but runs no turn — a known upstream gap), and cross-session resume after a drain is unverified.
 - **Cold resume drops extra agent options.** A background child's `persona`, `toolFilter`, and model route survive resume, but other fields — such as alias-stamped `reasoningEffort` or token limits — do not.
 - **Resume pins.** Each background spawn captures a resume pin (the alias selected at spawn plus `maxTokens`) into a resume-pin store, and resume restores that pinned tuple *including explicit absence* — a pin recording an unset value is honored as absent rather than re-resolved. A pinned model the parent can no longer resolve is gated by the `subagents-resume.onUnavailableModel` setting (`block` or `route-current`, default `block`), with deny codes such as `SUBAGENT_MODEL_UNAVAILABLE`, `WORKSPACE_CHANGED`, `DEFINITION_CHANGED`, `PINNED_TOOL_UNAVAILABLE`, `PIN_ORPHANED`, `PIN_UNREADABLE` naming the policy knob.
 - **No output file.** There is no `TaskOutput` alias and no `outputFile` field; a foreground result comes back as text.

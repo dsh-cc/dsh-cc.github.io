@@ -20,3 +20,8 @@ DSH_HARNESS_DIR # harness CLI location override used by the harness repo's CI ga
 INSTALL_ANCHOR # harness install-tree anchor passed to harness's healProfilesModuleFallback()
 DSH_AGENTS_HOME # harness skill-filesystem agentsHome override; verified in deepseek-harness packages/skill/skill-filesystem/src/index.ts
 @deepseek-ai/dsh-skill-filesystem # harness provider mounted by dsh-cc preset (packages/preset/cc/agent.cordis.yml — yml outside the md corpus)
+
+# --- package removed upstream in v0.8.3 (commit 72ca3eec) ---
+# The site's settings reference documents its removal; the token no longer
+# appears in the v0.8.3 corpus by design.
+@dsh-cc/settings-migrations

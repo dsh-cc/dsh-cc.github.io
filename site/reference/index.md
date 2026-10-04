@@ -1,7 +1,7 @@
 ---
 title: Reference
 description: Quick catalog of the dsh-cc reference pages — flags, env vars, commands, and configuration.
-distilled-from: dsh-cc v0.8.0-rc.2
+distilled-from: dsh-cc v0.8.3 (a33c681f)
 ---
 
 # Reference

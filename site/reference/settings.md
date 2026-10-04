@@ -1,7 +1,7 @@
 ---
 title: Settings cascade
 description: How dsh-cc resolves settings.json across five levels, merges them, and applies environment variables safely.
-distilled-from: dsh-cc v0.8.1-rc.1 (main 82576b5)
+distilled-from: dsh-cc v0.8.3 (a33c681f)
 ---
 
 # Settings cascade
@@ -85,11 +85,9 @@ Currently there is exactly **one** entry in the whitelist: `statusLine` → `sta
 
 Plugin discovery reads the `enabledPlugins` map with a dual-home layering: claude-user (`$CLAUDE_CONFIG_DIR` / `~/.claude`) → dsh-user (`$DSH_HOME` / `~/.dsh/settings.json`) → project → local, later files overriding per key. `/plugin` mutations write only under the dsh home — user-scope `enabledPlugins` and `extraKnownMarketplaces` entries land in `~/.dsh/settings.json`, and the Claude home stays read-visible, never written. The full dual-home rules are in [Plugins](/guide/plugins).
 
-## Migrations: mechanism ready, nothing shipped
+## Settings migrations: removed in v0.8.3
 
-`@dsh-cc/settings-migrations` ships a versioned migration mechanism: `defineMigration({ version, name, migrate(ctx) })` registers into a module registry (deduplicated by version + name), and `runMigrations()` applies every migration whose `version` exceeds the recorded `migrationVersion` (stored in `<home>/migrations.json`, default `$DSH_HOME` / `~/.dsh`), in ascending order, atomically — a mid-batch failure writes nothing and retries on the next mount, so migrations must be idempotent. A `guard(ctx)` returning `false` skips a migration without blocking version advancement.
-
-As of dsh-cc v0.6.0, **no concrete migrations exist** — the registry is empty and neither cc nor dsh has a legacy settings format to migrate; the first real migration lands with the first settings-shape change. Mounting the plugin is currently a no-op. The mechanism also targets only the user `settings.json` — project/local/flag/policy layers are not yet migration targets.
+The mechanism-only `@dsh-cc/settings-migrations` package was removed in dsh-cc v0.8.3. Its registry had been empty since it shipped — no concrete migrations ever existed for cc or dsh. The capability will return when the first real settings-shape change ships.
 
 ## Profile-level tweaks
 
@@ -119,7 +117,7 @@ Several CC preset features are tuned through their own settings namespaces in `~
 | `cc-post-edit-verify` | `enabled` (false), `rules` ([]), `debounce-ms` (5000) | Runs a user-declared verification command after accepted `edit`/`write` results and appends the outcome to the same tool result. **User layer only** (`~/.dsh/settings.json`); project-scope rules are never read. | [Interactive basics](/guide/interactive-basics) |
 | `cc-edit-recovery-hint` | `enabled` (false) | Appends static recovery advice when `edit` fails with a not-found error on a multi-line `old_string`. **User layer only**; project scope is never read. | [Interactive basics](/guide/interactive-basics) |
 | `cc-compaction-cost-gate` | `enabled` (false), `mode` (dry-run), `margin` (1.0), `cooldown-ms` (600000) | Ships dark; evaluates whether projected compaction savings justify the rewrite cost before calling `/compact`-style compaction, with a cooldown after each real pass. | [Interactive basics](/guide/interactive-basics) |
-| `cc-turn-rules` | `enabled` (true), `max-result-bytes` (200000), `regex-cache-size` (64), `judged.enabled` (false) | Turn rules: Cursor-plugin rules carrying a `trigger` regex are injected as an advisory reminder when it matches. On by default with zero effect until such a rule exists. **User layer only.** | [Plugins](/guide/plugins) |
+| `cc-turn-rules` | `enabled` (true), `max-result-bytes` (200000), `regex-cache-size` (64), `judged.enabled` (false), `repeat-reminder.enabled` (false), `repeat-reminder.thresholds` ([3,5,8]), `repeat-reminder.include`/`exclude` ([]), `repeat-reminder.arguments-preview-chars` (500) | Turn rules: Cursor-plugin rules carrying a `trigger` regex are injected as an advisory reminder when it matches. On by default with zero effect until such a rule exists. The namespace also carries the built-in repeat-reminder (default off): when the top-level agent makes the same tool call with identical arguments several times in a row, it fires an advisory reminder at each of the default thresholds (`[3,5,8]`), reset by the next user prompt. **User layer only.** | [Plugins](/guide/plugins) |
 | `cc-advisor` | `enabled` (false), `alias` (haiku), `budget` (2), `immune-turns` (3), `session-cap` (24), `severities` (all three), `subagents` (off) | Opt-in advisor watchdog: a second model reviews every completed turn. **User layer only.** | [Interactive basics](/guide/interactive-basics) |
 | `cc-lsp-on-write` | `enabled` (false), `server-name` (serena), `timeout-ms` (1500), `max-diagnostics` (8), `min-severity` (warning), `tool-names` | Opt-in LSP diagnostics appended to `edit`/`write`/`NotebookEdit` results, pulled from a running serena MCP server. **User layer only.** | [Interactive basics](/guide/interactive-basics) |
 | `cc-secrets` | `extraPatterns`, `redactCrusherStore` | Extra regex sources for the one-way secret redaction applied to `/export` output and the context-crusher store. | [Slash commands](/reference/commands) |

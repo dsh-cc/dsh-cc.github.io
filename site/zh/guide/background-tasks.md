@@ -44,16 +44,17 @@ parity 矩阵记录的其他控制项：
 
 - **Ctrl+B 提升（仅 TUI）。** TUI 忙碌时按下 Ctrl+B 会把待定的前台收集提升到后台：挂起的工具调用解析为 `{ status: 'async_launched', agentId, backgroundedByUser: true }`，子代理继续运行。非 TUI 客户端没有提升路径。在 tmux 下，Ctrl+B 是默认前缀——连按两次会透传字面 Ctrl+B。
 - **关闭开关。** `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS` 设为除 `0`/`false`（大小写不敏感）以外的非空值时，会禁用"省略即后台"的固定；显式 `run_in_background` 参数两种方向仍然生效。
-- **容量护栏。** 当父代理已有 25 个存活子代理时，Task 工具会拒绝新的可持续子代理，并给出可操作的错误提示建议 `/agents stop <id>`。
+- **容量护栏。** 当父代理已有 25 个存活子代理时，Task 工具会拒绝新的可持续子代理——而且只有*运行中*的子代理占用护栏槽位（空闲激活不占槽）。错误提示会指明真正的释放路径：用 `release_agent` 作用于运行中的子代理（或在交互界面用 `/agents release <id>`）释放槽位，或让子代理自然结束；`/agents stop` 只中断回合，永远不会释放槽位。
 
 ## 检查与干预
 
-**`/agents`**（partial parity）是运行中代理的轻量快照——list、detail、stop：
+**`/agents`**（partial parity）是运行中代理的轻量快照——list、detail、stop、release：
 
 ```text
 /agents              # list running background agents
 /agents <id>         # detail for one agent
 /agents stop <id>    # interrupt one (it stays resumable)
+/agents release <id> # evict a continuable child's resident activation (frees its slot; not continuable in this session afterwards)
 ```
 
 TUI 消费同一份快照，并在详情视图中追加折叠派生的装饰（provider、prompt 摘录、最近 stopReason）。`/agents attach <id>` 是保留但**未实现**的命名空间。
@@ -63,6 +64,7 @@ TUI 消费同一份快照，并在详情视图中追加折叠派生的装饰（p
 - `send_message` — 向同一后台代理的会话发送后续 prompt。
 - `interrupt` — 停止子代理的当前回合；其持久化会话保留，可继续。
 - `list` — 枚举子代理及其状态。
+- `release_agent` — 驱逐运行中可持续子代理的常驻激活以释放其容量槽位；此后同会话内无法再继续该子代理（`send_message` 会解析但不运行任何回合），而其持久化会话仍在磁盘上保留。
 
 **`/tasks`**（partial parity）只列出后台**作业**；todo 列表接缝尚待实现。
 
@@ -71,7 +73,7 @@ TUI 消费同一份快照，并在详情视图中追加折叠派生的装饰（p
 围绕退出与恢复发生的事，严格按来源表述：
 
 - **父代理退出会抽干进行中的回合。** 退出会话会抽干后台子代理进行中的回合；其持久化会话保留。
-- **冷恢复（cold resume）。** 子代理的持久化会话在下一次 `send_message` 时冷恢复。
+- **冷恢复（cold resume）。** 子代理的持久化会话在下一次 `send_message` 时冷恢复——这只适用于自然结束的子代理。回合在父代理退出时被抽干（DRAINED）或已被 RELEASED 的子代理，无法在同一会话内继续（`send_message` 会解析但不运行任何回合——已知上游缺陷），抽干之后的跨会话恢复也未经验证。
 - **冷恢复会丢弃额外的代理选项。** 后台子代理的 `persona`、`toolFilter` 和模型路由在恢复后保留，但其他字段——例如别名标注的 `reasoningEffort` 或 token 上限——不会。
 - **恢复固定（resume pins）。** 每次后台启动都会把一份恢复固定（spawn 时选定的别名加上 `maxTokens`）写入恢复固定存储，恢复时还原该固定元组*包括显式缺省*——固定中记录为未设置的值会被当作缺省，而不是重新解析。父代理已无法解析的固定模型受 `subagents-resume.onUnavailableModel` 设置门控（`block` 或 `route-current`，默认 `block`），拒绝码如 `SUBAGENT_MODEL_UNAVAILABLE`、`WORKSPACE_CHANGED`、`DEFINITION_CHANGED`、`PINNED_TOOL_UNAVAILABLE`、`PIN_ORPHANED`、`PIN_UNREADABLE` 指明对应的策略旋钮。
 - **没有输出文件。** 不存在 `TaskOutput` 别名，也没有 `outputFile` 字段；前台结果以文本返回。

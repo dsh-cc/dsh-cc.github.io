@@ -21,9 +21,9 @@ $ npm install -g @deepseek-ai/dsh @dsh-cc/cli
 $ dsh-cc
 ```
 
-`dsh-cc` 要求 `dsh` **>= 0.1.5-rc.1**；默认的 `npm install -g @deepseek-ai/dsh` 目前满足该要求（截至 2026-09-12），启动器会在引导时强制检查这一下限。
+`dsh-cc` 要求 `dsh` **>= 0.2.0-rc.2**；默认的 `npm install -g @deepseek-ai/dsh` 目前满足该要求（截至 2026-09-29），启动器会在引导时强制检查这一下限。该下限随 dsh-cc 的开发线变动，各发布版本对应的已验证配对见“升级”一节中的表格。
 
-如果已经安装 `dsh` **>= 0.1.5-rc.1**，只需安装启动器：
+如果已经安装 `dsh` **>= 0.2.0-rc.2**，只需安装启动器：
 
 ```sh
 $ npm install -g @dsh-cc/cli
@@ -59,6 +59,18 @@ $ dsh-cc
 ```
 
 升级后的首次启动，启动器会以新版本重新执行 profile 的 bundle 安装（记录在 `~/.dsh/profiles/tui/.dsh-cc-bootstrap.json`），profile 会自动收敛——无需手动操作。对账失败（网络问题，或新版本仍在 npm/pnpm 的 minimum-release-age 窗口内）只会警告并照常启动，下次启动时重试。通过 `scripts/sync-local-profile.sh` 同步的 dev profile（`dsh-cc --version` 显示 `-dev+<commit>[.dirty]`）永远不会被启动器对账。
+
+### dsh 版本兼容性
+
+| dsh-cc release | Verified dsh |
+| --- | --- |
+| v0.8.3 | 0.2.0-rc.2 |
+| v0.8.2 | 0.1.7-rc.2 |
+| v0.6.3 – v0.8.1 | 0.1.5-rc.1 |
+| v0.6.0 – v0.6.2 | 0.1.2-rc.1 |
+| v0.5.0 | 0.1.1-rc.2 (no launcher version gate) |
+
+每个 `dsh-cc` 发布版本都针对一个确定的 `dsh` 版本开发并通过 CI 验证，启动器会在引导时将其强制为下限。没有强制的版本上限，但只有上表列出的配对经过 CI 验证。当新的 `dsh-cc` 发布迁移到更新的 `dsh` 时，请先升级 `dsh`，再升级 `dsh-cc`——一方的 `@latest` 未必是另一方 `@latest` 的已验证配对。
 
 ## 首次运行
 

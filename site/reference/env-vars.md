@@ -1,7 +1,7 @@
 ---
 title: Environment variables
 description: The environment variables dsh-cc reads and sets, with defaults from the launcher and TUI source.
-distilled-from: dsh-cc v0.8.0-rc.2
+distilled-from: dsh-cc v0.8.3 (a33c681f)
 ---
 
 # Environment variables

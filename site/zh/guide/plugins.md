@@ -10,7 +10,7 @@ description: dsh-cc 如何通过 dsh profile 与 bundle 完成自身组合，以
 - **故事 A —— dsh 原生组合。** dsh-cc 本身以普通 dsh 插件的形式安装，按 `@dsh-cc/bundle-*` 包分组并挂载到 dsh profile 中。你的本地微调放在 `cordis.patch.yml` 文件里。
 - **故事 B —— 加载 Claude Code 插件。** 通过 cc-plugin-loader，dsh-cc 可以发现并挂载磁盘上已有的 Claude Code 插件（一个 `plugin.json` 清单加若干组件目录），让你手头的插件资产继续可用。
 
-前置条件：dsh >= 0.1.5-rc.1，并安装 `@dsh-cc/cli` 启动器（`npm install -g @dsh-cc/cli`）。
+前置条件：dsh >= 0.2.0-rc.2，并安装 `@dsh-cc/cli` 启动器（`npm install -g @dsh-cc/cli`）。
 
 ## 故事 A：dsh profile 与 bundle
 
@@ -131,7 +131,7 @@ repeatGap: 10                   # turn stops before re-arm; default 10
 ---
 ```
 
-`repeat: after-gap` 会在 `repeatGap` 次轮次结束后重新武装规则。不带 `trigger` 的规则行为与上文完全相同。只有顶层会话会触发 turn rules，而且它们从不阻止工具调用。该引擎由用户层 settings 文件中的 `cc-turn-rules` 命名空间调优（见[设置](/zh/reference/settings)）。
+`repeat: after-gap` 会在 `repeatGap` 次轮次结束后重新武装规则。不带 `trigger` 的规则行为与上文完全相同。只有顶层会话会触发 turn rules，而且它们从不阻止工具调用。该引擎由用户层 settings 文件中的 `cc-turn-rules` 命名空间调优（见[设置](/zh/reference/settings)）。除基于文件和触发器的规则外，v0.8.3 还内置了一条 repeat-reminder 规则——当顶层 agent 连续多次以完全相同的参数重复同一个工具调用时，它会发出一条提醒（仅提示，不阻断）。该规则默认关闭，通过 `cc-turn-rules.repeat-reminder` 键调优（见“设置”）。
 
 **Hooks。** camelCase 的 Cursor 事件映射到 CC 事件：
 

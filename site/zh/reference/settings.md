@@ -1,7 +1,7 @@
 ---
 title: 设置级联
 description: dsh-cc 如何在五个层级间解析 settings.json、合并它们，并安全地应用环境变量。
-distilled-from: dsh-cc v0.8.1-rc.1 (main 82576b5)
+distilled-from: dsh-cc v0.8.3 (a33c681f)
 ---
 
 # 设置级联
@@ -85,11 +85,9 @@ PATH
 
 插件发现读取 `enabledPlugins` 映射，按双 home 分层：claude-user（`$CLAUDE_CONFIG_DIR` / `~/.claude`）→ dsh-user（`$DSH_HOME` / `~/.dsh/settings.json`）→ project → local，后读文件按键覆盖。`/plugin` 的修改只写入 dsh home——用户作用域的 `enabledPlugins` 和 `extraKnownMarketplaces` 条目落在 `~/.dsh/settings.json`，Claude home 保持可读、绝不写入。完整的双 home 规则见 [插件](/zh/guide/plugins)。
 
-## 迁移：机制就绪，尚无实际迁移
+## 设置迁移：已在 v0.8.3 移除
 
-`@dsh-cc/settings-migrations` 提供了一套版本化的迁移机制：`defineMigration({ version, name, migrate(ctx) })` 注册进模块注册表（按 version + name 去重），`runMigrations()` 以升序原子地应用所有 `version` 大于已记录 `migrationVersion` 的迁移（状态存于 `<home>/migrations.json`，默认 `$DSH_HOME` / `~/.dsh`）——批次中途失败则什么也不写，下次挂载重试，因此迁移必须幂等。`guard(ctx)` 返回 `false` 会跳过该迁移但不阻塞版本推进。
-
-截至 dsh-cc v0.6.0，**尚无任何具体迁移**——注册表为空，cc 与 dsh 都没有需要迁移的旧版设置格式；第一个真实迁移将随第一次设置结构变更落地。当前挂载该插件是空操作。该机制目前也只作用于用户层 `settings.json`——project/local/flag/policy 层还不是迁移目标。
+仅含机制、从未有实际迁移的 `@dsh-cc/settings-migrations` 包已在 dsh-cc v0.8.3 中移除。该注册表自发布以来一直为空——cc 与 dsh 都从未存在过具体迁移。当第一个真实的设置结构变更落地时，该能力会随之回归。
 
 ## Profile 级微调
 
@@ -119,7 +117,7 @@ PATH
 | `cc-post-edit-verify` | `enabled`（false）、`rules`（[]）、`debounce-ms`（5000） | 在 `edit`/`write` 结果被接受后运行你声明的验证命令，并把结果追加到同一条工具结果中。**仅限用户层**（`~/.dsh/settings.json`）；project 层的规则永远不会被读取。 | [交互基础](/zh/guide/interactive-basics) |
 | `cc-edit-recovery-hint` | `enabled`（false） | 当 `edit` 因多行 `old_string` 找不到匹配而失败时，追加一条固定的恢复建议。**仅限用户层**；project 层永远不会被读取。 | [交互基础](/zh/guide/interactive-basics) |
 | `cc-compaction-cost-gate` | `enabled`（false）、`mode`（dry-run）、`margin`（1.0）、`cooldown-ms`（600000） | 默认关闭；在真正执行 compaction 前先评估压缩收益是否抵得过重写成本，每次真实压缩后进入冷却期。 | [交互基础](/zh/guide/interactive-basics) |
-| `cc-turn-rules` | `enabled`（true）、`max-result-bytes`（200000）、`regex-cache-size`（64）、`judged.enabled`（false） | Turn rules：带 `trigger` 正则的 Cursor 插件规则在正则命中时作为建议性提醒注入。默认开启，但在存在这类规则之前没有任何效果。**仅用户层。** | [插件](/zh/guide/plugins) |
+| `cc-turn-rules` | `enabled`（true）、`max-result-bytes`（200000）、`regex-cache-size`（64）、`judged.enabled`（false）、`repeat-reminder.enabled`（false）、`repeat-reminder.thresholds`（[3,5,8]）、`repeat-reminder.include`/`exclude`（[]）、`repeat-reminder.arguments-preview-chars`（500） | Turn rules：带 `trigger` 正则的 Cursor 插件规则在正则命中时作为建议性提醒注入。默认开启，但在存在这类规则之前没有任何效果。该命名空间还携带内置的 repeat-reminder（默认关闭）：当顶层 agent 连续多次发出参数完全相同的同一工具调用时，会在每个默认阈值（[3,5,8]）处触发一条建议性提醒，下一次用户输入会重置计数。**仅用户层。** | [插件](/zh/guide/plugins) |
 | `cc-advisor` | `enabled`（false）、`alias`（haiku）、`budget`（2）、`immune-turns`（3）、`session-cap`（24）、`severities`（三种全选）、`subagents`（off） | 可选的 advisor watchdog：由第二个模型审查每个完成的轮次。**仅用户层。** | [交互基础](/zh/guide/interactive-basics) |
 | `cc-lsp-on-write` | `enabled`（false）、`server-name`（serena）、`timeout-ms`（1500）、`max-diagnostics`（8）、`min-severity`（warning）、`tool-names` | 可选：从运行中的 serena MCP server 拉取 LSP 诊断，追加到 `edit`/`write`/`NotebookEdit` 结果。**仅用户层。** | [交互基础](/zh/guide/interactive-basics) |
 | `cc-secrets` | `extraPatterns`、`redactCrusherStore` | 为单向密钥脱敏追加正则源；脱敏作用于 `/export` 输出和 context-crusher 存储。 | [斜杠命令](/zh/reference/commands) |
