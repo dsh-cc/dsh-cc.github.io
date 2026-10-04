@@ -1,7 +1,7 @@
 ---
 title: 环境变量
 description: dsh-cc 读取和设置的环境变量一览，默认值取自 launcher 与 TUI 源码。
-distilled-from: dsh-cc v0.8.0-rc.2
+distilled-from: dsh-cc v0.8.3 (a33c681f)
 ---
 
 # 环境变量

@@ -21,9 +21,9 @@ $ npm install -g @deepseek-ai/dsh @dsh-cc/cli
 $ dsh-cc
 ```
 
-`dsh-cc` requires `dsh` **>= 0.1.5-rc.1**; the default `npm install -g @deepseek-ai/dsh` currently satisfies this (as of 2026-09-12), and the launcher enforces the floor at bootstrap.
+`dsh-cc` requires `dsh` **>= 0.2.0-rc.2**; the default `npm install -g @deepseek-ai/dsh` currently satisfies this (as of 2026-09-29), and the launcher enforces the floor at bootstrap. This floor tracks the dsh-cc development line; the verified per-release pairings are listed in the table under Upgrading.
 
-Already have `dsh` **>= 0.1.5-rc.1**? Install only the launcher:
+Already have `dsh` **>= 0.2.0-rc.2**? Install only the launcher:
 
 ```sh
 $ npm install -g @dsh-cc/cli
@@ -59,6 +59,18 @@ $ dsh-cc
 ```
 
 On the first launch after an upgrade, the launcher re-runs the profile's bundle install at the new version (recorded at `~/.dsh/profiles/tui/.dsh-cc-bootstrap.json`), so the profile converges automatically — no manual step. A failed reconcile (network, or the release still inside npm/pnpm's minimum-release-age window) warns and boots anyway, retrying on the next launch. Dev-synced profiles (via `scripts/sync-local-profile.sh` — `dsh-cc --version` shows `-dev+<commit>[.dirty]`) are never reconciled by the launcher.
+
+### dsh version compatibility
+
+| dsh-cc release | Verified dsh |
+| --- | --- |
+| v0.8.3 | 0.2.0-rc.2 |
+| v0.8.2 | 0.1.7-rc.2 |
+| v0.6.3 – v0.8.1 | 0.1.5-rc.1 |
+| v0.6.0 – v0.6.2 | 0.1.2-rc.1 |
+| v0.5.0 | 0.1.1-rc.2 (no launcher version gate) |
+
+Each `dsh-cc` release is developed and CI-verified against one `dsh` version, and the launcher enforces it as the minimum at bootstrap. There is no enforced upper bound, but only the pairing listed above is CI-verified. When a new `dsh-cc` release moves to a newer `dsh`, upgrade `dsh` first, then `dsh-cc` — `@latest` on one side is not necessarily the verified partner of `@latest` on the other.
 
 ## First run
 

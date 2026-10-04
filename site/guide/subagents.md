@@ -121,7 +121,7 @@ A definition may wrap part of its body in `<!-- actor-contract:start -->` … `<
 
 As of dsh-cc v0.6.0:
 
-- **`/agents` is partial.** It is a thin snapshot (list/detail/stop) over running agents; groups are residency-only and `/agents` attach is reserved but unimplemented.
+- **`/agents` is partial.** It is a thin snapshot (list/detail/stop/release) over running agents; groups are residency-only and `/agents` attach is reserved but unimplemented.
 - **Process-level discovery cache.** Definitions are cached per workspace root for the process lifetime with no filesystem watcher: edits take effect on the next session for an uncached workspace, and on process restart otherwise.
 - **Cold resume is pinned.** A background child's persona, tool filter, model route, and `maxTokens` are restored from its resume pin — a pin recording an unset reasoning-effort or token field is honored as absent rather than re-resolved. Other agent options do not survive resume.
 - **No TaskOutput alias or outputFile field.** Foreground results come back as text; there is no output file.

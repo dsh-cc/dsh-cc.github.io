@@ -1,7 +1,7 @@
 ---
 title: 斜杠命令
 description: dsh-cc 全部斜杠命令的参考目录——preset（harness）命令与 TUI 本地命令，附对等状态。
-distilled-from: dsh-cc v0.8.1-rc.1 (main 82576b5)
+distilled-from: dsh-cc v0.8.3 (a33c681f)
 ---
 
 # 斜杠命令
@@ -26,7 +26,7 @@ matrix 未声明该命令的状态。
 | `/rename <title>` | 为当前会话固定一个明确的用户标题。 | Full |
 | `/export` | 将当前会话转录写为文件，markdown（默认）或无损 JSON。写文件前会单向脱敏粘贴进来的凭据（dsh-cc 扩展；额外模式通过 `cc-secrets` 命名空间配置）。已知缺口：在 web profile 上，原生 CC `/export` 会绕过这层脱敏。 | Partial |
 | `/tasks` | 列出调用方可见的后台作业及其状态。 | Partial |
-| `/agents` | 列出、查看和停止可续接的后台 agent：`/agents <id>` 查看详情，`/agents stop <id>` 中断一个（仍可续接）。`/agents attach <id>` 是保留但未实现的命名空间。 | Partial |
+| `/agents` | 列出、查看、停止和释放可续接的后台 agent：`/agents <id>` 查看详情，`/agents stop <id>` 中断一个（仍可续接），`/agents release <id>` 驱逐子代理的常驻激活并释放其容量槽位（此后同一会话内不可续接）。`/agents attach <id>` 是保留但未实现的命名空间。 | Partial |
 | `/plan` | Plan mode 通道（通过 `exit_plan_mode` 退出）。 | Full |
 | `/learn [apply\|all\|days=N]` | 把会话中反复出现的失败模式蒸馏进工作区记忆。默认 dry-run——只有 `apply` 会写入。`apply` 写入 `session-learnings` 记忆主题（一个 managed marker block，整体重新生成；块之外的内容不受影响）并更新 `MEMORY.md`；`all` 扫描所有项目而不只是当前工作区；`days=N` 覆盖时间窗口（默认 14）。扫描会遍历持久化的会话存储，把窗口内最近的 `session.v3.jsonl.zstd` 日志解压后读取（并兼容旧的 `session.jsonl.zstd`）。通过 `cc-learn` 设置命名空间调优（`enabled` 默认 true、`days` 14、`min-occurrences` 2）。 | Full |
 
@@ -85,7 +85,7 @@ matrix 未声明该命令的状态。
 | `/resume <sessionId>` | 切换到被恢复的会话（选择器或按 id）。 | |
 | `/model <n\|provider/id>` | 列出或切换当前模型。 | |
 | `/effort <level\|default>` | 为当前模型设置推理努力级别。它在 effort 优先级中的位置见[模型路由](/zh/guide/model-routing)。 | |
-| `/agents [<id>\|stop <id>]` | 列出、查看或停止后台 agent。 | |
+| `/agents [<id>\|stop <id>\|release <id>]` | 列出、查看、停止或释放后台 agent。`release <id>` 驱逐子代理的常驻激活并释放其容量槽位；此后同一会话内不可续接。 | |
 | `/cost` | 显示 token 用量。 | |
 | `/usage` | 打开实时的 token 与上下文用量面板。 | |
 | `/export-md <path>` | 将会话转录导出为 Markdown 文件。 | |

@@ -58,7 +58,7 @@ TUI 还提供对话导出、用量/上下文显示、todo 查看、审批、排�
 
 工具使用摘要（tool-use-summary，TUS）默认开启（命名空间 `cc-tool-use-summary`）：每个较大的工具结果都会得到一份 fire-and-forget 的廉价通道摘要（默认别名 `haiku`，≤150 词，在账本中截断到 800 字符），按 `callId` 记录，压缩时直接消费摘要而不再读取原始输出。默认值：`enabled` true、`topLevelOnly` true、`minResultBytes` 4096、`maxSummariesPerSession` 200、`maxTokens` 256、`timeoutMs` 5000、`excludeTools` `['structured_output']`、`retentionDays` 7（0 = 仅内存）、`upgradeMicroPlaceholders` true。账本位于 `$DSH_HOME/tool-use-summary/<sessionId>.jsonl`。摘要在消费侧会被不可信包装；context-crusher 桩永远不会被替换（它们的 `ccr://` 定位符必须保留）。
 
-成本门控的计划步骤压缩（`cc-compaction-cost-gate`）默认关闭（ships dark，`enabled` false、`mode` `'dry-run'`）：完成一个计划步骤（一次 `todo_write` 到 completed 的状态转移）会武装一个边界，agent 下次空闲时评估压缩是否划算——预期输入 token 节省对比重写成本加债务，`margin` 1.0——划算才真正压缩。真实压缩后进入 `cooldown-ms`（600000）冷却；`window-pressure-tokens` 未设置则没有旁路；`model-table` 可选。账本位于 `$DSH_HOME/compaction-cost-gate/<projectKey>.jsonl`；连续 3 次真实失败会让本功能对会话暂停，并给出指向手动 `/compact` 的提示；`dry-run` 模式把不等式两侧都记入账本但不压缩。
+成本门控的计划步骤压缩（`cc-compaction-cost-gate`）默认关闭（ships dark，`enabled` false、`mode` `'dry-run'`）：完成一个计划步骤（一次 `todo_write` 到 completed 的状态转移）会武装一个边界，agent 下次空闲时评估压缩是否划算——预期输入 token 节省对比重写成本加债务，`margin` 1.0——划算才真正压缩。真实压缩后进入 `cooldown-ms`（600000）冷却；`window-pressure-tokens` 未设置则没有旁路；`model-table` 可选。账本位于 `$DSH_HOME/compaction-cost-gate/<projectKey>.jsonl`；连续 3 次真实失败会让本功能对会话暂停，并给出指向手动 `/compact` 的提示；`dry-run` 模式把不等式两侧都记入账本但不压缩。自 v0.8.3 起，该门控挂载在 compaction realm 内部，被武装的空闲评估会真正执行——更早的版本把它接在 realm 之外，每次评估都只记录为 `compaction-unavailable`，从不真正评估。
 
 ### 可选预览
 

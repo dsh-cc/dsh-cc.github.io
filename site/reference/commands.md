@@ -1,7 +1,7 @@
 ---
 title: Slash commands
 description: Reference catalog of every slash command in dsh-cc — preset (harness) commands and TUI-local commands, with parity status.
-distilled-from: dsh-cc v0.8.1-rc.1 (main 82576b5)
+distilled-from: dsh-cc v0.8.3 (a33c681f)
 ---
 
 # Slash commands
@@ -28,7 +28,7 @@ the matrix does not state a status for that command.
 | `/rename <title>` | Pin an explicit user title on the current session. | Full |
 | `/export` | Write the current session transcript to a file as markdown (default) or lossless JSON. Pasted credentials are redacted one-way before the file is written (a dsh-cc extension; extra patterns via the `cc-secrets` namespace). Known gap: on web profiles the native CC `/export` bypasses this redaction. | Partial |
 | `/tasks` | List caller-visible background jobs and their status. | Partial |
-| `/agents` | List, inspect, and stop continuable background agents: `/agents <id>` for detail, `/agents stop <id>` to interrupt one (it stays resumable). `/agents attach <id>` is a reserved, unimplemented namespace. | Partial |
+| `/agents` | List, inspect, stop, and release continuable background agents: `/agents <id>` for detail, `/agents stop <id>` to interrupt one (it stays resumable), `/agents release <id>` to evict the child's resident activation and free its capacity slot (not continuable in this session afterwards). `/agents attach <id>` is a reserved, unimplemented namespace. | Partial |
 | `/plan` | Plan mode channel (exit via `exit_plan_mode`). | Full |
 | `/learn [apply\|all\|days=N]` | Distill recurring session failure patterns into workspace memory. Dry-run by default — only `apply` writes. `apply` writes the `session-learnings` memory topic (a managed marker block, regenerated wholesale; content outside the block is untouched) and updates `MEMORY.md`; `all` scans every project instead of the current workspace; `days=N` overrides the recency window (default 14). Scanning walks the durable session store, decompressing recent `session.v3.jsonl.zstd` logs within the window (with legacy `session.jsonl.zstd` fallback). Tuned via the `cc-learn` settings namespace (`enabled` default true, `days` 14, `min-occurrences` 2). | Full |
 
@@ -88,7 +88,7 @@ these local commands.
 | `/resume <sessionId>` | Switch to a resumed session (picker or by id). | |
 | `/model <n\|provider/id>` | List or switch the active model. | |
 | `/effort <level\|default>` | Set reasoning effort for the current model. Where this sits in effort precedence: [Model routing](/guide/model-routing). | |
-| `/agents [<id>\|stop <id>]` | List, inspect, or stop background agents. | |
+| `/agents [<id>\|stop <id>\|release <id>]` | List, inspect, stop, or release background agents. `release <id>` evicts the child's resident activation and frees its capacity slot; it is not continuable in this session afterwards. | |
 | `/cost` | Show token usage. | |
 | `/usage` | Open the live token and context usage panel. | |
 | `/export-md <path>` | Export the transcript to a Markdown file. | |
