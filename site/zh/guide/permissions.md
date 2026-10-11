@@ -11,7 +11,7 @@ agent 发起的每一次工具调用都会经过 dsh-cc 的权限层。你可以
 
 ## 这写给谁看
 
-你希望 agent 的行为可预期：允许模型自由读取和编辑文件，但在执行任何破坏性操作前先询问你。TUI 提供面向终端的交互，包括审批流程——当引擎给出 `ask` 决定时，会弹出模态框，由你放行或拒绝。规则与 Claude Code 兼容：你已经熟悉的 `ToolName` 和 `ToolName(content)` 字符串可以直接沿用。
+你希望 agent 的行为可预期：允许模型自由读取和编辑文件，但在执行任何破坏性操作前先询问你。TUI 提供面向终端的交互，包括审批流程——当引擎给出 `ask` 决定时，会弹出模态框，由你放行或拒绝。你拒绝一次调用（不做会话授权）时，模型会收到原始的询问理由（经净化、截断至 120 字符）外加一行指引，让它明白这是权限决定，而不是工具故障。规则与 Claude Code 兼容：你已经熟悉的 `ToolName` 和 `ToolName(content)` 字符串可以直接沿用。
 
 ## 五种模式
 
@@ -74,6 +74,15 @@ UI 遵循设置中的 `permissions.defaultMode`：statusline、会话切换、Sh
 - 策略位于 `permissions.autoMode` 的 `hard_deny`、`soft_deny`、`allow` 和 `environment` 槽位中，每个都接受 `"$defaults"`。只有可信层（用户、`--settings` flag、托管策略）能设置 `autoMode`，所以克隆下来的仓库无法扩大自己的信任边界。
 - 一个会话内连续 3 次或累计 20 次 deny 会暂停 auto 模式并把会话降为 `default`；用 `/permissions auto` 重新进入。
 - 按路由的熔断器在连续失败 3 次后打开，冷却 60s 后放行一次探测调用。设置变更会重置它。
+
+### gauge（System One）后端
+
+分类器阶段还可以运行在面向 System One 模型的原生类型化决策后端上。`permissions.autoMode.classifier.backend` 取 `'haiku'`（默认）或 `'auto'`：在 `'auto'` 下，显式的 `classifier.route` 仍然优先；当 `gauge` 通道别名解析到一条 System One 路由时——一个 `protocol: "systemone"` 别名条目，或一个 `llmbox_systemone/` 模型 id——分类器武装原生后端。这时门控改为用 `P(allow)` 对照 `classifier.gaugeAllowThreshold`（默认 `0.5`）；gauge 给出的 `deny` 退化为 `ask`——System One 裁决无法引用精确的 `hard_deny` 规则。提示注入探针通过 `permissions.autoMode.probe.backend` 接受同一个选择器（默认 `'haiku'` | `'auto'`；显式的 `probe.route` 优先）。
+
+两个可选键用于调优 gauge 通道：
+
+- `permissions.autoMode.classifier.ambiguityAsk`（布尔，默认关闭）：只要有可用的有界任务文本（从你最近的消息折叠而来），就向 System One 调用追加第二个 `ambiguity` 选择题；target/scope 的回答为 `underspecified` 时，把 allow 升级为 ask，理由是 "target/scope under-specified (underspec detector)"。
+- `permissions.autoMode.gaugeContextWindow`（数字）：覆盖假定的 System One 上下文窗口。解析链：该键 > 内置实测注册表（每个已知 System One 模型一个固定的窗口值）> provider 记录的 `contextWindow`（遗留；只适用于未知模型 id）> 1024 默认值。模型 id 会做前缀归一化（前导 `llmbox_systemone/` 命名空间会被剥掉）；注册表遮蔽了一个不同的 provider 记录值时，每个进程一次性告警（`permission-rules:gauge-window-mismatch`）并指出被忽略的值。把窗口调大是危险方向——过大的窗口会静默截断裁决输入——拿不准时往小了配。
 
 在 `auto` 模式下，一个建议性的提示注入探针还会扫描 `read`、`bash`、`web_fetch` 和 `mcp__*` 等工具结果的文本，并给被标记的结果附上一条安全提示。
 

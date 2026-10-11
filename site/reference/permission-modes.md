@@ -1,7 +1,7 @@
 ---
 title: Permission modes
 description: The five permission modes, the rule engine's rule forms and evaluation order, strict-rule auto mode and its risk classifier, and the /permissions and /auto-mode commands.
-distilled-from: dsh-cc v0.8.3 (a33c681f)
+distilled-from: dsh-cc v0.9.0 (cdfcca16)
 ---
 
 # Permission modes
@@ -130,6 +130,27 @@ enabled, an llm service is mounted, and the alias route resolves.
   failing lane opens, one warn per process, one `breaker` audit event per
   session. After a 60s cooldown the route goes half-open and admits one probe
   call. A settings change (`rebuild()`) resets the breaker.
+- **Gauge (System One) backend.** `classifier.backend` selects `'haiku'`
+  (default) or `'auto'`; with `'auto'`, an explicit `classifier.route` still
+  wins and the stage arms a native typed-decision backend when the `gauge`
+  lane alias resolves to a System One route (a `protocol: "systemone"` alias
+  entry or an `llmbox_systemone/` model id). Gating is on `P(allow)` against
+  `classifier.gaugeAllowThreshold` (default `0.5`); a gauge `deny` collapses
+  to `ask` — a System One verdict cannot cite an exact `hard_deny` rule.
+- **Gauge tuning.** `classifier.ambiguityAsk` (boolean, default off) adds a
+  second `ambiguity` choice question to the System One call whenever bounded
+  task text (folded from your recent messages) is available; an
+  `underspecified` target/scope answer escalates allow→ask with the reason
+  "target/scope under-specified (underspec detector)".
+  `permissions.autoMode.gaugeContextWindow` (number, optional) overrides the
+  assumed System One context window; model ids are prefix-normalized (a
+  leading `llmbox_systemone/` namespace is stripped), and a registry shadow of a differing
+  provider-record value warns once per process
+  (`permission-rules:gauge-window-mismatch`).
+
+A non-grant denial shows the model the original ask reason (sanitized, capped
+at 120 characters) plus a guidance line — the outcome is a permission
+decision, not a tool malfunction.
 
 In `auto` mode an advisory **prompt-injection probe** also scans the text of
 executed tool results (by default `read`, `read_image`, `bash`, `web_fetch`,
@@ -174,8 +195,9 @@ The `permissions` namespace accepts:
 | `permissions.criticalDeny` | Append-only list added to the bypass-immune critical tier. |
 | `permissions.autoMode.hard_deny` / `soft_deny` / `allow` / `environment` | Classifier policy slots with `$defaults` expansion. |
 | `permissions.autoMode.classifyAllShell` | Suspend every bash/PowerShell allow rule in `auto`. |
-| `permissions.autoMode.classifier` | `{ enabled, route, timeoutMs, cacheMaxEntries }` arming the LLM stage, plus `secondPass` and `auditFullText`. |
-| `permissions.autoMode.probe` | Prompt-injection probe: `toolPatterns`, `route` (default `haiku`), `timeoutMs` (default 5000). |
+| `permissions.autoMode.classifier` | `{ enabled, route, timeoutMs, cacheMaxEntries }` arming the LLM stage, plus `secondPass`, `auditFullText`, `backend`, `gaugeAllowThreshold`, and `ambiguityAsk`. |
+| `permissions.autoMode.gaugeContextWindow` | Per-model System One window override; falls back to the measured per-model registry, then the provider record, then 1024. |
+| `permissions.autoMode.probe` | Prompt-injection probe: `toolPatterns`, `route` (default `haiku`), `backend` (same `'haiku'`/`'auto'` selector), `timeoutMs` (default 5000). |
 
 Settings rules carry the `settingsSource` label and merge with Config `rules`
 by source priority — settings rules win. A stored change re-runs the merge and

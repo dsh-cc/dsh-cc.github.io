@@ -131,6 +131,10 @@ the same way. It runs only when three gates all pass:
    mid-consolidation recovers automatically. A failed or killed consolidation
    rolls the lock back so the time gate re-opens.
 
+Two more knobs bound the forced path: `pressureCooldownMinutes` (default 60)
+is the minimum minutes between forced (pressure) dreams, and `sessionsRoot`
+(default `<DSH_HOME>/sessions`) is the session store root the gates scan.
+
 ## Recall: how memories surface later
 
 You do not have to ask for memories back. An `agent/pre-step` listener runs a

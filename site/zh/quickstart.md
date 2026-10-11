@@ -36,10 +36,12 @@ $ dsh-cc
 
 ### 可选：官方插件
 
-以上安装就是完整的快速开始。另有两个可选官方插件——通过 dsh-cc 仓库自带的 `dsh-cc` marketplace 分发——提供预配置好的子代理通道：
+以上安装就是完整的快速开始。另有四个可选官方插件——通过 dsh-cc 仓库自带的 `dsh-cc` marketplace 分发——提供预配置好的子代理通道和外部模型桥接：
 
 - **`dsh-cc-agents`** — `dsh-cc-agents:critic`（推理与方案评审）、`dsh-cc-agents:executor`（机械执行）和 `dsh-cc-agents:marathon`（长周期、全仓库级工作）三个子代理，外加一个编排路由 skill。
 - **`dsh-cc-shunt`** — 把大批量文件读取和模板代码生成重定向到廉价通道的工作子代理，让大文件语料不进入主上下文。
+- **`cc-codex-bridge`** — 一条免审批的 Codex 救援通道：PreToolUse hook 会在每次会话运行中自动放行唯一一条规范化、锁定参数的 Codex 调用，让卡住的会话可以把任务交给 Codex，而无需经过权限检查点。
+- **`cc-grok-bridge`** — 同样的模式用于 Grok 评审通道：自动放行唯一一条规范化调用，外部 Grok 评审无需逐次审批。
 
 在会话内安装：
 
@@ -64,6 +66,7 @@ $ dsh-cc
 
 | dsh-cc release | Verified dsh |
 | --- | --- |
+| v0.9.0-rc.1 – v0.9.0 | 0.2.0-rc.2 |
 | v0.8.3 | 0.2.0-rc.2 |
 | v0.8.2 | 0.1.7-rc.2 |
 | v0.6.3 – v0.8.1 | 0.1.5-rc.1 |

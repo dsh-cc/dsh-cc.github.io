@@ -1,7 +1,7 @@
 ---
 title: 设置级联
 description: dsh-cc 如何在五个层级间解析 settings.json、合并它们，并安全地应用环境变量。
-distilled-from: dsh-cc v0.8.3 (a33c681f)
+distilled-from: dsh-cc v0.9.0 (cdfcca16)
 ---
 
 # 设置级联
@@ -107,9 +107,11 @@ PATH
 | --- | --- | --- | --- |
 | `cc-onboarding` | `suppressed`（未设置/false） | 设为 `true` 可永久跳过首次运行的 onboarding 流程；用 `/onboard` 重新开启。 | [快速开始](/zh/quickstart) |
 | `cc-learn` | `enabled`（true）、`days`（14）、`min-occurrences`（2） | `/learn` 命令的时间窗口与写入门槛；`enabled` 同时控制 `manage_skill` 工具。 | [记忆体系](/zh/guide/memory) |
+| `cc-skill-usage` | `enabled`（true）、`rollup-stale-hours`（24）、`never-loaded-days`（30） | 技能使用遥测：把已提交的技能加载计入按工作区存放的 sidecar 台账，并派生一份效用报告，其降级候选清单仅作报告展示。仅限主 realm；仅限用户层。 | [技能](/zh/guide/skills) |
 | `cc-handoff` | `enabled`（true）、`threshold-chars`（8192，仅提示） | 子代理 handoff 存储的开关及其提示性大小阈值。 | [子代理](/zh/guide/subagents) |
-| `cc-context-compression` | `enabled`（false）、`mode`（dry-run）、`min-bytes`（8192）、`min-savings-ratio`（0.4）、`protected-tools`、`reducer-enabled`（false）、`reducer-max-input-tokens`（30000）、`reducer-min-savings-ratio`（0.5）、`reducer-max-tokens`（1024）、`reducer-timeout-ms`（10000）、`reducer-alias`（haiku）、`reducer-commands` | 可选开启的可逆工具结果压缩。`reducer-*` 键调优一条保证据的压缩通道，把超大结果交给廉价通道的 side query；默认全部处于关闭状态（`reducer-enabled` 默认 false）。 | [交互基础](/zh/guide/interactive-basics) |
+| `cc-context-compression` | `enabled`（false）、`mode`（dry-run）、`min-bytes`（8192）、`min-savings-ratio`（0.4）、`protected-tools`、`reducer-enabled`（false）、`reducer-max-input-tokens`（30000）、`reducer-min-savings-ratio`（0.5）、`reducer-max-tokens`（1024）、`reducer-timeout-ms`（10000）、`reducer-alias`（haiku）、`reducer-commands`、`defer-requests`（0）、`defer-margin`（1.5）、`defer-max-age-ms`（1800000）、`defer-urgency-tokens`（未设置） | 可选开启的可逆工具结果压缩。`reducer-*` 键调优一条保证据的压缩通道，把超大结果交给廉价通道的 side query；默认全部处于关闭状态（`reducer-enabled` 默认 false）。`defer-*` 键推迟外化：符合条件的结果先原样进入会话，在达到该次数的主循环发送计数后才替换为标准 stub（0 表示关闭该延迟）。 | [交互基础](/zh/guide/interactive-basics) |
 | `model-aliases` | 别名条目，外加 `warnOnInherit`（true） | 别名解析背后的 settings 覆盖层；设 `warnOnInherit: false` 可在别名回退到父路由时关掉廉价通道的继承警告。 | [模型路由](/zh/guide/model-routing) |
+| `moa` | `enabled`（false）、`acceptance.enabled`（false）、`acceptance.shadow`（false）、`acceptance.tau`（0.7）、`max-escalations`（1）、`judge-route`（gauge）、`classify-budget-tokens`（4000）、`call-budget-ms`（8000） | 主会话的分层级联路由：System One 分类调用选出满足需求的最低成本通道（`sketch`/`draft`/`blueprint`/`masterplan`），可选的 acceptance judge 会把被拒答案提升一个层级。默认关闭；子代理永不叠加。 | [模型路由](/zh/guide/model-routing) |
 | `worktree` | `baseRef`（fresh）、`cleanupPeriodDays`（30） | worktree 的基底选择（`fresh` 使用带过期刷新的缓存 `origin/HEAD`），以及启动时对过期 `worktree-*` worktree 的清扫。 | [Worktree](/zh/guide/worktrees) |
 | `actor-contract` | `models`（['glm-*']） | 哪些模型会在 agent 定义中收到 `<!-- actor-contract -->` 人格块；列表为空则关闭该契约。 | [子代理](/zh/guide/subagents) |
 | `cc-tool-use-summary` | `enabled`（true）、`topLevelOnly`（true）、`minResultBytes`（4096）、`retentionDays`（7）等 | 大型工具结果的廉价通道摘要，供 compaction 消费；`topLevelOnly` 会跳过子代理会话，`retentionDays: 0` 表示只在内存中保留。 | [交互基础](/zh/guide/interactive-basics) |
@@ -117,12 +119,16 @@ PATH
 | `cc-post-edit-verify` | `enabled`（false）、`rules`（[]）、`debounce-ms`（5000） | 在 `edit`/`write` 结果被接受后运行你声明的验证命令，并把结果追加到同一条工具结果中。**仅限用户层**（`~/.dsh/settings.json`）；project 层的规则永远不会被读取。 | [交互基础](/zh/guide/interactive-basics) |
 | `cc-edit-recovery-hint` | `enabled`（false） | 当 `edit` 因多行 `old_string` 找不到匹配而失败时，追加一条固定的恢复建议。**仅限用户层**；project 层永远不会被读取。 | [交互基础](/zh/guide/interactive-basics) |
 | `cc-compaction-cost-gate` | `enabled`（false）、`mode`（dry-run）、`margin`（1.0）、`cooldown-ms`（600000） | 默认关闭；在真正执行 compaction 前先评估压缩收益是否抵得过重写成本，每次真实压缩后进入冷却期。 | [交互基础](/zh/guide/interactive-basics) |
+| `cc-completion-gate` | `enabled`（false）、`nudges-per-session`（1） | 回执台账，外加每个会话一次提醒：当某次轮次停止声称已完成（"tests pass"、"committed"、…）却没有相匹配的已执行证据时触发。**仅限用户层。** | [交互基础](/zh/guide/interactive-basics) |
+| `retry-attendant` | `enabled`（false）、`guidance`（启用时 true）、`escalate`（启用时 true）、`expire-minutes`（10） | 针对结果不明确的变更类工具调用，"先验证后重试"专员按类别给出建议行；过期窗口内完全相同的重试会升级为询问（ask）。**仅限用户层。** | [交互基础](/zh/guide/interactive-basics) |
+| `progress-rebuild` | `enabled`（false）、`max-lines`（120）、`include-verified`（true） | 默认关闭；在一次成功的 compaction 之后，把一份结构化进度简报注入 compaction 之后构建的第一个模型请求。 | [交互基础](/zh/guide/interactive-basics) |
 | `cc-turn-rules` | `enabled`（true）、`max-result-bytes`（200000）、`regex-cache-size`（64）、`judged.enabled`（false）、`repeat-reminder.enabled`（false）、`repeat-reminder.thresholds`（[3,5,8]）、`repeat-reminder.include`/`exclude`（[]）、`repeat-reminder.arguments-preview-chars`（500） | Turn rules：带 `trigger` 正则的 Cursor 插件规则在正则命中时作为建议性提醒注入。默认开启，但在存在这类规则之前没有任何效果。该命名空间还携带内置的 repeat-reminder（默认关闭）：当顶层 agent 连续多次发出参数完全相同的同一工具调用时，会在每个默认阈值（[3,5,8]）处触发一条建议性提醒，下一次用户输入会重置计数。**仅用户层。** | [插件](/zh/guide/plugins) |
 | `cc-advisor` | `enabled`（false）、`alias`（haiku）、`budget`（2）、`immune-turns`（3）、`session-cap`（24）、`severities`（三种全选）、`subagents`（off） | 可选的 advisor watchdog：由第二个模型审查每个完成的轮次。**仅用户层。** | [交互基础](/zh/guide/interactive-basics) |
 | `cc-lsp-on-write` | `enabled`（false）、`server-name`（serena）、`timeout-ms`（1500）、`max-diagnostics`（8）、`min-severity`（warning）、`tool-names` | 可选：从运行中的 serena MCP server 拉取 LSP 诊断，追加到 `edit`/`write`/`NotebookEdit` 结果。**仅用户层。** | [交互基础](/zh/guide/interactive-basics) |
 | `cc-secrets` | `extraPatterns`、`redactCrusherStore` | 为单向密钥脱敏追加正则源；脱敏作用于 `/export` 输出和 context-crusher 存储。 | [斜杠命令](/zh/reference/commands) |
 | `cc-foreign-rules` | `disabled` | 关闭从会话 cwd 收集其他 agent 规则文件（cline/windsurf/copilot）并放入 `cc:foreign-rules` 提示段的行为。 | [兼容性](/zh/reference/compatibility) |
 | `cc-model-cycling` | `cycleOrder` | TUI 中 `Ctrl+P` / `Shift+Ctrl+P` 循环切换的别名列表。 | [模型路由](/zh/guide/model-routing) |
+| `config-snapshot` | `config-snapshot.enabled`（true） | 每次构造会话都向 `<dshHome>/config-snapshot/<encodedId>.jsonl` 写入一行 JSONL（dsh-cc 版本、harness 版本、preset id、插件清单）；仅用于观测——异步写入器 fail-open，从不阻塞会话创建。 | — |
 
 ## 另请参阅
 

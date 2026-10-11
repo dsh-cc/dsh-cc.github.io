@@ -133,6 +133,30 @@ $ /skills            list installed skills
 `disable-model-invocation: true`，这样模型就不会自行把它们拉进来。
 :::
 
+## 技能使用遥测
+
+`@dsh-cc/skill-usage` 是一个只观察（observe-only）的遥测插件，默认开启。它统计每一次已提交的技能加载——包括工具形式（成功的 `skill` 工具调用）和斜杠形式（`/name` 调用）——写入 `<dshHome>/skill-usage/` 下按工作区划分的 sidecar 账本。会话 transcript 不会被追加任何内容。
+
+sidecar 目录下每个工作区有三个文件：
+
+| 文件 | 说明 |
+| --- | --- |
+| `loads-<projectKey>.jsonl` | 只追加（append-only）的账本，每次已提交的加载对应一行 |
+| `observing-since-<projectKey>` | 观察覆盖起点标记；遥测停用期间会被删除 |
+| `utility-<projectKey>.md` | 派生的、可重新生成的效用报告 |
+
+效用报告展示每个技能的加载次数（30 天 / 全部时间）、去重会话数、最近加载时间、从未加载过的习得技能（含 `SKILL.md` mtime 年龄），以及降级候选（习得技能、30 天内 0 次加载、年龄 > 14 天、覆盖时长 ≥ 30 天）。降级**仅报告**，仍然手动执行——`manage_skill` 的 delete 或 edit。当前被遮蔽（shadowed）习得技能的加载会被标记为归因不确定（attribution-uncertain）。
+
+设置位于 `cc-skill-usage` 命名空间，仅 user 层：
+
+| 键 | 默认值 | 含义 |
+| --- | --- | --- |
+| `enabled` | `true` | 遥测插件的总开关 |
+| `rollup-stale-hours` | `24` | 报告过期时间窗口 |
+| `never-loaded-days` | `30` | 只控制报告中的 "Never loaded" 小节 |
+
+已声明的边界：观察**仅限主域（main-realm）**——子代理的技能加载不可见；归因按技能名进行，因此被遮蔽习得技能的加载可能属于遮蔽它的技能；v1 中账本**无上限**——轮转（rotation）是后续事项。
+
 ## 最小示例
 
 来源中没有提供可直接复制的示例 `SKILL.md`，因此以下示例只使用提供方文档化的字段搭建，**并非**官方示例，正文写法由你自行决定。把它放在

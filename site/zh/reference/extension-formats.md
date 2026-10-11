@@ -1,7 +1,7 @@
 ---
 title: 扩展格式
 description: 每个 Claude Code 兼容扩展文件（hooks、skills、plugins、subagents）的存放位置、最小骨架，以及指向完整指南的链接。
-distilled-from: dsh-cc v0.8.3 (a33c681f)
+distilled-from: dsh-cc v0.9.0 (cdfcca16)
 ---
 
 # 扩展格式
@@ -139,8 +139,11 @@ The agent's system prompt, written as the markdown body.
 `description` 成为何时使用的指引；`tools`/`disallowedTools` 编译为有效的
 allow/deny 工具限制；`model`（含 `inherit`）通过 `ccModelRoutes` 别名服务
 解析；`effort`、`permissionMode`、`maxTurns`、`initialPrompt`、`background`、
-`memory`、`skills`、`mcpServers`、`hooks` 和 `isolation` 随定义携带。
-`background: true` 是活字段：`run_in_background` 省略时任务转后台（显式
+`memory`、`skills`、`mcpServers`、`hooks`、`isolation`、`ephemeral`、
+`ephemeralTtlMs` 和 `autoReleaseMs` 随定义携带。`ephemeral: true` 强制
+前台一次性通道，`ephemeralTtlMs` 是其 TTL（默认 15 分钟）；`autoReleaseMs`
+覆盖自然结束后的自动释放窗口（前台送达 30 分钟 / 后台送达 2 小时；`0`
+表示禁用）。`background: true` 是活字段：`run_in_background` 省略时任务转后台（显式
 `run_in_background: false` 强制前台；契约见
 [/guide/subagents](/zh/guide/subagents)）。`isolation: worktree`
 会把子代理派发到每个子代理独占的隔离 git worktree（生命周期见

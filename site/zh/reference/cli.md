@@ -1,7 +1,7 @@
 ---
 title: CLI 参数
 description: dsh-cc 可执行文件在启动 dsh --profile tui 之前接受的参数。
-distilled-from: dsh-cc v0.8.3 (a33c681f)
+distilled-from: dsh-cc v0.9.0 (cdfcca16)
 ---
 
 # CLI 参数
@@ -40,6 +40,21 @@ $ dsh-cc
 
 退出时，TUI 会打印会话 id 和恢复命令，方便下次接着聊；设
 `DSH_CC_DISABLE_EXIT_TIP='1'` 可关闭该提示（[/reference/env-vars](/zh/reference/env-vars)）。
+
+## `dsh-cc acp` —— ACP 通道
+
+`dsh-cc acp [<args>]` 把 `cc-acp` profile（安装在 `~/.dsh/profiles/cc-acp`
+下）作为 Agent Client Protocol（ACP，v1）服务器经 stdio 启动，让 Zed
+之类的 ACP 客户端通过 JSON-RPC 驱动 dsh-cc 的 agent。该服务器是 harness
+`@deepseek-ai/dsh-acp` 插件的逐项移植，叠加 CC preset 组合；其 `presetId`
+配置默认为 `'cc'`。在编辑器中接入这一通道，把 agent server 指向 dsh-cc：
+
+```json
+{"command": "dsh-cc", "args": ["acp"]}
+```
+
+工作目录由编辑器提供。与上文 TUI 启动相同的 harness 下限检查与
+bootstrap/reconcile 行为在这里同样适用。
 
 ## 参数如何传递给 TUI
 

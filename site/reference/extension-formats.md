@@ -1,7 +1,7 @@
 ---
 title: Extension formats
 description: Where each Claude Code-compatible extension file lives (hooks, skills, plugins, subagents), with minimal skeletons and links to the full guides.
-distilled-from: dsh-cc v0.8.3 (a33c681f)
+distilled-from: dsh-cc v0.9.0 (cdfcca16)
 ---
 
 # Extension formats
@@ -151,8 +151,13 @@ The agent's system prompt, written as the markdown body.
 compile to an effective allow/deny restriction; `model` (with `inherit`)
 resolves through the `ccModelRoutes` alias service; `effort`,
 `permissionMode`, `maxTurns`, `initialPrompt`, `background`, `memory`,
-`skills`, `mcpServers`, `hooks`, and `isolation` are carried in the
-definition. `background: true` is live: when `run_in_background` is omitted
+`skills`, `mcpServers`, `hooks`, `isolation`, `ephemeral`,
+`ephemeralTtlMs`, and `autoReleaseMs` are carried in the definition.
+`ephemeral: true` forces the foreground one-shot lane, with
+`ephemeralTtlMs` as its TTL (default 15 minutes); `autoReleaseMs`
+overrides the settled auto-release window (30 minutes
+foreground-delivered / 2 hours background-delivered; `0` disables).
+`background: true` is live: when `run_in_background` is omitted
 the run backgrounds (explicit `run_in_background: false` forces foreground;
 the contract is covered in [/guide/subagents](/guide/subagents)). `isolation:
 worktree` dispatches the child into a per-child isolated git worktree

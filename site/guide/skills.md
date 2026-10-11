@@ -180,6 +180,30 @@ Set `disable-model-invocation: true` on skills you want to run only when you
 ask for them, so the model never pulls them in on its own.
 :::
 
+## Skill-usage telemetry
+
+`@dsh-cc/skill-usage` is an observe-only telemetry plugin, on by default, that counts every committed skill load — both tool-form loads (successful `skill` tool calls) and slash-form (`/name` invocations) — into a per-workspace sidecar ledger under `<dshHome>/skill-usage/`. Nothing is appended to session transcripts.
+
+The sidecar directory holds three files per workspace:
+
+| File | What it is |
+| --- | --- |
+| `loads-<projectKey>.jsonl` | Append-only ledger, one row per committed load |
+| `observing-since-<projectKey>` | Coverage start marker; deleted while telemetry is disabled |
+| `utility-<projectKey>.md` | Derived, regenerable utility report |
+
+The utility report shows per-skill loads (30 d / all-time), distinct sessions, last-loaded, never-loaded learned skills with `SKILL.md`-mtime age, and demote candidates (learned, 0 loads in 30 d, age > 14 d, coverage ≥ 30 d). Demotion is **report-only** and stays manual — `manage_skill` delete or edit. Loads of a currently shadowed learned skill are marked attribution-uncertain.
+
+Settings live in the `cc-skill-usage` namespace, user layer only:
+
+| Key | Default | What it does |
+| --- | --- | --- |
+| `enabled` | `true` | Master flag for the telemetry plugin |
+| `rollup-stale-hours` | `24` | Report staleness window |
+| `never-loaded-days` | `30` | Gates only the "Never loaded" report section |
+
+Stated boundaries: observation is **main-realm only** — subagent skill loads are invisible; attribution keys on the skill name, so a shadowed learned skill's loads may belong to the shadowing skill; and the ledger is **unbounded in v1** — rotation is a follow-up.
+
 ## A minimal worked example
 
 The source does not ship an example `SKILL.md` for copy-paste, so the

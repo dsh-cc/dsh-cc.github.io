@@ -1,7 +1,7 @@
 ---
 title: 权限模式
 description: 五种权限模式、规则引擎的规则形式与求值顺序、严格规则的 auto 模式及其风险分类器，以及 /permissions 和 /auto-mode 命令。
-distilled-from: dsh-cc v0.8.3 (a33c681f)
+distilled-from: dsh-cc v0.9.0 (cdfcca16)
 ---
 
 # 权限模式
@@ -114,6 +114,24 @@ ask。
 - **熔断器。** 按路由（阈值 3，按 `provider/model` 为键）：失败通道打开，每个
   进程一条警告，每个会话一条 `breaker` 审计事件。冷却 60s 后路由进入半开状态，
   放行一次探测调用。设置变更（`rebuild()`）会重置熔断器。
+- **gauge（System One）后端。** `classifier.backend` 取 `'haiku'`（默认）或
+  `'auto'`；在 `'auto'` 下，显式的 `classifier.route` 仍然优先，`gauge`
+  通道别名解析到一条 System One 路由（一个 `protocol: "systemone"` 别名条目或一个
+  `llmbox_systemone/` 模型 id）时，阶段武装原生类型化决策后端。门控用 `P(allow)`
+  对照 `classifier.gaugeAllowThreshold`（默认 `0.5`）；gauge 的 `deny` 退化为
+  `ask`——System One 裁决无法引用精确的 `hard_deny` 规则。
+- **gauge 调优。** `classifier.ambiguityAsk`（布尔，默认关闭）：只要有可用的有界
+  任务文本（从你最近的消息折叠而来），就向 System One 调用追加第二个 `ambiguity`
+  选择题；target/scope 的回答为 `underspecified` 时，allow 升级为 ask，理由是
+  "target/scope under-specified (underspec detector)"。
+  `permissions.autoMode.gaugeContextWindow`（数字，可选）覆盖假定的 System One
+  上下文窗口；模型 id 做前缀归一化（前导 `llmbox_systemone/` 命名空间会被
+  剥掉），注册表
+  遮蔽不同的 provider 记录值时每个进程告警一次
+  （`permission-rules:gauge-window-mismatch`）。
+
+非授权的拒绝会让模型看到原始的询问理由（经净化、截断至 120 字符）外加一行
+指引——这是权限决定，不是工具故障。
 
 在 `auto` 模式下，一个建议性的**提示注入探针**还会扫描已执行工具结果的文本
 （默认 `read`、`read_image`、`bash`、`web_fetch`、`web_search` 以及所有
@@ -156,8 +174,9 @@ ask。
 | `permissions.criticalDeny` | 追加到绕行免疫 critical 档的只追加列表。 |
 | `permissions.autoMode.hard_deny` / `soft_deny` / `allow` / `environment` | 支持 `$defaults` 展开的分类器策略槽位。 |
 | `permissions.autoMode.classifyAllShell` | 在 `auto` 下挂起每一条 bash/PowerShell allow 规则。 |
-| `permissions.autoMode.classifier` | `{ enabled, route, timeoutMs, cacheMaxEntries }`，武装 LLM 阶段；另有 `secondPass` 和 `auditFullText`。 |
-| `permissions.autoMode.probe` | 提示注入探针：`toolPatterns`、`route`（默认 `haiku`）、`timeoutMs`（默认 5000）。 |
+| `permissions.autoMode.classifier` | `{ enabled, route, timeoutMs, cacheMaxEntries }`，武装 LLM 阶段；另有 `secondPass`、`auditFullText`、`backend`、`gaugeAllowThreshold` 和 `ambiguityAsk`。 |
+| `permissions.autoMode.gaugeContextWindow` | 按模型的 System One 窗口覆盖；依次回退到实测的按模型注册表、provider 记录、1024。 |
+| `permissions.autoMode.probe` | 提示注入探针：`toolPatterns`、`route`（默认 `haiku`）、`backend`（同一个 gauge 选择器）、`timeoutMs`（默认 5000）。 |
 
 设置规则带有 `settingsSource` 标签，并按来源优先级与 Config `rules` 合并——设置
 规则获胜。存储变更会立即重新合并并重新注册 guard；格式错误的设置规则在设置边界
