@@ -35,6 +35,27 @@ inherit             -> parent agent route
 dsh-cc 项目本身就使用这套路由进行日常开发——当前开发映射见项目 README 的 [Dogfooding dsh-cc](https://github.com/dsh-cc/dsh-cc#dogfooding-dsh-cc) 章节。那只是项目自身的真实配置，不是强制默认值。
 :::
 
+## 分层级联路由（moa）
+
+`@dsh-cc/moa` 插件把主对话轮次路由到 `sketch` / `draft` / `blueprint` / `masterplan` 四条通道别名上：每个用户轮次由一次 System One 决策调用分类到足够用的最便宜层级，可选的验收判定器会把被拒绝的回答升级到上一层级。
+
+moa **默认关闭**——`moa.enabled: false` 时插件不挂载任何东西，也不产生任何开销。子代理和 fork 永远不会被叠加该路由。
+
+配置位于 `moa` settings 命名空间：
+
+| 键 | 默认值 | 含义 |
+| --- | --- | --- |
+| `enabled` | `false` | 在主 agent 上启用分层路由 |
+| `acceptance.enabled` | `false` | 运行验收判定器并按拒绝结果行动 |
+| `acceptance.shadow` | `false` | 运行判定器，但只记录判定结果 |
+| `acceptance.tau` | `0.7` | 当 `P(acceptable) < tau` 时判定拒绝 |
+| `max-escalations` | `1` | 每条消息的升级上限（读取时钳制到 3） |
+| `judge-route` | 别名 `gauge` | 别名或 `{provider, model, protocol}`；未设置时使用 gauge 通道别名，它必须解析到一条 System One 路由，否则 moa 保持未启用状态 |
+| `classify-budget-tokens` | `4000` | 分类输入预算 |
+| `call-budget-ms` | `8000` | 每条消息的级联时限 |
+
+验收判定器运行在上文介绍的 `gauge` 通道上——即 System One 模型的类型化决策廉价通道——因此 `judge-route` 未设置时，能解析到 System One 路由的 `gauge` 映射是启用判定的前提。
+
 ## 用 `/provider` 管理供应商
 
 `/provider` 命令在覆盖层中管理已配置的模型供应商：

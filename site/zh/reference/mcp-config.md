@@ -1,7 +1,7 @@
 ---
 title: MCP 配置
 description: dsh-cc 的 .mcp.json 模式、MCP 配置发现优先级、dsh-first 门控规则，以及 /mcp 命令。
-distilled-from: dsh-cc v0.8.3 (a33c681f)
+distilled-from: dsh-cc v0.9.0 (cdfcca16)
 ---
 
 # MCP 配置

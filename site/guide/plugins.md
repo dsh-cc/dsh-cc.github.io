@@ -248,7 +248,7 @@ Each bridge lets a session run exactly one canonical, locked-down invocation, `n
 ```
 
 - A SessionStart hook injects a `cc-codex-bridge:` or `cc-grok-bridge:` block stating whether the lane is **ARMED**, with the exact canonical invocation, or **NOT armed** with the reason. When the block is absent or NOT armed, the lane falls back to the approval-requiring path.
-- Multi-line prompts go through `--prompt-file <path>`, with the file inside the workspace or the canonical tmpdir. `--last` is used only when you explicitly ask to continue the previous run.
+- For Grok, inline prompts must be single-line and must not start with `-`; multi-line or dash-leading prompts go through `--prompt-file <path>` (the Codex lane's `--prompt-file` rule is multi-line only), with the file inside the workspace or the canonical tmpdir. `--last` is used only when you explicitly ask to continue the previous run.
 - For Grok, `grok login --device-code` writes `~/.grok/auth.json`, which the bridge seeds into a per-workspace shadow `GROK_HOME` for each run; an ambient `XAI_API_KEY` also passes through. The Grok lane has no turn cap; each successful run prints a `grok-review: session=… cost_usd=… turns=…` line on stderr. It was verified against grok 1.0.41.
 - A non-empty `BASH_ENV` or `ENV` disarms the lane. In dsh-cc's own repo dev sessions arming is refused (`anchor-under-writable-root`).
 

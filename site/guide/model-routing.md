@@ -35,6 +35,27 @@ The key point: **aliases are configuration, not hard-coded vendor bindings.** Th
 The dsh-cc project itself is developed with dsh-cc using this exact routing — see the current development mapping in the project README's [Dogfooding dsh-cc](https://github.com/dsh-cc/dsh-cc#dogfooding-dsh-cc) section. It is a real project configuration, not a required default.
 :::
 
+## Tiered cascade routing (moa)
+
+The `@dsh-cc/moa` plugin routes main-conversation turns over the four lane aliases `sketch` / `draft` / `blueprint` / `masterplan`: each user turn is classified by a System One decision call into the cheapest sufficient tier, and an optional acceptance judge escalates a rejected answer to the next tier up.
+
+moa is **off by default** — with `moa.enabled: false` the plugin mounts nothing and costs nothing. Subagents and forks are never overlaid.
+
+Configuration lives in the `moa` settings namespace:
+
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `enabled` | `false` | arm tiered routing on the main agent |
+| `acceptance.enabled` | `false` | run the acceptance judge and act on rejects |
+| `acceptance.shadow` | `false` | run the judge, log verdicts only |
+| `acceptance.tau` | `0.7` | reject when `P(acceptable) < tau` |
+| `max-escalations` | `1` | per-message escalation ceiling (read-time clamp to 3) |
+| `judge-route` | alias `gauge` | alias or `{provider, model, protocol}`; unset uses the gauge lane alias, which must resolve to a System One route, else moa stays unarmed |
+| `classify-budget-tokens` | `4000` | classify input budget |
+| `call-budget-ms` | `8000` | per-message cascade deadline |
+
+The acceptance judge runs on the `gauge` lane described above — the typed-decision cheap lane for System One models — so a `gauge` mapping that resolves to a System One route is what arms judging when `judge-route` is left unset.
+
 ## Managing providers with `/provider`
 
 The `/provider` command opens an overlay over your configured model providers:

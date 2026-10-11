@@ -248,7 +248,7 @@ shunt worker 固定 `model: haiku`。如果你的部署没有配置 haiku 别名
 ```
 
 - 一个 SessionStart hook 会注入 `cc-codex-bridge:` 或 `cc-grok-bridge:` 块，说明通道是 **ARMED**（附带确切的规范调用）还是 **NOT armed**（附带原因）。块缺失或显示 NOT armed 时，通道回落到需要审批的路径。
-- 多行提示词走 `--prompt-file <path>`，文件放在工作区或规范 tmpdir 中。只有在你明确要求继续上一次运行时才使用 `--last`。
+- Grok 侧的内联提示词必须是单行，且不得以 `-` 开头；多行或以连字符开头的提示词走 `--prompt-file <path>`（Codex 通道的 `--prompt-file` 规则仅针对多行），文件放在工作区或规范 tmpdir 中。只有在你明确要求继续上一次运行时才使用 `--last`。
 - 对 Grok，`grok login --device-code` 会写入 `~/.grok/auth.json`，bridge 每次运行时把它植入按工作区划分的影子 `GROK_HOME`；环境中的 `XAI_API_KEY` 也会透传。Grok 通道没有轮次上限；每次成功运行会在 stderr 打印一行 `grok-review: session=… cost_usd=… turns=…`。已针对 grok 1.0.41 验证。
 - 非空的 `BASH_ENV` 或 `ENV` 会解除通道武装。在 dsh-cc 自身仓库的开发会话中会拒绝武装（`anchor-under-writable-root`）。
 

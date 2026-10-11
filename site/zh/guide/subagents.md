@@ -31,6 +31,9 @@ description: 在 .claude/agents 下编写 Claude Code 风格的代理定义，�
 | `tools` | 收窄子代理的工具集（allow/deny），见下文工具一节。 |
 | `background` | 将该代理固定为可继续的后台代理启动，见下文。 |
 | `isolation` | `isolation: worktree` 会把子代理调度进它自己的 git worktree，见下文。 |
+| `ephemeral` | `ephemeral: true` 让任何定义强制走前台一次性通道；`ephemeral: false` 覆盖只读白名单。见下文"临时只读代理"一节。 |
+| `ephemeralTtlMs` | 运行中临时子代理的 TTL（毫秒），默认 15 分钟。见下文"临时只读代理"一节。 |
+| `autoReleaseMs` | 自然结束后自动释放窗口的覆盖值（毫秒）；`0` 表示永不自动释放，非法值在加载时大声失败。见下文"自然结束后的自动释放"一节。 |
 
 加载器也会解析 `permissionMode`、`memory`、`effort` 等 CC frontmatter 字段，但 v1 不会把它们投影到子代理上——使用了这些字段的定义，其行为等同于字段不存在。（`isolation: worktree` 和 `background: true` 是会被消费的，见下文。）
 
@@ -102,6 +105,22 @@ frontmatter 的 `tools:` 值会收窄子代理的工具集，并针对 spawn 时
 默认情况下 `Task` 调用是**前台**的：工具等待子代理完成并返回其文本输出。在定义中设置 `background: true` 会把该代理固定为持久、可继续的后台代理——调用立即返回一个 `agentId`，结果稍后以唤醒消息的形式到达。调用方仍可覆盖这一固定：显式 `run_in_background: false` 强制前台，显式 `run_in_background: true` 则让任何代理都在后台启动。
 
 后台代理的运行、恢复、中断与查看（`send_message` / `interrupt` / `list`、`/tasks`、`/agents`）见 [/guide/background-tasks](/zh/guide/background-tasks)。
+
+### 临时只读代理
+
+白名单中的只读定义——内置的 `explore` 与 `dsh-cc-guide`，以及 `dsh-cc-shunt` 插件的 `shunt-reader`——外加**任何**在 frontmatter 中显式声明 `ephemeral: true` 的定义，都会以前台一次性的方式运行：一次普通 spawn，不创建持久子代理、不写恢复钉版、不可恢复。定义上的 `ephemeral: false` 会覆盖白名单。
+
+上面的后台化控制不会延续到这一通道：这类定义上的 `background: true` 固定会被忽略（并附一条显式提示，说明固定被忽略是因为只读临时代理永远以前台一次性方式运行）；显式的 `run_in_background: true` 参数会被快速失败拒绝；`isolation: worktree` 以同样方式被拒绝；Ctrl+B 无法提升临时代理的等待；每条临时代理的结果都带有一行提示，说明没有创建持久子代理。
+
+运行中的临时子代理按定义的 `ephemeralTtlMs` 或 15 分钟默认值收割；到期会提示 "ephemeral child hit its TTL; re-spawn it"。运行中的临时子代理计入 25 个存活子代理的容量护栏；对运行中的临时代理不支持 `release_agent`（按模式门控）——它只能自己结束，或撞上 TTL。
+
+### 自然结束后的自动释放
+
+自然结束的可持续子代理会在一段不活跃宽限期后被自动释放：前台送达的结果为 30 分钟，后台送达的结果为 2 小时（包括 Ctrl+B 提升后的唤醒消息）。
+
+按定义覆盖的旋钮是 frontmatter 的 `autoReleaseMs`（毫秒）：缺省使用层级默认值，`0` 表示永不自动释放，非法值在加载时大声失败。`dsh-cc-agents` 插件的写通道代理在其定义中固定了 `autoReleaseMs: 7200000`——等于 2 小时的后台默认值，显式固定是为了让它不受策略漂移影响。
+
+结束时的消息会在两个送达点都标明该窗口（"auto-released after … of inactivity"），被自动释放的子代理在 `/agents` 中的标记与手动释放的完全相同。自动释放后该子代理无法继续——`send_message` 会被拒绝，与手动 `release_agent` 同一条规则；`release_agent` 仍然是用来处理卡死的 RUNNING 子代理（可以丢弃的那种）的工具。
 
 ### `isolation: worktree`
 

@@ -1,7 +1,7 @@
 ---
 title: CLI flags
 description: The dsh-cc bin and the flags it accepts before spawning dsh --profile tui.
-distilled-from: dsh-cc v0.8.3 (a33c681f)
+distilled-from: dsh-cc v0.9.0 (cdfcca16)
 ---
 
 # CLI flags
@@ -44,6 +44,23 @@ and picks the worktree base via settings — see [/guide/worktrees](/guide/workt
 On quit, the TUI prints the session id and the resume command for picking the
 session back up; set `DSH_CC_DISABLE_EXIT_TIP='1'` to disable it
 ([/reference/env-vars](/reference/env-vars)).
+
+## `dsh-cc acp` — the ACP lane
+
+`dsh-cc acp [<args>]` boots the `cc-acp` profile (installed under
+`~/.dsh/profiles/cc-acp`) as an Agent Client Protocol (ACP, v1) server over
+stdio, letting an ACP client such as Zed drive dsh-cc agents over JSON-RPC.
+The server is a verbatim port of the harness `@deepseek-ai/dsh-acp` plugin
+with CC preset composition; its `presetId` config defaults to `'cc'`. To wire
+the lane into an editor, point the agent server at dsh-cc:
+
+```json
+{"command": "dsh-cc", "args": ["acp"]}
+```
+
+The working directory comes from the editor. The same harness floor and
+bootstrap/reconcile behavior as the TUI launch described above apply here
+too.
 
 ## How flags reach the TUI
 

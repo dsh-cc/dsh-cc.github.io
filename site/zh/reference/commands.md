@@ -1,7 +1,7 @@
 ---
 title: 斜杠命令
 description: dsh-cc 全部斜杠命令的参考目录——preset（harness）命令与 TUI 本地命令，附对等状态。
-distilled-from: dsh-cc v0.8.3 (a33c681f)
+distilled-from: dsh-cc v0.9.0 (cdfcca16)
 ---
 
 # 斜杠命令

@@ -22,7 +22,10 @@ Code](/guide/from-claude-code) for the general mapping.
 You want predictable agent behavior: let the model read and edit freely, but
 get asked before anything destructive runs. The TUI provides terminal-oriented
 interactions such as approval flows — when the engine says `ask`, a modal
-appears and you allow or deny the call. Rules are Claude Code-compatible:
+appears and you allow or deny the call. When you deny a call without granting it, the
+model receives the original ask reason (sanitized, capped at 120 characters)
+plus a guidance line, so the outcome reads as a permission decision, not a
+tool malfunction. Rules are Claude Code-compatible:
 `ToolName` and `ToolName(content)` strings you already know carry over.
 
 ## The five modes
@@ -136,6 +139,39 @@ stage** through `permissions.autoMode.classifier` (`enabled` / `route` /
   session to `default`; re-enter with `/permissions auto`.
 - A per-route circuit breaker opens after 3 consecutive failures and admits
   one probe call after a 60s cooldown. A settings change resets it.
+
+### The gauge (System One) backend
+
+The classifier stage can also run on a native typed-decision backend for
+System One models. `permissions.autoMode.classifier.backend` takes `'haiku'`
+(the default) or `'auto'`; with `'auto'`, an explicit `classifier.route`
+still wins, and the classifier arms the native backend when the `gauge` lane
+alias resolves to a System One route — a `protocol: "systemone"` alias entry
+or an `llmbox_systemone/` model id. Instead of a prose verdict, gating is on
+`P(allow)` against `classifier.gaugeAllowThreshold` (default `0.5`), and a
+gauge `deny` collapses to `ask` — a System One verdict cannot cite an exact
+`hard_deny` rule. The prompt-injection probe takes the same selector via
+`permissions.autoMode.probe.backend` (`'haiku'` default | `'auto'`; an
+explicit `probe.route` wins).
+
+Two optional keys tune the gauge lane:
+
+- `permissions.autoMode.classifier.ambiguityAsk` (boolean, default off) adds
+  a second `ambiguity` choice question to the System One call whenever
+  bounded task text (folded from your recent messages) is available; an
+  `underspecified` target/scope answer escalates allow→ask with the reason
+  "target/scope under-specified (underspec detector)".
+- `permissions.autoMode.gaugeContextWindow` (number) overrides the assumed
+  System One context window. Resolution chain: this key > the built-in
+  measured registry (one pinned window size per known System One model) > the
+  provider record's `contextWindow` (legacy; applies to unknown model ids
+  only) > the 1024 default. Model ids are prefix-normalized (a leading
+  `llmbox_systemone/` namespace is stripped); when the registry shadows a
+  differing provider-record value, one
+  process-lifetime warn-once (`permission-rules:gauge-window-mismatch`) names
+  the ignored value. Oversizing is the dangerous direction — an oversized
+  window silently truncates the verdict input — so when in doubt, configure
+  low.
 
 In `auto` mode an advisory prompt-injection probe also scans the text of
 tool results such as `read`, `bash`, `web_fetch`, and `mcp__*` tools, and

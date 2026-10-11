@@ -36,10 +36,12 @@ Official packages come only from the `@dsh-cc` npm scope.
 
 ### Optional: official plugins
 
-The install above is the whole quick start. Two optional official plugins — shipped through the dsh-cc repo's `dsh-cc` marketplace — add preconfigured subagent lanes:
+The install above is the whole quick start. Four optional official plugins — shipped through the dsh-cc repo's `dsh-cc` marketplace — add preconfigured subagent lanes and external model bridges:
 
 - **`dsh-cc-agents`** — the `dsh-cc-agents:critic` (reasoning and plan review) and `dsh-cc-agents:executor` (mechanical execution) subagents, plus the `dsh-cc-agents:marathon` (long-horizon, repo-wide work) subagent and an orchestration routing skill.
 - **`dsh-cc-shunt`** — gates that redirect bulk file reads and boilerplate generation to cheap-lane worker subagents, keeping large file corpora out of the main context.
+- **`cc-codex-bridge`** — an approval-free Codex rescue lane: a PreToolUse hook auto-allows exactly one canonical, locked-down Codex invocation per session run, so a stuck session can hand a task to Codex without a permission checkpoint.
+- **`cc-grok-bridge`** — the same pattern for a Grok review lane: one canonical invocation is auto-allowed, so external Grok review passes need no per-run approval.
 
 Install them inside a session:
 
@@ -64,6 +66,7 @@ On the first launch after an upgrade, the launcher re-runs the profile's bundle 
 
 | dsh-cc release | Verified dsh |
 | --- | --- |
+| v0.9.0-rc.1 – v0.9.0 | 0.2.0-rc.2 |
 | v0.8.3 | 0.2.0-rc.2 |
 | v0.8.2 | 0.1.7-rc.2 |
 | v0.6.3 – v0.8.1 | 0.1.5-rc.1 |

@@ -76,6 +76,7 @@ TUI 消费同一份快照，并在详情视图中追加折叠派生的装饰（p
 - **冷恢复（cold resume）。** 子代理的持久化会话在下一次 `send_message` 时冷恢复——这只适用于自然结束的子代理。回合在父代理退出时被抽干（DRAINED）或已被 RELEASED 的子代理，无法在同一会话内继续（`send_message` 会解析但不运行任何回合——已知上游缺陷），抽干之后的跨会话恢复也未经验证。
 - **冷恢复会丢弃额外的代理选项。** 后台子代理的 `persona`、`toolFilter` 和模型路由在恢复后保留，但其他字段——例如别名标注的 `reasoningEffort` 或 token 上限——不会。
 - **恢复固定（resume pins）。** 每次后台启动都会把一份恢复固定（spawn 时选定的别名加上 `maxTokens`）写入恢复固定存储，恢复时还原该固定元组*包括显式缺省*——固定中记录为未设置的值会被当作缺省，而不是重新解析。父代理已无法解析的固定模型受 `subagents-resume.onUnavailableModel` 设置门控（`block` 或 `route-current`，默认 `block`），拒绝码如 `SUBAGENT_MODEL_UNAVAILABLE`、`WORKSPACE_CHANGED`、`DEFINITION_CHANGED`、`PINNED_TOOL_UNAVAILABLE`、`PIN_ORPHANED`、`PIN_UNREADABLE` 指明对应的策略旋钮。
+- **自然结束后的自动释放（settled auto-release）。** 自然结束的可持续子代理会在一段按送达层级区分的不活跃宽限期后被自动释放——前台送达的结果为 30 分钟，后台送达的结果为 2 小时——除非定义在 frontmatter 中固定了 `autoReleaseMs`（缺省使用层级默认值，`0` 表示永不自动释放，非法值在加载时大声失败）。被自动释放的行在 `/agents` 中的标记与 `[released]` 完全相同，且"无法继续"的规则与手动释放一致：`send_message` 会被拒绝。自动释放是自然结束子代理的常规通道；`release_agent` 留给你可以丢弃的运行中子代理。在这一切之上还有一条：白名单中的只读定义——以及任何 `ephemeral: true` 的定义——根本不会创建可持续后台子代理，它们以前台一次性方式运行（见 [/guide/subagents](/zh/guide/subagents)）。
 - **没有输出文件。** 不存在 `TaskOutput` 别名，也没有 `outputFile` 字段；前台结果以文本返回。
 
 ::: info

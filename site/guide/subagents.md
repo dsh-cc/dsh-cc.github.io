@@ -31,6 +31,9 @@ Only the fields the loader actually consumes:
 | `tools` | Restricts the child's tool set (allow/deny). See the tools section below. |
 | `background` | Pin the agent to launch as a continuable background agent. See below. |
 | `isolation` | `isolation: worktree` dispatches the child into its own git worktree. See below. |
+| `ephemeral` | `ephemeral: true` forces the foreground one-shot lane for any definition; `ephemeral: false` overrides the read-only allowlist. See Ephemeral read-only agents below. |
+| `ephemeralTtlMs` | TTL (milliseconds) for a running ephemeral child; default 15 minutes. See Ephemeral read-only agents below. |
+| `autoReleaseMs` | Override for the settled auto-release window (milliseconds); `0` never auto-releases, a malformed value fails loudly at load. See Settled auto-release below. |
 
 The loader also parses CC frontmatter fields such as `permissionMode`, `memory`, and `effort`, but v1 does not project them onto the child — a definition using them behaves as if the field were absent. (`isolation: worktree` and `background: true` are consumed — see below.)
 
@@ -102,6 +105,22 @@ A `tools:` frontmatter value narrows the child's tool set and is sanitized again
 By default a `Task` call is **foreground**: the tool waits for the child to finish and returns its text output. Setting `background: true` in the definition pins the agent to launch as a durable, continuable background agent — the call returns promptly with an `agentId` and the result arrives later as a wake message. The caller can still override the pin: an explicit `run_in_background: false` forces foreground, and `run_in_background: true` starts any agent in the background.
 
 Running, resuming, interrupting, and inspecting background agents (`send_message` / `interrupt` / `list`, `/tasks`, `/agents`) is covered in [/guide/background-tasks](/guide/background-tasks).
+
+### Ephemeral read-only agents
+
+Allow-listed read-only definitions — the bundled `explore` and `dsh-cc-guide`, and the `dsh-cc-shunt` plugin's `shunt-reader` — plus **any** definition with explicit frontmatter `ephemeral: true` run as a foreground one-shot: a plain spawn with no durable child, no resume pin, no resume. `ephemeral: false` on the definition overrides the allowlist.
+
+The backgrounding controls above do not carry over. A `background: true` pin on such a definition is ignored, with an explicit notice saying the pin was ignored because read-only ephemeral agents always run as foreground one-shots; an explicit `run_in_background: true` argument is fail-fast rejected; `isolation: worktree` is rejected the same way; Ctrl+B cannot promote an ephemeral wait; and every ephemeral result carries a one-line notice that no durable child was created.
+
+Running ephemeral children are reaped at the definition's `ephemeralTtlMs` or a 15-minute default; expiry surfaces "ephemeral child hit its TTL; re-spawn it". A running ephemeral child counts toward the 25 live-child capacity guard; `release_agent` is not supported on a running ephemeral (mode-gated) — it settles or hits its TTL on its own.
+
+### Settled auto-release
+
+A settled continuable child is auto-released after an inactivity grace window: 30 minutes for foreground-delivered results, 2 hours for background-delivered results (including Ctrl+B-promoted wake messages).
+
+The per-definition override is the frontmatter `autoReleaseMs` (in milliseconds): absent uses the tier default, `0` never auto-releases, and a malformed value fails loudly at load. The `dsh-cc-agents` plugin's write-lane agent pins `autoReleaseMs: 7200000` in its definition — equal to the 2-hour background default, pinned explicitly so it survives policy drift.
+
+The settle-time message names the window ("auto-released after … of inactivity") at both delivery sites, and an auto-released child is tagged in `/agents` exactly like a manually released one. After auto-release the child cannot be continued — `send_message` is refused, the same rule as manual `release_agent`, which remains the tool for stuck RUNNING children you can discard.
 
 ### `isolation: worktree`
 
