@@ -1,7 +1,7 @@
 ---
 title: CLI 参数
 description: dsh-cc 可执行文件在启动 dsh --profile tui 之前接受的参数。
-distilled-from: dsh-cc v0.9.0 (cdfcca16)
+distilled-from: dsh-cc v0.9.2 (5f496613)
 ---
 
 # CLI 参数

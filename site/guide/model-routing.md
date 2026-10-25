@@ -56,6 +56,18 @@ Configuration lives in the `moa` settings namespace:
 
 The acceptance judge runs on the `gauge` lane described above — the typed-decision cheap lane for System One models — so a `gauge` mapping that resolves to a System One route is what arms judging when `judge-route` is left unset.
 
+### Truthful model bookkeeping
+
+While a moa overlay is active, several things keep the session honest about which model is actually serving it:
+
+- **Phantom notices filtered.** The harness re-emits `[model changed: …]` notices on nearly every step under the overlay, claiming a continuation model the overlay will not serve. A sanitizer drops exactly those rows while the overlay is active; in every other state (moa disabled, disarmed, validation-failed, or no moa at all) harness notices pass through byte-identical.
+- **`/model` disarms moa.** A mid-session `/model` selection away from the boot pair disarms moa before the next turn is classified — the wire serves your selection (previously the switch was silently ignored while overlaid). Switching back to the boot selection re-arms moa from the next turn.
+- **Persona states the effective model.** The system-prompt `provider`/`model` variables are rewritten to the resolved tier pair whenever the overlay applies; on any fail-open (classification failure or timeout, off-boot selection, disabled) the harness's own selection variables pass through untouched, so the prompt and the wire always agree.
+- **Statusline shows the effective pair.** While an overlay is active the statusline renders `<resolved-model> ◂ <tier-alias>` (e.g. `<provider-model> ◂ sketch`) instead of the bare tier alias; custom statusline payloads gain a `moa: {tier, model}` field. A switch-away clears the segment.
+- **Statusline shows why moa is not armed.** With `moa.enabled: true` but arming refused (routes unavailable, degenerate ladder, judge-route window failure) the statusline renders `moa:unarmed — <reason>` instead of hiding the misconfiguration in a warn line.
+
+Routing scope is the main conversation only — subagent sessions are never classified, overlaid, or judged.
+
 ## Managing providers with `/provider`
 
 The `/provider` command opens an overlay over your configured model providers:

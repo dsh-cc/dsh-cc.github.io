@@ -1,7 +1,7 @@
 ---
 title: 设置级联
 description: dsh-cc 如何在五个层级间解析 settings.json、合并它们，并安全地应用环境变量。
-distilled-from: dsh-cc v0.9.0 (cdfcca16)
+distilled-from: dsh-cc v0.9.2 (5f496613)
 ---
 
 # 设置级联
@@ -117,11 +117,11 @@ PATH
 | `cc-tool-use-summary` | `enabled`（true）、`topLevelOnly`（true）、`minResultBytes`（4096）、`retentionDays`（7）等 | 大型工具结果的廉价通道摘要，供 compaction 消费；`topLevelOnly` 会跳过子代理会话，`retentionDays: 0` 表示只在内存中保留。 | [交互基础](/zh/guide/interactive-basics) |
 | `cc-prompt-suggest` | `enabled`（false）、`alias`（haiku）、`timeoutMs`（4000）、`maxTokens`（128） | 可选开启的下一轮输入建议。读取完整的 settings 级联（不像下面两个插件那样仅限用户层）。 | [交互基础](/zh/guide/interactive-basics) |
 | `cc-post-edit-verify` | `enabled`（false）、`rules`（[]）、`debounce-ms`（5000） | 在 `edit`/`write` 结果被接受后运行你声明的验证命令，并把结果追加到同一条工具结果中。**仅限用户层**（`~/.dsh/settings.json`）；project 层的规则永远不会被读取。 | [交互基础](/zh/guide/interactive-basics) |
-| `cc-edit-recovery-hint` | `enabled`（false） | 当 `edit` 因多行 `old_string` 找不到匹配而失败时，追加一条固定的恢复建议。**仅限用户层**；project 层永远不会被读取。 | [交互基础](/zh/guide/interactive-basics) |
+| `cc-edit-recovery-hint` | `enabled`（true） | 当 `edit` 因多行 `old_string` 找不到匹配而失败时，追加一条固定的恢复建议。自 2026-10-16 起默认开启（此前 ships dark）。**仅限用户层**；project 层永远不会被读取。 | [交互基础](/zh/guide/interactive-basics) |
 | `cc-compaction-cost-gate` | `enabled`（false）、`mode`（dry-run）、`margin`（1.0）、`cooldown-ms`（600000） | 默认关闭；在真正执行 compaction 前先评估压缩收益是否抵得过重写成本，每次真实压缩后进入冷却期。 | [交互基础](/zh/guide/interactive-basics) |
 | `cc-completion-gate` | `enabled`（false）、`nudges-per-session`（1） | 回执台账，外加每个会话一次提醒：当某次轮次停止声称已完成（"tests pass"、"committed"、…）却没有相匹配的已执行证据时触发。**仅限用户层。** | [交互基础](/zh/guide/interactive-basics) |
-| `retry-attendant` | `enabled`（false）、`guidance`（启用时 true）、`escalate`（启用时 true）、`expire-minutes`（10） | 针对结果不明确的变更类工具调用，"先验证后重试"专员按类别给出建议行；过期窗口内完全相同的重试会升级为询问（ask）。**仅限用户层。** | [交互基础](/zh/guide/interactive-basics) |
-| `progress-rebuild` | `enabled`（false）、`max-lines`（120）、`include-verified`（true） | 默认关闭；在一次成功的 compaction 之后，把一份结构化进度简报注入 compaction 之后构建的第一个模型请求。 | [交互基础](/zh/guide/interactive-basics) |
+| `retry-attendant` | `enabled`（true）、`guidance`（true）、`escalate`（true）、`expire-minutes`（10） | 针对结果不明确的变更类工具调用，"先验证后重试"专员按类别给出建议行；过期窗口内完全相同的重试会升级为询问（ask）。自 2026-10-16 起默认开启（此前需主动开启）。**仅限用户层。** | [交互基础](/zh/guide/interactive-basics) |
+| `progress-rebuild` | `enabled`（true）、`max-lines`（120）、`include-verified`（true） | 在一次成功的 compaction 之后，把一份结构化进度简报注入 compaction 之后构建的第一个模型请求。自 2026-10-16 起默认开启（此前 ships dark）。 | [交互基础](/zh/guide/interactive-basics) |
 | `cc-turn-rules` | `enabled`（true）、`max-result-bytes`（200000）、`regex-cache-size`（64）、`judged.enabled`（false）、`repeat-reminder.enabled`（false）、`repeat-reminder.thresholds`（[3,5,8]）、`repeat-reminder.include`/`exclude`（[]）、`repeat-reminder.arguments-preview-chars`（500） | Turn rules：带 `trigger` 正则的 Cursor 插件规则在正则命中时作为建议性提醒注入。默认开启，但在存在这类规则之前没有任何效果。该命名空间还携带内置的 repeat-reminder（默认关闭）：当顶层 agent 连续多次发出参数完全相同的同一工具调用时，会在每个默认阈值（[3,5,8]）处触发一条建议性提醒，下一次用户输入会重置计数。**仅用户层。** | [插件](/zh/guide/plugins) |
 | `cc-advisor` | `enabled`（false）、`alias`（haiku）、`budget`（2）、`immune-turns`（3）、`session-cap`（24）、`severities`（三种全选）、`subagents`（off） | 可选的 advisor watchdog：由第二个模型审查每个完成的轮次。**仅用户层。** | [交互基础](/zh/guide/interactive-basics) |
 | `cc-lsp-on-write` | `enabled`（false）、`server-name`（serena）、`timeout-ms`（1500）、`max-diagnostics`（8）、`min-severity`（warning）、`tool-names` | 可选：从运行中的 serena MCP server 拉取 LSP 诊断，追加到 `edit`/`write`/`NotebookEdit` 结果。**仅用户层。** | [交互基础](/zh/guide/interactive-basics) |
@@ -129,6 +129,14 @@ PATH
 | `cc-foreign-rules` | `disabled` | 关闭从会话 cwd 收集其他 agent 规则文件（cline/windsurf/copilot）并放入 `cc:foreign-rules` 提示段的行为。 | [兼容性](/zh/reference/compatibility) |
 | `cc-model-cycling` | `cycleOrder` | TUI 中 `Ctrl+P` / `Shift+Ctrl+P` 循环切换的别名列表。 | [模型路由](/zh/guide/model-routing) |
 | `config-snapshot` | `config-snapshot.enabled`（true） | 每次构造会话都向 `<dshHome>/config-snapshot/<encodedId>.jsonl` 写入一行 JSONL（dsh-cc 版本、harness 版本、preset id、插件清单）；仅用于观测——异步写入器 fail-open，从不阻塞会话创建。 | — |
+
+另有三个命名空间只存在于 VWA agent preset 内：
+
+| 命名空间 | 键（默认值） | 调优对象 |
+| --- | --- | --- |
+| `vwa-argument` | `semantic-enabled`（false）、`review-alias`（sonnet） | Lane-2 论证工具：`semantic-enabled` 决定 lane-2 工具是否挂载（只有为 true 时才挂载）；`review-alias` 是审查方使用的模型别名。 |
+| `vwa-evidence` | `enabled`（vwa preset 内为 true）、`nudge-budget`（4） | VWA 项目的证据工具，包括其 nudge 预算。 |
+| `vwa-preset` | `selectedDefault`（缺省） | `/preset` 指向的已保存默认 agent preset；缺省表示部署默认值 `cc`。 |
 
 ## 另请参阅
 

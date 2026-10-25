@@ -26,6 +26,7 @@ These pages walk through concrete dsh-cc workflows: running interactive sessions
 - [Skills](/guide/skills) — `SKILL.md`-based skills and bundled utilities.
 - [Subagents](/guide/subagents) — dispatch and manage `.claude/agents` subagents.
 - [Plugins](/guide/plugins) — compose and manage plugins and marketplaces.
+- [VWA writing and review](/guide/vwa-writing) — evidence-checked document writing and review.
 
 ## Advanced
 

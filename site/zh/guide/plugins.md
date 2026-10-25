@@ -160,11 +160,11 @@ repeatGap: 10                   # turn stops before re-arm; default 10
 
 ## 官方插件
 
-四个官方插件通过 `dsh-cc` marketplace 发布。
+五个官方插件通过 `dsh-cc` marketplace 发布。
 
 ### dsh-cc-agents —— critic、executor 与 marathon 子代理
 
-包含三个子代理和两个技能——一个在子代理之间做路由，一个用于数据分析工作：
+包含三个子代理和四个技能——一个在子代理之间做路由，一个用于数据分析工作，一个用于带证据核验的写作，一个用于有界形式化设计：
 
 - **`dsh-cc-agents:critic`** —— 重推理工作：复杂分析、架构决策、对抗性方案评审、根因分析。运行在 `opus` 模型别名上，默认后台运行。
 - **`dsh-cc-agents:executor`** —— 执行已获批、完全明确的计划中的机械性工作：格式化、简单重构、样板代码、改名、测试、文档、检查。运行在 `sonnet` 模型别名上，默认前台运行。
@@ -172,6 +172,8 @@ repeatGap: 10                   # turn stops before re-arm; default 10
 
 - **`dsh-cc-agents-orchestration` 技能**——在子代理之间做选择的路由表、后台不对称性，以及它们的报告契约。
 - **`data-analysis` 技能**——数据分析编排（数据分析/口径/对账）：带有口径存疑、对账、外部报告问题的数据分析任务经 critic/executor 处理，评审/核验/执行元规则内联进派发提示词。
+- **`vwa-writing` 技能**——带证据核验的文档写作与评审：来源快照、论断标记、论证图和语义评审通道，适用于需要可追溯论断的研究文章、历史或文学分析、技术报告。见 [VWA 写作与评审](/zh/guide/vwa-writing)。
+- **`formal-design` 技能**——在既有设计评审之前做有界 TLA+ 模型检查，面向涉及共享状态顺序、重试、崩溃恢复或异步所有权的协议或状态机改动。要求 PATH 上有 Java >=17；钉定版本的 TLC JAR 随插件发布，无需单独下载或配置 JAR。安装插件并不会启用它——需要由人把项目规则片段采纳进生效的项目规则（显式请求和已加载的编排技能也可以选中它）。插件更新后请重启 dsh，以使用更新后的技能和运行器。
 
 在会话内安装，然后重启会话：
 
@@ -194,7 +196,7 @@ repeatGap: 10                   # turn stops before re-arm; default 10
 
 ### Serena hooks（带门槛）
 
-插件还附带可选的 Serena 代码智能 hooks：PreToolUse 提醒挂在 `read`/`grep`（以及 serena 工具调用）上，在一连串原始读取/grep 之后把模型往符号工具方向推一把——短 deny 加提醒，每个会话最多每两分钟一次；SessionEnd 则清理该会话的 hook 状态目录 `<project>/.serena/hook_data/<session-id>/`。
+插件还附带可选的 Serena 代码智能 hooks：PreToolUse 提醒挂在 `read`/`grep`（以及 serena 工具调用）上，在一连串原始读取/grep 之后把模型往符号工具方向推一把——短 deny 加提醒，每个会话内严格限频——SessionEnd 则清理该会话的 hook 状态目录 `<project>/.serena/hook_data/<session-id>/`。
 
 两者都是双重门槛下的静默空操作，除非当前会话的项目已完成 serena 接入（从会话工作目录向上、经过 git 顶层找到 `.serena/project.yml`）**并且** `serena-hooks` 在 `PATH` 上可解析：
 
@@ -207,7 +209,28 @@ uv tool install git+https://github.com/oraios/serena@v1.7.0
 两条运行注意事项：
 
 - **一种行为只留一个通道。** 如果仓库自己的 `hooks.json` 里也有 serena-remind 条目，两处都会触发，共享计数器会重复计数。提醒只留在一个地方——本插件或仓库，二选一。
-- 非 serena 项目每次 Read/Grep 多付一次约 50 毫秒的门槛化 node 进程。想彻底省掉就禁用本插件；dsh-cc 发版后跑一次 `/plugin update` 以获取 hook 变更。
+- 非 serena 项目每次 Read/Grep 多付一次短暂的门槛化 node 进程。想彻底省掉就禁用本插件；dsh-cc 发版后跑一次 `/plugin update` 以获取 hook 变更。
+
+### dsh-cc-writing —— 文章写作、评审与语言编辑
+
+面向中英文文章的写作、评审和语言编辑的官方插件。它提供三个公开技能——**`article-writing`**（规划论证、起草章节、修改结构）、**`article-review`**（报告结构、逻辑和文风问题，不改正文）和 **`language-editing`**（以局部编辑提升清晰度、简洁度和文体）——外加支撑性的 **`writing-workflow`** 技能，它承载共享的运行协议、schema、profile 和脚本，从不作为独立任务出现。
+
+在会话内安装，然后重启：
+
+```text
+/plugin marketplace add dsh-cc/dsh-cc
+/plugin install dsh-cc-writing@dsh-cc
+```
+
+每次运行会把它的工作简报、计划、评审、编辑建议和保全检查写到磁盘上一个伴生目录下（`runs/<runId>/`；对 `docs/articles/port.md`，默认伴生目录是 `docs/articles/port.writing/`），正文停留在指定路径。普通模式无需任何 VWA 安装，也不依赖 `dsh-cc-agents`；证据模式使用 VWA 运行时（见 [VWA 写作与评审](/zh/guide/vwa-writing)），并把它自己的编辑报告与 VWA 报告分开保存。
+
+更新遵循与其他插件相同的两步流程——只更新 marketplace 并不会更新已安装的插件，`/plugin update dsh-cc-writing@dsh-cc` 之后要重启 dsh。
+
+关键限制：
+
+- 不做翻译；不编辑 DOCX 或 PDF 文件。
+- 每个正文只支持一个协作写作者——使用默认伴生目录，脚本会拒绝并发运行。
+- 编辑结果永远不会设置 VWA 等级；只有 VWA 运行时及其用户命令决定评审状态。
 
 ### dsh-cc-shunt —— 让大文件内容不进入主上下文
 

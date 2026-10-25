@@ -56,6 +56,18 @@ moa **默认关闭**——`moa.enabled: false` 时插件不挂载任何东西，
 
 验收判定器运行在上文介绍的 `gauge` 通道上——即 System One 模型的类型化决策廉价通道——因此 `judge-route` 未设置时，能解析到 System One 路由的 `gauge` 映射是启用判定的前提。
 
+### 模型记账的真实化
+
+当 moa overlay 处于激活状态时，以下机制保证会话如实呈现当前真正在服务的模型：
+
+- **过滤幽灵通知。** 在 overlay 之下，harness 几乎每一步都会重新发出 `[model changed: …]` 通知，声称一个 overlay 并不会使用的续写模型。一个 sanitizer 只在 overlay 激活时精确丢弃这些行；其余所有状态（moa 禁用、已解除、校验失败或根本没有 moa）下，harness 通知逐字节原样透传。
+- **`/model` 会解除 moa。** 会话中途用 `/model` 选到启动模型对以外的选择，会在下一个轮次分类之前解除 moa——链路上真正服务你选中的模型（此前在 overlay 下这个切换会被静默忽略）。切回启动选择后，moa 从下一个轮次重新启用。
+- **人格声明实际生效的模型。** 只要 overlay 生效，系统提示中的 `provider`/`model` 变量会被改写为解析后的层级模型对；任何 fail-open（分类失败或超时、偏离启动选择、禁用）时，harness 自己的选择变量原样透传，提示词与链路始终保持一致。
+- **状态栏展示实际模型对。** overlay 激活时，状态栏渲染 `<resolved-model> ◂ <tier-alias>`（例如 `<provider-model> ◂ sketch`），而不是裸的层级别名；自定义状态栏载荷会获得 `moa: {tier, model}` 字段。切走后该段会被清除。
+- **状态栏展示 moa 未启用的原因。** 当 `moa.enabled: true` 但启用被拒绝（路由不可用、层级阶梯退化、judge-route 窗口失败）时，状态栏渲染 `moa:unarmed — <reason>`，配置错误不再藏在一条 warn 日志里。
+
+路由范围仅限主对话——子代理会话永远不会被分类、叠加 overlay 或判定。
+
 ## 用 `/provider` 管理供应商
 
 `/provider` 命令在覆盖层中管理已配置的模型供应商：

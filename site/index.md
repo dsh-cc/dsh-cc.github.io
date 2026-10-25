@@ -5,7 +5,7 @@ description: "dsh-cc turns DeepSeek Harness into a batteries-included coding age
 hero:
   name: "Claude Code-style workflows."
   text: '<span class="grad">Your models.</span>'
-  tagline: 'dsh-cc turns <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a> into a batteries-included coding environment for everyday development. Keep familiar project assets and interaction patterns while choosing the models, tools, permissions, and agent composition that fit your environment.'
+  tagline: 'dsh-cc turns <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a> into a batteries-included coding and document-writing environment for everyday development. Keep familiar project assets and interaction patterns while choosing the models, tools, permissions, and agent composition that fit your environment.'
   actions:
     - theme: brand
       text: Quick start
@@ -20,6 +20,8 @@ features:
     details: Route stable aliases like `sketch`, `draft`, `blueprint`, and `masterplan` to any provider/model pair your dsh deployment supports.
   - title: Run a complete coding loop
     details: TUI, MCP, memory, subagents, background tasks, worktrees, structured output, deferred tool discovery, reversible tool-output compression (`context-crusher` + `context_retrieve`), and cost-gated compaction — the full loop, out of the box.
+  - title: Write documents with evidence checks
+    details: An optional VWA preset writes and reviews articles with source snapshots, claim markers, an argument graph, and a semantic review lane — see the [VWA writing guide](/guide/vwa-writing).
   - title: Stay composable
     details: Installed through native dsh profiles and plugins — no permanent DeepSeek Harness fork to maintain.
 ---

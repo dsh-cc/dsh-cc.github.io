@@ -1,7 +1,7 @@
 ---
 title: MCP 配置
 description: dsh-cc 的 .mcp.json 模式、MCP 配置发现优先级、dsh-first 门控规则，以及 /mcp 命令。
-distilled-from: dsh-cc v0.9.0 (cdfcca16)
+distilled-from: dsh-cc v0.9.2 (5f496613)
 ---
 
 # MCP 配置
@@ -46,7 +46,9 @@ dsh-cc 通过 `@dsh-cc/mcp-config` 从 Claude Code 风格的 `.mcp.json` 加载 
 
 每个被接受的服务器变成一个 `@dsh-cc/mcp-client` 注册项：服务器名是模型可见
 工具名（`mcp__<serverName>__*`）的 `serverName` 命名空间；注册项默认
-`toolCallTimeoutMs` 为 60000、`failOnStartupError` 为 `true`。
+`toolCallTimeoutMs` 为 60000、`failOnStartupError` 为 `true`。MCP 连接通过一个
+运行时全局的注册表注册，因此已配置的服务器在 VWA agent preset 中同样可用
+（此前 VWA 模式的会话看到的是空注册表）。
 
 `command`、`args`、`cwd`、`env` 值、`url` 和 `headers` 中的字符串支持环境变量
 展开：

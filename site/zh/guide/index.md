@@ -26,6 +26,7 @@ description: 面向具体任务的 dsh-cc 工作流指南，从首次启动到�
 - [技能](/zh/guide/skills) — 基于 `SKILL.md` 的技能与内置实用技能。
 - [子代理](/zh/guide/subagents) — 派发并管理 `.claude/agents` 子代理。
 - [插件](/zh/guide/plugins) — 组合并管理插件与市场。
+- [VWA 写作与评审](/zh/guide/vwa-writing) — 带证据核验的文档写作与审查。
 
 ## 进阶
 

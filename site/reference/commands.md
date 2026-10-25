@@ -1,7 +1,7 @@
 ---
 title: Slash commands
 description: Reference catalog of every slash command in dsh-cc — preset (harness) commands and TUI-local commands, with parity status.
-distilled-from: dsh-cc v0.9.0 (cdfcca16)
+distilled-from: dsh-cc v0.9.2 (5f496613)
 ---
 
 # Slash commands
@@ -53,6 +53,7 @@ the matrix does not state a status for that command.
 | `/mcp` | Manage MCP connections: `/mcp` lists registered servers (name, connection state, tool count, OAuth requirement), `/mcp reconnect <name>`, `/mcp disconnect <name>`. `/mcp migrate` imports servers from Claude Code config files into `$DSH_HOME/.mcp.json` (raw entries verbatim, atomic write, `.bak` backup). | Full |
 | `/plugin` | Manage plugins and marketplaces: `list [--enabled\|--disabled]`, `install\|uninstall\|enable\|disable\|update <plugin[@mkt]> [--scope user\|project\|local]`, `marketplace list\|add <source>\|remove <name>\|update [name]`. Text output only (no interactive menu); a static trust-warning line replaces interactive consent; installs trigger a rescan — restart the session for new agents/hooks. Not implemented: `details`/`eval`/`init`/`prune`/`tag`/`validate`, `--config`, `--sparse`, managed scope. | Partial |
 | `/reload-plugins` | Rescan the on-disk discovery roots and remount plugins live. | Full |
+| `/preset` | Show the agent-preset roster, or switch this session and the saved default (`/preset <id>`; persisted via `vwa-preset.selectedDefault`). No Claude Code counterpart — dsh-cc-specific. | Full |
 | `/output-style` | Manage output styles. | Full |
 
 ## System & diagnostics
@@ -69,6 +70,17 @@ the matrix does not state a status for that command.
 | `/version` | Print the plugin bundle version and, when the host surfaces one, the harness version. | Full |
 | `/release-notes` | Print the bundled release notes changelog. | Full |
 | `/help` | List every registered slash command, or show one command's detail including its input hint (`/help <cmd>`). | Full |
+
+## VWA preset commands
+
+These commands mount only in the VWA agent preset. They are deliberately
+excluded from the parity matrix (which does not cover VWA-preset
+capabilities), so they carry no parity status:
+
+- `/vwa init` — initialize the workspace VWA project.
+- `/vwa status` — inspect the workspace VWA project.
+- `/vwa sign` — user-only: only the user can run this command.
+- `/vwa adjudicate` — user-only: only the user can run this command.
 
 ## TUI-local commands
 

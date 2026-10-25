@@ -160,11 +160,11 @@ On the manager side, `.cursor-plugin` marketplaces and manifests are consumed id
 
 ## Official plugins
 
-Four official plugins ship through the `dsh-cc` marketplace.
+Five official plugins ship through the `dsh-cc` marketplace.
 
 ### dsh-cc-agents — critic, executor, and marathon subagents
 
-Ships three subagents and two skills — one that routes between them, one for data-analysis work:
+Ships three subagents and four skills — one that routes between them, one for data-analysis work, one for evidence-checked writing, one for bounded formal design:
 
 - **`dsh-cc-agents:critic`** — reasoning-heavy work: complex analysis, architectural decisions, adversarial plan review, root-cause analysis. Runs on the `opus` model alias and is background-pinned.
 - **`dsh-cc-agents:executor`** — mechanical execution of pre-approved, fully specified plans: formatting, simple refactors, boilerplate, renames, tests, docs, checks. Runs on the `sonnet` model alias, foreground by default.
@@ -172,6 +172,8 @@ Ships three subagents and two skills — one that routes between them, one for d
 
 - **`dsh-cc-agents-orchestration` skill** — routing table for choosing between the agents, the background asymmetry, and their report contracts.
 - **`data-analysis` skill** — data-analysis orchestration (数据分析/口径/对账): data-analysis tasks with caliber doubt, reconciliation, and external-report questions route through critic/executor, with review/verification/execution meta-rules inlined into the dispatch prompts.
+- **`vwa-writing` skill** — evidence-checked document writing and review: source snapshots, claim markers, an argument graph, and a semantic review lane for research articles, historical or literary analysis, and technical reports that need traceable claims. See [VWA writing and review](/guide/vwa-writing).
+- **`formal-design` skill** — bounded TLA+ model checks before the existing design review, for protocol or state-machine changes with shared-state ordering, retries, crash recovery, or asynchronous ownership. Requires Java >=17 on PATH; the pinned TLC JAR ships with the plugin, so no separate download or JAR configuration is needed. Installing the plugin does not enable it — a human must adopt the project rules snippet into the effective project rules (explicit requests and a loaded orchestration skill can also select it). Restart dsh after plugin updates to pick up the updated skill and runner.
 
 Install from inside a session, then restart:
 
@@ -208,6 +210,27 @@ Two operational notes:
 
 - **One channel per behavior.** If a repository's own `hooks.json` also carries a serena-remind entry, both fire and the shared counter double-counts. Keep the reminder in exactly one place — this plugin or the repo.
 - Non-serena projects pay one ~50 ms gated node spawn per Read/Grep. Disable the plugin to opt out entirely; run `/plugin update` after a dsh-cc release to pick up hook changes.
+
+### dsh-cc-writing — article writing, review, and language editing
+
+Official plugin for article writing, article review, and language editing of Chinese and English articles. It provides three public skills — **`article-writing`** (plan an argument, draft the sections, revise the structure), **`article-review`** (report structure, logic, and prose findings without body changes), and **`language-editing`** (improve clarity, concision, and style with local edits) — plus the supporting **`writing-workflow`** skill, which holds the shared run protocol, schemas, profiles, and scripts and never appears as a separate task.
+
+Install from inside a session, then restart:
+
+```text
+/plugin marketplace add dsh-cc/dsh-cc
+/plugin install dsh-cc-writing@dsh-cc
+```
+
+Each run writes its brief, plan, reviews, edit proposals, and preservation checks on disk under a companion directory (`runs/<runId>/`; for `docs/articles/port.md` the default companion is `docs/articles/port.writing/`), with the body staying at the requested path. Ordinary mode needs no VWA setup and works without `dsh-cc-agents`; evidence mode uses the VWA runtime (see [VWA writing and review](/guide/vwa-writing)) and keeps its editorial report separate from the VWA report.
+
+Updates follow the same two-command flow as the other plugins — a marketplace update alone does not update the installed plugin, and after `/plugin update dsh-cc-writing@dsh-cc` you restart dsh.
+
+Key limits:
+
+- No translation; no DOCX or PDF editing.
+- One cooperative writer per body — use the default companion directory so the scripts reject a concurrent run.
+- An editorial result never sets a VWA grade; only the VWA runtime and its user commands decide a review status.
 
 ### dsh-cc-shunt — keep bulk reads out of the main context
 

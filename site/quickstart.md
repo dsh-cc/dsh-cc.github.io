@@ -36,9 +36,10 @@ Official packages come only from the `@dsh-cc` npm scope.
 
 ### Optional: official plugins
 
-The install above is the whole quick start. Four optional official plugins — shipped through the dsh-cc repo's `dsh-cc` marketplace — add preconfigured subagent lanes and external model bridges:
+The install above is the whole quick start. Five optional official plugins — shipped through the dsh-cc repo's `dsh-cc` marketplace — add preconfigured subagent lanes, a document-writing toolkit, and external model bridges:
 
-- **`dsh-cc-agents`** — the `dsh-cc-agents:critic` (reasoning and plan review) and `dsh-cc-agents:executor` (mechanical execution) subagents, plus the `dsh-cc-agents:marathon` (long-horizon, repo-wide work) subagent and an orchestration routing skill.
+- **`dsh-cc-agents`** — the `dsh-cc-agents:critic` (reasoning and plan review) and `dsh-cc-agents:executor` (mechanical execution) subagents, plus the `dsh-cc-agents:marathon` (long-horizon, repo-wide work) subagent, an orchestration routing skill, and the `vwa-writing` and `formal-design` skills (evidence-checked document review and bounded TLA+ design checks).
+- **`dsh-cc-writing`** — a document-writing toolkit: article writing, article review, and language editing for Chinese and English articles, with a run protocol that keeps briefs, plans, reviews, and preservation checks on disk.
 - **`dsh-cc-shunt`** — gates that redirect bulk file reads and boilerplate generation to cheap-lane worker subagents, keeping large file corpora out of the main context.
 - **`cc-codex-bridge`** — an approval-free Codex rescue lane: a PreToolUse hook auto-allows exactly one canonical, locked-down Codex invocation per session run, so a stuck session can hand a task to Codex without a permission checkpoint.
 - **`cc-grok-bridge`** — the same pattern for a Grok review lane: one canonical invocation is auto-allowed, so external Grok review passes need no per-run approval.
@@ -48,10 +49,11 @@ Install them inside a session:
 ```text
 /plugin marketplace add dsh-cc/dsh-cc
 /plugin install dsh-cc-agents@dsh-cc
+/plugin install dsh-cc-writing@dsh-cc
 /plugin install dsh-cc-shunt@dsh-cc
 ```
 
-Restart the session after installing so the new agents and hooks are picked up. Details and configuration: [Plugins](/guide/plugins).
+Restart the session after installing so the new agents and hooks are picked up. Details and configuration: [Plugins](/guide/plugins). For evidence-checked document writing and review, see [VWA writing and review](/guide/vwa-writing).
 
 ## Upgrading
 
@@ -66,7 +68,7 @@ On the first launch after an upgrade, the launcher re-runs the profile's bundle 
 
 | dsh-cc release | Verified dsh |
 | --- | --- |
-| v0.9.0-rc.1 – v0.9.0 | 0.2.0-rc.2 |
+| v0.9.0-rc.1 – v0.9.2 | 0.2.0-rc.2 |
 | v0.8.3 | 0.2.0-rc.2 |
 | v0.8.2 | 0.1.7-rc.2 |
 | v0.6.3 – v0.8.1 | 0.1.5-rc.1 |

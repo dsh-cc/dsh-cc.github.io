@@ -1,7 +1,7 @@
 ---
 title: Extension formats
 description: Where each Claude Code-compatible extension file lives (hooks, skills, plugins, subagents), with minimal skeletons and links to the full guides.
-distilled-from: dsh-cc v0.9.0 (cdfcca16)
+distilled-from: dsh-cc v0.9.2 (5f496613)
 ---
 
 # Extension formats
