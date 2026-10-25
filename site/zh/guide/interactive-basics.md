@@ -66,18 +66,18 @@ TUI 还提供对话导出、用量/上下文显示、todo 查看、审批、排�
 
 - **prompt-suggest**（`cc-prompt-suggest`，`enabled` false）：turn-stop 时通过一次廉价通道旁路查询（`alias` `'haiku'`、`timeoutMs` 4000、`maxTokens` 128）预测你的下一条输入，≤120 字符，5 分钟 TTL。在 TUI 自动补全中只按前缀匹配呈现——触发字符 `/`/`@` 或强制 Tab，空输入永不触发；输入前几个字符后按 Tab 即可补全。
 - **post-edit-verify**（`cc-post-edit-verify`，`enabled` false）：一次被接受的 edit/write 之后，运行第一条匹配的 `rules` 条目 `{glob, command, timeout-ms?}`（POSIX sh，会话工作目录），并把结果以 `[auto-verify]` 块追加到同一个工具结果上。配置项：`rules` `[]`、`debounce-ms` 5000（只用于突发标记——每次匹配的编辑仍会执行）、`max-output-bytes` 4096、`verbose-on-success` false、每条规则的 `timeout-ms` 60000，上限 120000。成功时只静默输出一行，除非开启 verbose。
-- **edit-recovery-hint**（`cc-edit-recovery-hint`，`enabled` false）：当 edit 因多行 `old_string` 未找到而失败时，作为旁带上下文追加一段固定的静态建议（改用单行锚点重试，或按 hunk 拆分编辑；只有锚点也失败时，才重新读取目标区域）。歧义失败（"appears more than once"）刻意不匹配；提示文本是静态的——不会插入任何工具输出。
+- **edit-recovery-hint**（`cc-edit-recovery-hint`，`enabled` true——自 2026-10-16 起默认开启，此前 ships dark；可用 `cc-edit-recovery-hint.enabled: false` 关闭）：当 edit 因多行 `old_string` 未找到而失败时，作为旁带上下文追加一段固定的静态建议（改用单行锚点重试，或按 hunk 拆分编辑；只有锚点也失败时，才重新读取目标区域）。歧义失败（"appears more than once"）刻意不匹配；提示文本是静态的——不会插入任何工具输出。
 
 另有两项可选功能遵循同样的仅用户层规则：
 
 - **advisor watchdog**（`cc-advisor`，`enabled` false）：由第二个模型审查每个完成的轮次。每轮结束后它询问一个廉价通道（`alias` `'haiku'`；未配置的别名绝不会回落到主路由），并把保留下来的 `nit` / `concern` / `blocker` 注记作为一条注入消息送达，绝不会在工具批次中途插入，也不会唤醒空闲会话。约束：每次运行 `budget` 2 条非 blocker 注记，`immune-turns` 3，`session-cap` 24。`subagents` `'off'` 只审查顶层会话。每次运行记录到 `$DSH_HOME/advisor/<sessionId>.jsonl`。
 - **lsp-on-write**（`cc-lsp-on-write`，`enabled` false）：`edit`/`write`/`NotebookEdit` 成功后，从运行中的 serena 语言服务器（MCP 连接 `server-name` `serena`）拉取该文件的诊断，并把紧凑的 `[lsp]` 块追加到同一个工具结果。参数：`timeout-ms` 1500，`max-diagnostics` 8，`min-severity` `warning`。任何失败都静默丢弃；连续丢弃 3 次后，本会话内自动停用。
 
-另有三个默认关闭的可选交互插件：
+另有更多交互插件补足这一层面，其中两项自 2026-10-16 起默认开启：
 
 - **completion-gate**（`cc-completion-gate`，`enabled` false、`nudges-per-session` 1；仅用户层）：无论开关如何，已结束的工具执行都会记录一份哈希回执；开启 `enabled` 后，每个会话最多一次——当 turn-stop 时最后一条 assistant 消息宣称已完成（"tests pass"、"committed"、"pushed"、"build succeeded"）而自你上一条消息以来没有相匹配的已执行证据，就会发出提醒。账本位于 `<dshHome>/completion-gate/receipts/`。
-- **retry-attendant**（`retry-attendant`，`enabled` false——需主动开启；开启后 `guidance` 与 `escalate` 默认 true；`expire-minutes` 10；仅用户层）：对结果含糊的变更类工具调用（超时、沙箱拒绝、部分写入、git/包管理变更失败），追加一行针对失败类别的提示——重新运行前先验证预期的后置条件；在过期窗口内出现完全相同的重试（效果字段一致）时，升级为权限询问。
-- **progress-rebuild**（`progress-rebuild`，`enabled` false——ships dark；`max-lines` 120、`include-verified` true）：一次成功的压缩之后，第一个模型请求会重新带上一份结构化进度简报——目标状态、最新的 todo 快照、已验证的 bash 执行回执，以及你上一条真实消息——全部由已提交的会话事件推导而来。
+- **retry-attendant**（`retry-attendant`，`enabled` true——自 2026-10-16 起默认开启，此前需主动开启；可用 `retry-attendant.enabled: false` 关闭；`guidance` 与 `escalate` 默认 true；`expire-minutes` 10；仅用户层）：对结果含糊的变更类工具调用（超时、沙箱拒绝、部分写入、git/包管理变更失败），追加一行针对失败类别的提示——重新运行前先验证预期的后置条件；在过期窗口内出现完全相同的重试（效果字段一致）时，升级为权限询问。
+- **progress-rebuild**（`progress-rebuild`，`enabled` true——自 2026-10-16 起默认开启，此前 ships dark；可用 `progress-rebuild.enabled: false` 关闭；`max-lines` 120、`include-verified` true）：一次成功的压缩之后，第一个模型请求会重新带上一份结构化进度简报——目标状态、最新的 todo 快照、已验证的 bash 执行回执，以及你上一条真实消息——全部由已提交的会话事件推导而来。
 
 ## 安全地并行开发
 

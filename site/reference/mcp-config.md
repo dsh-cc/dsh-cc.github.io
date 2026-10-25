@@ -1,7 +1,7 @@
 ---
 title: MCP configuration
 description: The .mcp.json schema, MCP config discovery precedence, the dsh-first gating rule, and the /mcp command for dsh-cc.
-distilled-from: dsh-cc v0.9.0 (cdfcca16)
+distilled-from: dsh-cc v0.9.2 (5f496613)
 ---
 
 # MCP configuration
@@ -49,7 +49,9 @@ objects is also accepted; the array form rejects a name that appears twice):
 Each accepted server becomes one `@dsh-cc/mcp-client` registration: the server
 name is the `serverName` namespace for model-facing tool names
 (`mcp__<serverName>__*`); registrations default `toolCallTimeoutMs` to 60000
-and `failOnStartupError` to `true`.
+and `failOnStartupError` to `true`. MCP connections register through one
+runtime-wide registry, so configured servers are available identically in the
+VWA agent preset (previously VWA-mode sessions saw an empty registry).
 
 Strings in `command`, `args`, `cwd`, `env` values, `url`, and `headers`
 support environment expansion:

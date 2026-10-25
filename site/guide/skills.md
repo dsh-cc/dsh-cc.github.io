@@ -44,6 +44,10 @@ Notes, from the provider's discovery rules:
   `deprecated` in their metadata.
 - Discovery deduplicates by real path, so a symlinked or overlapping file is
   served once.
+- Skills mounted from a plugin manifest's declared skill root can run into a
+  naming edge: the directory-derived name may fail the registry's kebab-case
+  grammar (e.g. version-shaped install basenames), in which case dsh-cc falls
+  back to the `SKILL.md` frontmatter `name` for registration.
 
 ### Harness-native roots (also scanned)
 

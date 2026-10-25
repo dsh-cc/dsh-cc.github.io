@@ -1,7 +1,7 @@
 ---
 title: Claude Code compatibility
 description: What "Claude Code compatibility" means in dsh-cc — and how to read the parity matrix honestly.
-distilled-from: dsh-cc v0.9.0 (cdfcca16)
+distilled-from: dsh-cc v0.9.2 (5f496613)
 ---
 
 # Claude Code compatibility
@@ -61,10 +61,15 @@ for the current state before relying on any of them.
 - **WebSearch** and **plan mode** — full parity, mounted by default.
 - **Divergent-by-design extension surfaces** — v0.9.0 adds more dsh-cc
   extension rows beyond Claude Code, marked divergent in the matrix:
-  `engine.moa` (tiered cascade routing for the main conversation),
+  `engine.moa` (tiered cascade routing for the main conversation; its routing
+  scope is main-session turns only — subagent sessions are never classified,
+  overlaid, or judged; a notice sanitizer drops phantom `[model changed: …]`
+  notices while the overlay is active; a mid-session `/model` selection
+  disarms moa until it returns to the boot pair),
   `engine.acp-front-end` (the ACP lane), `engine.completion-gate`,
   `engine.verify-before-retry`, `engine.config-snapshot`,
-  `sessions.progress-rebuild`, and `subagents.ephemeral-agents`
+  `sessions.progress-rebuild` (default ON since 2026-10-16, was ship-dark),
+  and `subagents.ephemeral-agents`
   (allow-listed read-only one-shot agents). The same release also adds
   `skills.usage-telemetry` as a full-parity capability row.
 - **Git worktrees** — the worktree rows (`workspace.worktree-ecosystem`,
@@ -84,7 +89,10 @@ for the current state before relying on any of them.
   [/reference/permission-modes](/reference/permission-modes).
 - **Workflow engine** — `engine.workflow` is behavioral divergent with partial
   ux (same-session replay only, per-user directory under `$DSH_HOME`); the
-  Ralph loop is now its own full-parity row.
+  Ralph loop is now its own full-parity row. Same-session workflow resume now
+  matches each journal line by request hash rather than arrival position, so
+  replay is order-independent for concurrent combinators like `pipeline` /
+  `parallel`.
 - **Hooks** — `SubagentStart` / `SubagentStop` are now partial: they report a
   constant `agent_type` of `general-purpose` and a child-scoped `session_id`.
 - **New dsh-cc extensions** — `plugins.codex-bridge` and

@@ -1,7 +1,7 @@
 ---
 title: Settings cascade
 description: How dsh-cc resolves settings.json across five levels, merges them, and applies environment variables safely.
-distilled-from: dsh-cc v0.9.0 (cdfcca16)
+distilled-from: dsh-cc v0.9.2 (5f496613)
 ---
 
 # Settings cascade
@@ -117,11 +117,11 @@ Several CC preset features are tuned through their own settings namespaces in `~
 | `cc-tool-use-summary` | `enabled` (true), `topLevelOnly` (true), `minResultBytes` (4096), `retentionDays` (7), and more | Cheap-lane digests of large tool results, consumed at compaction; `topLevelOnly` skips subagent sessions and `retentionDays: 0` keeps the ledger in memory only. | [Interactive basics](/guide/interactive-basics) |
 | `cc-prompt-suggest` | `enabled` (false), `alias` (haiku), `timeoutMs` (4000), `maxTokens` (128) | Opt-in next-prompt suggestion at turn-stop. Read through the full settings cascade (not restricted to the user layer, unlike the two plugins below). | [Interactive basics](/guide/interactive-basics) |
 | `cc-post-edit-verify` | `enabled` (false), `rules` ([]), `debounce-ms` (5000) | Runs a user-declared verification command after accepted `edit`/`write` results and appends the outcome to the same tool result. **User layer only** (`~/.dsh/settings.json`); project-scope rules are never read. | [Interactive basics](/guide/interactive-basics) |
-| `cc-edit-recovery-hint` | `enabled` (false) | Appends static recovery advice when `edit` fails with a not-found error on a multi-line `old_string`. **User layer only**; project scope is never read. | [Interactive basics](/guide/interactive-basics) |
+| `cc-edit-recovery-hint` | `enabled` (true) | Appends static recovery advice when `edit` fails with a not-found error on a multi-line `old_string`. Default ON since 2026-10-16 (was ship-dark). **User layer only**; project scope is never read. | [Interactive basics](/guide/interactive-basics) |
 | `cc-compaction-cost-gate` | `enabled` (false), `mode` (dry-run), `margin` (1.0), `cooldown-ms` (600000) | Ships dark; evaluates whether projected compaction savings justify the rewrite cost before calling `/compact`-style compaction, with a cooldown after each real pass. | [Interactive basics](/guide/interactive-basics) |
 | `cc-completion-gate` | `enabled` (false), `nudges-per-session` (1) | Receipt ledger plus one nudge per session when a turn-stop claims done-ness ("tests pass", "committed", …) with no matching executed evidence. User layer only. | [Interactive basics](/guide/interactive-basics) |
-| `retry-attendant` | `enabled` (false), `guidance` (true when enabled), `escalate` (true when enabled), `expire-minutes` (10) | Verify-before-retry attendant for mutating tool calls with ambiguous outcomes: class-specific advice lines, and identical retries inside the expiry window escalated to an ask. User layer only. | [Interactive basics](/guide/interactive-basics) |
-| `progress-rebuild` | `enabled` (false), `max-lines` (120), `include-verified` (true) | Ships dark; restores a structured progress brief into the first model request after a successful compaction. | [Interactive basics](/guide/interactive-basics) |
+| `retry-attendant` | `enabled` (true), `guidance` (true), `escalate` (true), `expire-minutes` (10) | Verify-before-retry attendant for mutating tool calls with ambiguous outcomes: class-specific advice lines, and identical retries inside the expiry window escalated to an ask. Default ON since 2026-10-16 (was opt-in). User layer only. | [Interactive basics](/guide/interactive-basics) |
+| `progress-rebuild` | `enabled` (true), `max-lines` (120), `include-verified` (true) | Restores a structured progress brief into the first model request after a successful compaction. Default ON since 2026-10-16 (was ship-dark). | [Interactive basics](/guide/interactive-basics) |
 | `cc-turn-rules` | `enabled` (true), `max-result-bytes` (200000), `regex-cache-size` (64), `judged.enabled` (false), `repeat-reminder.enabled` (false), `repeat-reminder.thresholds` ([3,5,8]), `repeat-reminder.include`/`exclude` ([]), `repeat-reminder.arguments-preview-chars` (500) | Turn rules: Cursor-plugin rules carrying a `trigger` regex are injected as an advisory reminder when it matches. On by default with zero effect until such a rule exists. The namespace also carries the built-in repeat-reminder (default off): when the top-level agent makes the same tool call with identical arguments several times in a row, it fires an advisory reminder at each of the default thresholds (`[3,5,8]`), reset by the next user prompt. **User layer only.** | [Plugins](/guide/plugins) |
 | `cc-advisor` | `enabled` (false), `alias` (haiku), `budget` (2), `immune-turns` (3), `session-cap` (24), `severities` (all three), `subagents` (off) | Opt-in advisor watchdog: a second model reviews every completed turn. **User layer only.** | [Interactive basics](/guide/interactive-basics) |
 | `cc-lsp-on-write` | `enabled` (false), `server-name` (serena), `timeout-ms` (1500), `max-diagnostics` (8), `min-severity` (warning), `tool-names` | Opt-in LSP diagnostics appended to `edit`/`write`/`NotebookEdit` results, pulled from a running serena MCP server. **User layer only.** | [Interactive basics](/guide/interactive-basics) |
@@ -129,6 +129,14 @@ Several CC preset features are tuned through their own settings namespaces in `~
 | `cc-foreign-rules` | `disabled` | Opts out of harvesting other agents' rule files (cline/windsurf/copilot) from the session cwd into a `cc:foreign-rules` prompt section. | [Compatibility](/reference/compatibility) |
 | `cc-model-cycling` | `cycleOrder` | The alias list `Ctrl+P` / `Shift+Ctrl+P` cycles through in the TUI. | [Model routing](/guide/model-routing) |
 | `config-snapshot` | `config-snapshot.enabled` (true) | Writes one JSONL row per session construction to `<dshHome>/config-snapshot/<encodedId>.jsonl` (dsh-cc version, harness version, preset id, plugin inventory); observability only — the async writer is fail-open and never blocks session creation. | — |
+
+Three more namespaces exist only inside the VWA agent preset:
+
+| Namespace | Keys (defaults) | What it tunes |
+| --- | --- | --- |
+| `vwa-argument` | `semantic-enabled` (false), `review-alias` (sonnet) | Lane-2 argument tools: `semantic-enabled` gates whether the lane-2 tools mount at all (they mount only when true); `review-alias` is the model alias used for the reviewer. |
+| `vwa-evidence` | `enabled` (true inside the vwa preset), `nudge-budget` (4) | Evidence tooling for the VWA project, including its nudge budget. |
+| `vwa-preset` | `selectedDefault` (absent) | The saved default agent preset targeted by `/preset`; absent means the deployment default `cc`. |
 
 ## See also
 

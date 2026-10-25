@@ -1,7 +1,7 @@
 ---
 title: 斜杠命令
 description: dsh-cc 全部斜杠命令的参考目录——preset（harness）命令与 TUI 本地命令，附对等状态。
-distilled-from: dsh-cc v0.9.0 (cdfcca16)
+distilled-from: dsh-cc v0.9.2 (5f496613)
 ---
 
 # 斜杠命令
@@ -51,6 +51,7 @@ matrix 未声明该命令的状态。
 | `/mcp` | 管理 MCP 连接：`/mcp` 列出已注册服务器（名称、连接状态、工具数、OAuth 要求），`/mcp reconnect <name>`、`/mcp disconnect <name>`。`/mcp migrate` 将 Claude Code 配置文件中的服务器导入 `$DSH_HOME/.mcp.json`（条目原样保留，原子写入，`.bak` 备份）。 | Full |
 | `/plugin` | 管理插件与 marketplace：`list [--enabled\|--disabled]`，`install\|uninstall\|enable\|disable\|update <plugin[@mkt]> [--scope user\|project\|local]`，`marketplace list\|add <source>\|remove <name>\|update [name]`。纯文本输出（无交互菜单）；以一行静态信任警告代替交互式同意提示；安装会触发重新扫描——新 agent/hook 需重启会话才生效。未实现：`details`/`eval`/`init`/`prune`/`tag`/`validate`、`--config`、`--sparse`、managed scope。 | Partial |
 | `/reload-plugins` | 重新扫描磁盘上的发现根目录并即时重新挂载插件。 | Full |
+| `/preset` | 显示 agent-preset 名单，或切换当前会话及保存的默认值（`/preset <id>`；通过 `vwa-preset.selectedDefault` 持久化）。无 Claude Code 对应物——dsh-cc 专属。 | Full |
 | `/output-style` | 管理 output style。 | Full |
 
 ## 系统与诊断
@@ -67,6 +68,16 @@ matrix 未声明该命令的状态。
 | `/version` | 打印插件包版本，宿主可见时还打印 harness 版本。 | Full |
 | `/release-notes` | 打印内置的 release notes 更新日志。 | Full |
 | `/help` | 列出所有已注册的斜杠命令，或显示某条命令的详情（含输入提示，`/help <cmd>`）。 | Full |
+
+## VWA preset 命令
+
+以下命令只在 VWA agent preset 中挂载。它们被有意排除在 parity matrix 之外
+（matrix 不覆盖 VWA-preset 能力），因此不带对等状态：
+
+- `/vwa init` —— 初始化工作区的 VWA 项目。
+- `/vwa status` —— 查看工作区的 VWA 项目。
+- `/vwa sign` —— 仅限用户：只有你能运行这条命令。
+- `/vwa adjudicate` —— 仅限用户：只有你能运行这条命令。
 
 ## TUI 本地命令
 

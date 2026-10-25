@@ -27,6 +27,7 @@ description: 把可复用的任务级说明打包成 SKILL.md 技能包，由 ds
 - **内置（bundled）技能**随提供方包一起分发，以 rank 600 服务。因为 600 是最高 rank，任何同名的 managed（100）、project（200）、user（300）或 additional（400）技能都会赢得命名冲突——本地技能覆盖内置技能，与 Claude Code 的优先级一致。当前内置子集为 `debug`、`simplify` 和 `batch`。
 - 旧版 `.claude/commands/*.md` 文件也会被加载，并在其元数据中标记为 `deprecated`。
 - 发现按真实路径去重，因此符号链接或互相重叠的文件只会被服务一次。
+- 从插件清单声明的技能根目录挂载的技能会遇到一个命名边界情况：按目录推导的名称可能无法通过注册表的 kebab-case 语法校验（例如形如版本号的安装基名），此时 dsh-cc 会回退使用 `SKILL.md` frontmatter 中的 `name` 完成注册。
 
 ### Harness 原生根目录（同样会被扫描）
 
