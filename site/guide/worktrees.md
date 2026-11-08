@@ -70,7 +70,7 @@ Creation is hardened:
 - An existing target directory is adopted only when its `.git` entry resolves into this repository's `.git/worktrees/` registration.
 - Outside a git working tree it returns a structured error rather than changing anything.
 
-Because the session working directory is fixed at session creation, after entering you (the model) must pass `workdir` equal to the reported `worktreePath` on subsequent shell and fs calls. At most one worktree is active per process. The `path` form — naming a directory outside the convention dir — always asks for confirmation, and only bypassPermissions skips that prompt.
+Both tools commit the session cwd through the awaited harness `workingDirectory.set` call, so the switch is real rather than declared — a rejected `set` fails the enter or exit instead of falling back. The `tool:worktree:cwd` runtime context reports the new working directory as a secondary, model-facing hint only, and you (the model) are still told to pass `workdir` equal to the reported `worktreePath` on subsequent shell and fs calls. At most one worktree is active per process. The `path` form — naming a directory outside the convention dir — always asks for confirmation, and only bypassPermissions skips that prompt.
 
 The worktree is locked with `git worktree lock --reason="dsh-cc session <slug>"` and unlocked on both exit actions.
 

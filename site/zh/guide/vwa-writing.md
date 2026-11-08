@@ -9,7 +9,7 @@ description: 用来源证据、论断标记、论证图和语义评审通道来�
 
 ## 前置条件
 
-- dsh >= 0.2.0-rc.2，并安装 `@dsh-cc/cli` 启动器。
+- dsh >= 0.2.2-rc.1，并安装 `@dsh-cc/cli` 启动器。
 - `dsh-cc-agents` 插件（见[插件](/zh/guide/plugins)）。
 - 带 lane-2 交付工具的 dsh-cc 构建。其他 Claude 兼容宿主可以加载 `vwa-writing` 技能，但没有必要的工具，下面的工作流无法在那里运行。
 
@@ -88,11 +88,14 @@ You may revise the article after review.
 
 工作流注册来源摘录、构建论证图、绑定正文，并对所有阶段启动评审。agent 会等待任务完成后再做报告。相关改动之后，已批准的修复需要新的绑定和评审。
 
+评审按阶段运行：`sources`、`support`、`claims`、`arguments`、`all` 或 `audit`（其中 `claims` 是新阶段）。如果一次运行中途停下、没有跑完，可以带 `continue: true` 和一个新的 `requestId` 再次调用评审，只重跑那些没有完成记录的任务；如果所有任务都已完成，运行时会以 `NOTHING_TO_CONTINUE` 拒绝；如果本轮评审周期的预算已经用尽，则以 `BUDGET_EXHAUSTED` 拒绝。静态可行性检查可以在事前就把不可行的方案以 `BUDGET_INSUFFICIENT` 拒掉，该拒绝带有按阶段的分解和 `suggestedClaimsBatchSize`。
+
 运行时的判定是权威的：
 
 - 运行时设置等级和交付状态——技能或 critic 的意见都不能替代它们。
 - 未完成的任务、失败的检查或耗尽的预算绝不构成一次通过的评审；运行时可以交付未核验的草稿。
 - 项目的评审限额在初始化时冻结。评审会增加模型调用、时间和 token 开销。
+- 报告先落到 `docs/vwa-reports/<projectId>/` 下，然后才出回执；交付只通过宿主呈现交付物的事件来认定。
 - 只有你能运行 `/vwa sign` 和 `/vwa adjudicate`。
 
 `review-alias` 选择评审模型别名，默认为 `sonnet`。缺失的内置别名可以继承父级模型。别名是一个配置名，不是固定模型——别名如何映射到 provider 见[模型路由](/zh/guide/model-routing)。
@@ -103,14 +106,16 @@ You may revise the article after review.
 
 ## 命令
 
-VWA preset 会添加 `/vwa` 项目命令：
+VWA preset 会添加六个 `/vwa` 项目命令，外加 `/preset` 切换：
 
 | 命令 | 作用 |
 | --- | --- |
 | `/preset vwa` | 切换新会话的默认 preset（用 `/preset cc` 切回）。 |
 | `/vwa init` | 初始化工作区的 VWA 项目——每个工作区运行一次。 |
 | `/vwa status` | 查看当前项目状态。 |
+| `/vwa import` | 用真实字节重新核验全部来源快照和已绑定的产物，然后重新绑定项目。 |
 | `/vwa sign` / `/vwa adjudicate` | 仅限用户运行的命令；agent 无法执行。 |
+| `/vwa repair` | 采用最新的自校验候选来修复损坏的项目存储。 |
 
 ## 与 dsh-cc-writing 的关系
 

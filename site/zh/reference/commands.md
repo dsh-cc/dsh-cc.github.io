@@ -1,7 +1,7 @@
 ---
 title: 斜杠命令
 description: dsh-cc 全部斜杠命令的参考目录——preset（harness）命令与 TUI 本地命令，附对等状态。
-distilled-from: dsh-cc v0.9.2 (5f496613)
+distilled-from: dsh-cc v0.9.4 (e65fa0ac)
 ---
 
 # 斜杠命令
@@ -9,9 +9,13 @@ distilled-from: dsh-cc v0.9.2 (5f496613)
 dsh-cc 有两层斜杠命令。**Preset 命令**由 CC preset 通过 `ctx.commands` 注册，
 不消耗模型轮次，在任何会分发 harness 命令的界面中可用。**TUI 本地命令**由终
 端界面自己拥有（`packages/ui/tui/src/slash.ts`）；TUI 处理它们时不调用
-`ctx.commands`，且部分名称（`/resume`、`/model`、`/agents`、`/cost`、
-`/provider`）在两层都存在——在 TUI 中以本地实现优先。除非特别注明
-（`/init` 会排队一个模型轮次），下列命令的执行都不经过模型。
+`ctx.commands`，且部分名称（`/resume`、`/agents`、`/cost`）在两层都存在——在
+TUI 中以本地实现优先。`/model`、`/effort`、`/provider`、`/onboard` 则只存在于
+TUI 本地层。除非特别注明（`/init` 会排队一个模型轮次），下列命令的执行都不经
+过模型。
+
+宿主的 `/permission` 表面（沙箱与审批 preset）对所有 preset 都已退役：它从命令
+列表中移除，手工键入的 `/permission …` 行会被重定向到 `/permissions …`。
 
 对等信息来自 `docs/cc-parity-matrix.md`（Full/Partial）。空白单元格表示
 matrix 未声明该命令的状态。
@@ -24,26 +28,18 @@ matrix 未声明该命令的状态。
 | `/branch [note]` | 将当前会话分叉为新的子分支并报告子会话 id。切换到子分支需要重启。 | Partial |
 | `/compact` | 压缩会话，可附带保留指令。 | Full |
 | `/rename <title>` | 为当前会话固定一个明确的用户标题。 | Full |
-| `/export` | 将当前会话转录写为文件，markdown（默认）或无损 JSON。写文件前会单向脱敏粘贴进来的凭据（dsh-cc 扩展；额外模式通过 `cc-secrets` 命名空间配置）。已知缺口：在 web profile 上，原生 CC `/export` 会绕过这层脱敏。 | Partial |
+| `/export` | 将当前会话转录写为文件，markdown（默认）或 JSON，两种格式都会对机密做脱敏。二者在渲染时都执行单向机密脱敏——`cc-secrets` 的模式加上运行时的额外模式（额外模式通过 `cc-secrets` 命名空间配置；这是 dsh-cc 扩展）——且没有未脱敏模式。已知缺口：在 web profile 上，原生 CC `/export` 会绕过这层脱敏。 | Partial |
 | `/tasks` | 列出调用方可见的后台作业及其状态。 | Partial |
-| `/agents` | 列出、查看、停止和释放可续接的后台 agent：`/agents <id>` 查看详情，`/agents stop <id>` 中断一个（仍可续接），`/agents release <id>` 驱逐子代理的常驻激活并释放其容量槽位（此后同一会话内不可续接）。`/agents attach <id>` 是保留但未实现的命名空间。 | Partial |
+| `/agents` | 列出、查看、停止和释放可续接的后台 agent：`/agents <id>` 查看详情，`/agents stop <id>` 中断一个（仍可续接），`/agents release <id>` 驱逐子代理的常驻激活并释放其容量槽位（此后同一会话内不可续接）。常驻子代理无论正在运行还是空闲都占用池容量，因此空闲的常驻子代理同样可以释放并让出槽位。`/agents attach <id>` 是保留但未实现的命名空间。 | Partial |
 | `/plan` | Plan mode 通道（通过 `exit_plan_mode` 退出）。 | Full |
-| `/learn [apply\|all\|days=N]` | 把会话中反复出现的失败模式蒸馏进工作区记忆。默认 dry-run——只有 `apply` 会写入。`apply` 写入 `session-learnings` 记忆主题（一个 managed marker block，整体重新生成；块之外的内容不受影响）并更新 `MEMORY.md`；`all` 扫描所有项目而不只是当前工作区；`days=N` 覆盖时间窗口（默认 14）。扫描会遍历持久化的会话存储，把窗口内最近的 `session.v3.jsonl.zstd` 日志解压后读取（并兼容旧的 `session.jsonl.zstd`）。通过 `cc-learn` 设置命名空间调优（`enabled` 默认 true、`days` 14、`min-occurrences` 2）。 | Full |
-
-## 模型与 Provider
-
-| Command | What it does | Parity |
-| --- | --- | --- |
-| `/provider` | 管理 LLM provider 与 API key。子命令：`/provider list` 打印当前路由，`/provider add <preset-id>` 走内置 preset（Moonshot、Z.AI/Zhipu、DeepSeek）或自定义端点的向导，`/provider remove <route>` 移除路由。详情视图可轮换 key、刷新模型列表、设置默认。Key 存入凭据存储（`~/.dsh/.credentials.yaml`），绝不进 settings。 | Full |
-| `/model <n\|provider/id>` | 列出或切换当前模型。 | Full |
-| `/effort <level\|default>` | 为当前模型设置推理努力级别。它在 effort 优先级中的位置见[模型路由](/zh/guide/model-routing)。 | — |
+| `/learn [apply\|all\|days=N\|promote=<kebab-name>]` | 把会话中反复出现的失败模式蒸馏进工作区记忆。默认 dry-run——只有 `apply` 会写入。`apply` 写入 `session-learnings` 记忆主题（一个 managed marker block，整体重新生成；块之外的内容不受影响）并更新 `MEMORY.md`；`all` 扫描所有项目而不只是当前工作区；`days=N` 覆盖时间窗口（默认 14）；`promote=<kebab-name>` 隐含 `apply`，把恰好一条发现提升为指定 kebab-case 名称的 learned skill（存在多于一条发现时会拒绝执行）。扫描会遍历持久化的会话存储，把窗口内最近的 `session.v4.jsonl.zstd` 日志解压后读取（回退到 `session.v3.jsonl.zstd`，再回退到旧的 `session.jsonl.zstd`）。通过 `cc-learn` 设置命名空间调优（`enabled` 默认 true、`days` 14、`min-occurrences` 2）。 | Full |
 
 ## 配置
 
 | Command | What it does | Parity |
 | --- | --- | --- |
 | `/config` | 查看或更新生效的配置命名空间（仅文本渲染/补丁，键集合有白名单，不是交互式编辑器）。 | Partial |
-| `/permissions [mode]` | 查看或修改权限模式/规则（CC 规则引擎模式）；裸调用会打开 TUI 覆盖层。在 `auto` 模式下，被挂起的 allow 规则会标注 "suspended in auto mode"。`/permissions lint` 按来源分组报告规则卫生问题（格式错误的规则、完全重复、被前缀包含的规则、整工具 `Bash` allow、未知工具名），并给出修改前后的 diff 建议；`--apply` 只清理用户 settings 层。 | Full |
+| `/permissions [mode]` | 查看或修改权限模式/规则（CC 规则引擎模式）；裸调用会打开 TUI 覆盖层。在 `auto` 模式下，被挂起的 allow 规则会标注 "suspended in auto mode"。`/permissions lint` 按来源分组报告规则卫生问题（格式错误的规则、完全重复、被前缀包含的规则、整工具 `Bash` allow、未知工具名），并给出修改前后的 diff 建议；`--apply` 只清理用户 settings 层。`/permissions grant <descriptor> --confirm` 创建一个会话级 task grant——一种只能由用户本人创建的批量授权；它从宿主会话派生 root、branch、goal 与到期时间，从不跨会话持久化，一旦 scope、branch 或到期时间被违反即被撤销。 | Full |
 | `/auto-mode` | `auto` 模式分类器的只读自检，不调用模型：`/auto-mode defaults` 以 JSON 打印内置槽位列表；`/auto-mode config` 打印生效的、仅取可信层的 `permissions.autoMode` 片段；`/auto-mode review [full]` 显示当前会话最近 20 条分类器/探针裁决（`auditFullText` 开启时，`full` 会打印存储的输入）。见[权限模式](/zh/reference/permission-modes)。 | Partial |
 | `/memory` | 列出 memdir 记忆文件（名称、类型、首行），或按名称打印某条记忆的正文。 | Full |
 | `/skills` | 列出每个可用 skill 及其描述、来源和调用策略（model、user 或两者）。 | Full |
@@ -71,24 +67,27 @@ matrix 未声明该命令的状态。
 
 ## VWA preset 命令
 
-以下命令只在 VWA agent preset 中挂载。它们被有意排除在 parity matrix 之外
-（matrix 不覆盖 VWA-preset 能力），因此不带对等状态：
+VWA preset 会加上这些项目命令。它们只在 VWA agent preset 中挂载，且不论
+semantic 闸门是否打开都会挂上，并被有意排除在 parity matrix 之外（matrix 不
+覆盖 VWA-preset 能力），因此不带对等状态：
 
 - `/vwa init` —— 初始化工作区的 VWA 项目。
 - `/vwa status` —— 查看工作区的 VWA 项目。
+- `/vwa import` —— 仅限用户：把已绑定的源快照与产物对照工作区实际字节重新校验，并重新绑定 current-project 指针；校验失败时指针保持不变。
 - `/vwa sign` —— 仅限用户：只有你能运行这条命令。
 - `/vwa adjudicate` —— 仅限用户：只有你能运行这条命令。
+- `/vwa repair` —— 仅限用户：通过提升最新的可自校验恢复候选来修复项目存储；HEAD 健康时会报告无需修复。
 
 ## TUI 本地命令
 
 以下名称由 TUI 自行处理（描述逐字来自
-`packages/ui/tui/src/slash.ts`）。preset 侧的 `/model` 和 `/exit` 按设计由宿
-主拥有，不在对等范围内；dsh 原生等价物就是这些本地命令。
+`packages/ui/tui/src/slash.ts`）。`/model` 与 `/exit` 另有宿主层的定义，但那些
+不在 preset 命令列表中、也不在对等范围内；你实际敲的是这里的本地命令。
 
 | Command | What it does | Parity |
 | --- | --- | --- |
-| `/quit` | 退出 TUI 会话。在 launcher worktree 会话中，会询问保留还是移除该 worktree。 | |
-| `/exit` | 退出 TUI 会话。 | |
+| `/quit` | 退出 TUI 会话（别名 `/exit`）。在 launcher worktree 会话中，会询问保留还是移除该 worktree。 | |
+| `/exit` | 退出 TUI 会话。`/quit` 的别名。 | |
 | `/clear` | 开启新对话（清空上下文）。之前的会话仍可恢复。 | |
 | `/new` | `/clear` 的别名。 | |
 | `/reset` | `/clear` 的别名。 | |
@@ -96,12 +95,12 @@ matrix 未声明该命令的状态。
 | `/resume <sessionId>` | 切换到被恢复的会话（选择器或按 id）。 | |
 | `/model <n\|provider/id>` | 列出或切换当前模型。 | |
 | `/effort <level\|default>` | 为当前模型设置推理努力级别。它在 effort 优先级中的位置见[模型路由](/zh/guide/model-routing)。 | |
-| `/agents [<id>\|stop <id>\|release <id>]` | 列出、查看、停止或释放后台 agent。`release <id>` 驱逐子代理的常驻激活并释放其容量槽位；此后同一会话内不可续接。 | |
+| `/agents [<id>\|stop <id>\|release <id>]` | 列出、查看、停止或释放后台 agent。`release <id>` 驱逐子代理的常驻激活并释放其容量槽位；常驻子代理无论正在运行还是空闲都计入池容量，此后同一会话内不可续接。 | |
 | `/cost` | 显示 token 用量。 | |
 | `/usage` | 打开实时的 token 与上下文用量面板。 | |
 | `/export-md <path>` | 将会话转录导出为 Markdown 文件。 | |
 | `/copy` | 将最近的助手回复复制到剪贴板。 | |
-| `/provider [list \| add <preset-id> \| remove <route>]` | 管理 LLM provider 路由与 API key。 | Full |
+| `/provider [list \| add <preset-id> \| remove <route>]` | 管理 LLM provider 与 API key。`/provider list` 打印当前路由，`/provider add <preset-id>` 走内置 preset（Moonshot、Z.AI/Zhipu、DeepSeek）或自定义端点的向导，`/provider remove <route>` 移除路由。详情视图可轮换 key、刷新模型列表、设置默认。Key 存入凭据存储（`~/.dsh/.credentials.yaml`），绝不进 settings。 | Full |
 | `/onboard` | 重新运行首次运行设置（清除 onboarding 的永久关闭标记）。 | |
 
 ## 说明

@@ -10,7 +10,7 @@ description: How dsh-cc composes itself from dsh profiles and bundles, and how i
 - **Story A — dsh-native composition.** dsh-cc itself is installed as ordinary dsh plugins grouped into `@dsh-cc/bundle-*` packages and mounted into a dsh profile. Your local tweaks live in a `cordis.patch.yml` file.
 - **Story B — Claude Code plugin loading.** Through the cc-plugin-loader, dsh-cc can discover and mount existing on-disk Claude Code plugins (a `plugin.json` manifest plus component directories), so plugin assets you already have keep working.
 
-Prerequisites: dsh >= 0.2.0-rc.2 with the `@dsh-cc/cli` launcher installed (`npm install -g @dsh-cc/cli`).
+Prerequisites: dsh >= 0.2.2-rc.1 with the `@dsh-cc/cli` launcher installed (`npm install -g @dsh-cc/cli`).
 
 ## Story A: dsh profiles and bundles
 
@@ -164,7 +164,7 @@ Five official plugins ship through the `dsh-cc` marketplace.
 
 ### dsh-cc-agents — critic, executor, and marathon subagents
 
-Ships three subagents and four skills — one that routes between them, one for data-analysis work, one for evidence-checked writing, one for bounded formal design:
+Ships three subagents and five skills — one that routes between them, one for data-analysis work, one for evidence-checked writing, one for bounded formal design, one for unattended batch review:
 
 - **`dsh-cc-agents:critic`** — reasoning-heavy work: complex analysis, architectural decisions, adversarial plan review, root-cause analysis. Runs on the `opus` model alias and is background-pinned.
 - **`dsh-cc-agents:executor`** — mechanical execution of pre-approved, fully specified plans: formatting, simple refactors, boilerplate, renames, tests, docs, checks. Runs on the `sonnet` model alias, foreground by default.
@@ -173,7 +173,8 @@ Ships three subagents and four skills — one that routes between them, one for 
 - **`dsh-cc-agents-orchestration` skill** — routing table for choosing between the agents, the background asymmetry, and their report contracts.
 - **`data-analysis` skill** — data-analysis orchestration (数据分析/口径/对账): data-analysis tasks with caliber doubt, reconciliation, and external-report questions route through critic/executor, with review/verification/execution meta-rules inlined into the dispatch prompts.
 - **`vwa-writing` skill** — evidence-checked document writing and review: source snapshots, claim markers, an argument graph, and a semantic review lane for research articles, historical or literary analysis, and technical reports that need traceable claims. See [VWA writing and review](/guide/vwa-writing).
-- **`formal-design` skill** — bounded TLA+ model checks before the existing design review, for protocol or state-machine changes with shared-state ordering, retries, crash recovery, or asynchronous ownership. Requires Java >=17 on PATH; the pinned TLC JAR ships with the plugin, so no separate download or JAR configuration is needed. Installing the plugin does not enable it — a human must adopt the project rules snippet into the effective project rules (explicit requests and a loaded orchestration skill can also select it). Restart dsh after plugin updates to pick up the updated skill and runner.
+- **`formal-design` skill** — checks bounded TLA+ models and proves high-impact deterministic rules in Lean, before the existing design review. TLA+ fits protocol or state-machine changes with shared-state ordering, retries, crash recovery, or asynchronous ownership; event ordering, retries, and recovery stay on that path. TLC checks need Java >=17 on PATH, and the pinned TLC JAR ships with the plugin, so no separate download or JAR configuration is needed. Lean checks need a pinned Lean toolchain provisioned separately, once, with `lean-provision.mjs` — nothing is downloaded at startup or check time. Lean covers high-impact deterministic behavior: permission, policy, eligibility, or configuration composition with a stated invariant; budget, quota, allocation, or ranking arithmetic with a stated conservation, bound, or ordering requirement; a deterministic transformation with a requested general correctness property; or an explicit Lean request. Installing the plugin does not enable it — a human must adopt the project rules snippet into the effective project rules (explicit requests and a loaded orchestration skill can also select it). Restart dsh after plugin updates to pick up the updated skill and runner.
+- **`vwa-batch` skill** — unattended multi-page VWA review batches: give one instruction plus a page list and the loop runs to completion without per-page interaction — a project per page, review, a frozen evaluation, one fix-and-report commit, push, PR, CI, then the batch ledger at `docs/vwa-reports/batch-<batchId>.md`. The driver is the agent: there is no runner and no daemon, and batch state lives under `.dsh/vwa/batches/<batchId>/`. The one user action is `/permissions grant .dsh/vwa/batches/<batchId>/grant-descriptor.json`. See [VWA writing and review](/guide/vwa-writing).
 
 Install from inside a session, then restart:
 

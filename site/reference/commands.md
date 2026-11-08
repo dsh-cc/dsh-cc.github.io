@@ -1,7 +1,7 @@
 ---
 title: Slash commands
 description: Reference catalog of every slash command in dsh-cc — preset (harness) commands and TUI-local commands, with parity status.
-distilled-from: dsh-cc v0.9.2 (5f496613)
+distilled-from: dsh-cc v0.9.4 (e65fa0ac)
 ---
 
 # Slash commands
@@ -11,9 +11,13 @@ CC preset through `ctx.commands`; they run without a model turn and are
 available in every surface that dispatches harness commands. **TUI-local
 commands** are owned by the terminal surface (`packages/ui/tui/src/slash.ts`);
 the TUI handles them without calling `ctx.commands`, and some names (`/resume`,
-`/model`, `/agents`, `/cost`, `/provider`) exist in both layers — in the TUI the
-local implementation wins. Every command below executes without a model turn
-unless noted (`/init` queues one).
+`/agents`, `/cost`) exist in both layers — in the TUI the local implementation
+wins. `/model`, `/effort`, `/provider`, and `/onboard` are TUI-local only. Every
+command below executes without a model turn unless noted (`/init` queues one).
+
+The host `/permission` surface (sandbox and approval presets) is retired for
+every preset: it is dropped from the command list, and a typed
+`/permission …` line is redirected onto `/permissions …`.
 
 Parity is from `docs/cc-parity-matrix.md` (Full/Partial). A blank cell means
 the matrix does not state a status for that command.
@@ -26,26 +30,18 @@ the matrix does not state a status for that command.
 | `/branch [note]` | Fork the current session into a new child branch and report the child session id. Switching to the child requires a restart. | Partial |
 | `/compact` | Compact the session, with optional preservation instructions. | Full |
 | `/rename <title>` | Pin an explicit user title on the current session. | Full |
-| `/export` | Write the current session transcript to a file as markdown (default) or lossless JSON. Pasted credentials are redacted one-way before the file is written (a dsh-cc extension; extra patterns via the `cc-secrets` namespace). Known gap: on web profiles the native CC `/export` bypasses this redaction. | Partial |
+| `/export` | Write the current session transcript to a file as markdown (default) or JSON, with secrets redacted in both formats. Both formats apply one-way secret redaction as they render — the `cc-secrets` patterns plus any live extra patterns (extra patterns via the `cc-secrets` namespace; a dsh-cc extension) — and there is no unredacted mode. Known gap: on web profiles the native CC `/export` bypasses this redaction. | Partial |
 | `/tasks` | List caller-visible background jobs and their status. | Partial |
-| `/agents` | List, inspect, stop, and release continuable background agents: `/agents <id>` for detail, `/agents stop <id>` to interrupt one (it stays resumable), `/agents release <id>` to evict the child's resident activation and free its capacity slot (not continuable in this session afterwards). `/agents attach <id>` is a reserved, unimplemented namespace. | Partial |
+| `/agents` | List, inspect, stop, and release continuable background agents: `/agents <id>` for detail, `/agents stop <id>` to interrupt one (it stays resumable), `/agents release <id>` to evict the child's resident activation and free its capacity slot (not continuable in this session afterwards). A resident child counts against the pool whether it is running or idle, so an idle resident is releasable and frees its slot. `/agents attach <id>` is a reserved, unimplemented namespace. | Partial |
 | `/plan` | Plan mode channel (exit via `exit_plan_mode`). | Full |
-| `/learn [apply\|all\|days=N]` | Distill recurring session failure patterns into workspace memory. Dry-run by default — only `apply` writes. `apply` writes the `session-learnings` memory topic (a managed marker block, regenerated wholesale; content outside the block is untouched) and updates `MEMORY.md`; `all` scans every project instead of the current workspace; `days=N` overrides the recency window (default 14). Scanning walks the durable session store, decompressing recent `session.v3.jsonl.zstd` logs within the window (with legacy `session.jsonl.zstd` fallback). Tuned via the `cc-learn` settings namespace (`enabled` default true, `days` 14, `min-occurrences` 2). | Full |
-
-## Model & provider
-
-| Command | What it does | Parity |
-| --- | --- | --- |
-| `/provider` | Manage LLM providers and API keys. Subcommands: `/provider list` prints current routes, `/provider add <preset-id>` walks a wizard for built-in presets (Moonshot, Z.AI/Zhipu, DeepSeek) or a custom endpoint, `/provider remove <route>` removes a route. The detail view rotates keys, refreshes the model list, and sets the default. Keys go to the credential store (`~/.dsh/.credentials.yaml`), never settings. | Full |
-| `/model <n\|provider/id>` | List or switch the active model. | Full |
-| `/effort <level\|default>` | Set reasoning effort for the current model. Where this sits in effort precedence: [Model routing](/guide/model-routing). | — |
+| `/learn [apply\|all\|days=N\|promote=<kebab-name>]` | Distill recurring session failure patterns into workspace memory. Dry-run by default — only `apply` writes. `apply` writes the `session-learnings` memory topic (a managed marker block, regenerated wholesale; content outside the block is untouched) and updates `MEMORY.md`; `all` scans every project instead of the current workspace; `days=N` overrides the recency window (default 14); `promote=<kebab-name>` implies `apply` and promotes exactly one finding into a learned skill with that kebab-case name (it refuses when more than one finding is present). Scanning walks the durable session store, decompressing recent `session.v4.jsonl.zstd` logs within the window (falling back to `session.v3.jsonl.zstd` and then the legacy `session.jsonl.zstd`). Tuned via the `cc-learn` settings namespace (`enabled` default true, `days` 14, `min-occurrences` 2). | Full |
 
 ## Configuration
 
 | Command | What it does | Parity |
 | --- | --- | --- |
 | `/config` | Show or update effective configuration namespaces (text-only render/patch with an allowlisted key set, not an interactive editor). | Partial |
-| `/permissions [mode]` | Inspect or change permission mode/rules (CC rule-engine modes); the bare invocation opens a TUI overlay. In `auto` mode, suspended allow rules are annotated "suspended in auto mode". `/permissions lint` reports rule-hygiene findings (malformed rules, exact duplicates, prefix-subsumed rules, bare whole-tool `Bash` allows, unknown tool names) grouped by source with a proposed before/after diff; `--apply` cleans the user settings layer only. | Full |
+| `/permissions [mode]` | Inspect or change permission mode/rules (CC rule-engine modes); the bare invocation opens a TUI overlay. In `auto` mode, suspended allow rules are annotated "suspended in auto mode". `/permissions lint` reports rule-hygiene findings (malformed rules, exact duplicates, prefix-subsumed rules, bare whole-tool `Bash` allows, unknown tool names) grouped by source with a proposed before/after diff; `--apply` cleans the user settings layer only. `/permissions grant <descriptor> --confirm` creates a session-scoped task grant — a batch authorization the user alone can create; it derives its root, branch, goal, and expiry from the host session, is never persisted across sessions, and is revoked as soon as its scope, branch, or expiry is violated. | Full |
 | `/auto-mode` | Read-only introspection of the `auto`-mode classifier, no model call: `/auto-mode defaults` prints the built-in slot lists as JSON; `/auto-mode config` prints the effective trusted-scoped `permissions.autoMode` slice; `/auto-mode review [full]` shows the current session's last 20 classifier/probe verdicts (`full` prints the stored inputs when `auditFullText` is on). See [Permission modes](/reference/permission-modes). | Partial |
 | `/memory` | List memdir memory files (name, type, first line) or print one memory's body by name. | Full |
 | `/skills` | List every available skill with description, source, and invocation policy (model, user, or both). | Full |
@@ -73,26 +69,29 @@ the matrix does not state a status for that command.
 
 ## VWA preset commands
 
-These commands mount only in the VWA agent preset. They are deliberately
-excluded from the parity matrix (which does not cover VWA-preset
-capabilities), so they carry no parity status:
+The VWA preset adds these project commands. They mount only in the VWA agent
+preset, regardless of the semantic gate, and are deliberately excluded from the
+parity matrix (which does not cover VWA-preset capabilities), so they carry no
+parity status:
 
 - `/vwa init` — initialize the workspace VWA project.
 - `/vwa status` — inspect the workspace VWA project.
+- `/vwa import` — user-only: re-verify the bound source snapshots and artifacts against the workspace bytes and rebind the current-project pointer; verification failures leave the pointer unchanged.
 - `/vwa sign` — user-only: only the user can run this command.
 - `/vwa adjudicate` — user-only: only the user can run this command.
+- `/vwa repair` — user-only: repair the project store by promoting the newest self-verifying recovery candidate; a healthy HEAD reports that no repair is needed.
 
 ## TUI-local commands
 
 The following names are handled by the TUI itself (descriptions verbatim from
-`packages/ui/tui/src/slash.ts`). The preset-side `/model` and `/exit` are
-host-owned by design and out of parity scope; the dsh-native equivalents are
-these local commands.
+`packages/ui/tui/src/slash.ts`). `/model` and `/exit` also have host-plane
+definitions, but those stay out of the preset command list and out of parity
+scope; what you actually type is the local command.
 
 | Command | What it does | Parity |
 | --- | --- | --- |
-| `/quit` | Exit the TUI session. On a launcher worktree session, offers to keep or remove the worktree. | |
-| `/exit` | Exit the TUI session. | |
+| `/quit` | Exit the TUI session (alias `/exit`). On a launcher worktree session, offers to keep or remove the worktree. | |
+| `/exit` | Exit the TUI session. Alias of `/quit`. | |
 | `/clear` | Start a new conversation (empty context). Previous session stays resumable. | |
 | `/new` | Alias of `/clear`. | |
 | `/reset` | Alias of `/clear`. | |
@@ -100,12 +99,12 @@ these local commands.
 | `/resume <sessionId>` | Switch to a resumed session (picker or by id). | |
 | `/model <n\|provider/id>` | List or switch the active model. | |
 | `/effort <level\|default>` | Set reasoning effort for the current model. Where this sits in effort precedence: [Model routing](/guide/model-routing). | |
-| `/agents [<id>\|stop <id>\|release <id>]` | List, inspect, stop, or release background agents. `release <id>` evicts the child's resident activation and frees its capacity slot; it is not continuable in this session afterwards. | |
+| `/agents [<id>\|stop <id>\|release <id>]` | List, inspect, stop, or release background agents. `release <id>` evicts the child's resident activation and frees its capacity slot; a resident child counts whether it is running or idle, and it is not continuable in this session afterwards. | |
 | `/cost` | Show token usage. | |
 | `/usage` | Open the live token and context usage panel. | |
 | `/export-md <path>` | Export the transcript to a Markdown file. | |
 | `/copy` | Copy the latest assistant reply to the clipboard. | |
-| `/provider [list \| add <preset-id> \| remove <route>]` | Manage LLM provider routes and API keys. | Full |
+| `/provider [list \| add <preset-id> \| remove <route>]` | Manage LLM providers and API keys. `/provider list` prints current routes, `/provider add <preset-id>` walks a wizard for built-in presets (Moonshot, Z.AI/Zhipu, DeepSeek) or a custom endpoint, `/provider remove <route>` removes a route. The detail view rotates keys, refreshes the model list, and sets the default. Keys go to the credential store (`~/.dsh/.credentials.yaml`), never settings. | Full |
 | `/onboard` | Re-run the first-run setup (clears the onboarding opt-out). | |
 
 ## Notes

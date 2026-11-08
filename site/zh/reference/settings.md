@@ -1,7 +1,7 @@
 ---
 title: 设置级联
 description: dsh-cc 如何在五个层级间解析 settings.json、合并它们，并安全地应用环境变量。
-distilled-from: dsh-cc v0.9.2 (5f496613)
+distilled-from: dsh-cc v0.9.4 (e65fa0ac)
 ---
 
 # 设置级联
@@ -134,7 +134,7 @@ PATH
 
 | 命名空间 | 键（默认值） | 调优对象 |
 | --- | --- | --- |
-| `vwa-argument` | `semantic-enabled`（false）、`review-alias`（sonnet） | Lane-2 论证工具：`semantic-enabled` 决定 lane-2 工具是否挂载（只有为 true 时才挂载）；`review-alias` 是审查方使用的模型别名。 |
+| `vwa-argument` | `semantic-enabled`（false）、`review-alias`（sonnet）、`review-claims-batch-size`（1，范围 1-4） | Lane-2 论证工具：`semantic-enabled` 控制语义工具的挂载——为 false 时语义工具不挂载，但 `/vwa` 命令仍然挂载，语义评审处于不生效状态；`review-alias` 是审查方使用的模型别名；`review-claims-batch-size` 决定连续的 `claims` 评审任务如何成批。 |
 | `vwa-evidence` | `enabled`（vwa preset 内为 true）、`nudge-budget`（4） | VWA 项目的证据工具，包括其 nudge 预算。 |
 | `vwa-preset` | `selectedDefault`（缺省） | `/preset` 指向的已保存默认 agent preset；缺省表示部署默认值 `cc`。 |
 

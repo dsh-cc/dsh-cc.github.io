@@ -14,7 +14,7 @@ installing the `dsh-cc-agents` plugin alone selects nothing.
 
 ## Prerequisites
 
-- dsh >= 0.2.0-rc.2 with the `@dsh-cc/cli` launcher installed.
+- dsh >= 0.2.2-rc.1 with the `@dsh-cc/cli` launcher installed.
 - The `dsh-cc-agents` plugin (see [Plugins](/guide/plugins)).
 - A dsh-cc build with the lane-2 delivery tools. A different
   Claude-compatible host can load the `vwa-writing` skill without the
@@ -125,6 +125,15 @@ body, and starts the review over all stages. The agent waits for the job
 before making its report. After related changes, approved repairs need a new
 binding and review.
 
+Reviews run by stage: `sources`, `support`, `claims`, `arguments`, `all`, or
+`audit` (`claims` is new). If a run stops incomplete, call review again with
+`continue: true` and a new `requestId` to re-execute only the tasks that have
+no completed record; the runtime refuses with `NOTHING_TO_CONTINUE` when
+everything is already complete, or `BUDGET_EXHAUSTED` when the shared
+review-cycle budget is spent. A static feasibility check can refuse an
+infeasible plan up front with `BUDGET_INSUFFICIENT`, which carries a per-stage
+breakdown and a `suggestedClaimsBatchSize`.
+
 What the runtime says is authoritative:
 
 - The runtime sets grades and delivery status — a skill or a critic opinion
@@ -133,6 +142,9 @@ What the runtime says is authoritative:
   passed review; the runtime can deliver an unverified draft.
 - Project review limits are frozen at initialization. Review adds model
   calls, time, and token use.
+- Reports land under `docs/vwa-reports/<projectId>/` before the receipt, and
+  delivery is recognized only through the host's presented-deliverables
+  event.
 - Only the user can run `/vwa sign` and `/vwa adjudicate`.
 
 `review-alias` selects the reviewer model alias; its default is `sonnet`. A
@@ -148,14 +160,16 @@ does not show that all claims are correct.
 
 ## Commands
 
-The VWA preset adds `/vwa` project commands:
+The VWA preset adds six `/vwa` project commands, plus the `/preset` switch:
 
 | Command | What it does |
 | --- | --- |
 | `/preset vwa` | Switch the saved default preset for new sessions (back with `/preset cc`). |
 | `/vwa init` | Initialize the workspace VWA project — run once per workspace. |
 | `/vwa status` | Inspect the current project. |
+| `/vwa import` | Re-verify every source snapshot and the bound artifact against the actual bytes, then rebind the project. |
 | `/vwa sign` / `/vwa adjudicate` | User-only commands; the agent cannot run them. |
+| `/vwa repair` | Repair a corrupted project store by adopting the newest self-verifying candidate. |
 
 ## Relationship to dsh-cc-writing
 

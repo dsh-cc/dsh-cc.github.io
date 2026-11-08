@@ -118,7 +118,11 @@ The consolidation package (`dsh-memory-consolidation`) adds turn-end
 extraction: a background forked subagent with read/search tools only extracts
 durable facts from the turn as structured output, which the plugin validates
 and writes host-side — the forks hold no write tools, so a sandboxed session
-can never write memory directly.
+can never write memory directly. Concurrent extractions from parallel sessions
+no longer drop each other's `MEMORY.md` pointers: an index write is checked
+against the baseline the job read and rebased onto whatever landed meanwhile —
+topic-file bodies stay last-writer-wins, and the dream lock serializes only
+consolidations.
 
 Dream consolidation is a read-only forked subagent that reviews past sessions
 and reports a rewritten `MEMORY.md` + topic file set, applied by the plugin
@@ -128,8 +132,10 @@ the same way. It runs only when three gates all pass:
 2. **Session count** — at least `minSessions` (default 5) new transcripts.
 3. **Lock** — a `.consolidation-lock` file enforces mutual exclusion; a stale
    holder older than `lockStaleMs` (default 1 hour) is reclaimed, so a crash
-   mid-consolidation recovers automatically. A failed or killed consolidation
-   rolls the lock back so the time gate re-opens.
+   mid-consolidation recovers automatically. A successful consolidation
+   releases the lock (holder cleared, epoch kept), so the next dream waits only
+   on its own cooldown or the time gate; a failed or killed consolidation rolls
+   the lock back so the time gate re-opens.
 
 Two more knobs bound the forced path: `pressureCooldownMinutes` (default 60)
 is the minimum minutes between forced (pressure) dreams, and `sessionsRoot`

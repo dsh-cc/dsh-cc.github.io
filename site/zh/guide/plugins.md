@@ -10,7 +10,7 @@ description: dsh-cc 如何通过 dsh profile 与 bundle 完成自身组合，以
 - **故事 A —— dsh 原生组合。** dsh-cc 本身以普通 dsh 插件的形式安装，按 `@dsh-cc/bundle-*` 包分组并挂载到 dsh profile 中。你的本地微调放在 `cordis.patch.yml` 文件里。
 - **故事 B —— 加载 Claude Code 插件。** 通过 cc-plugin-loader，dsh-cc 可以发现并挂载磁盘上已有的 Claude Code 插件（一个 `plugin.json` 清单加若干组件目录），让你手头的插件资产继续可用。
 
-前置条件：dsh >= 0.2.0-rc.2，并安装 `@dsh-cc/cli` 启动器（`npm install -g @dsh-cc/cli`）。
+前置条件：dsh >= 0.2.2-rc.1，并安装 `@dsh-cc/cli` 启动器（`npm install -g @dsh-cc/cli`）。
 
 ## 故事 A：dsh profile 与 bundle
 
@@ -164,7 +164,7 @@ repeatGap: 10                   # turn stops before re-arm; default 10
 
 ### dsh-cc-agents —— critic、executor 与 marathon 子代理
 
-包含三个子代理和四个技能——一个在子代理之间做路由，一个用于数据分析工作，一个用于带证据核验的写作，一个用于有界形式化设计：
+包含三个子代理和五个技能——一个在子代理之间做路由，一个用于数据分析工作，一个用于带证据核验的写作，一个用于有界形式化设计，一个用于无人值守的批量评审：
 
 - **`dsh-cc-agents:critic`** —— 重推理工作：复杂分析、架构决策、对抗性方案评审、根因分析。运行在 `opus` 模型别名上，默认后台运行。
 - **`dsh-cc-agents:executor`** —— 执行已获批、完全明确的计划中的机械性工作：格式化、简单重构、样板代码、改名、测试、文档、检查。运行在 `sonnet` 模型别名上，默认前台运行。
@@ -173,7 +173,8 @@ repeatGap: 10                   # turn stops before re-arm; default 10
 - **`dsh-cc-agents-orchestration` 技能**——在子代理之间做选择的路由表、后台不对称性，以及它们的报告契约。
 - **`data-analysis` 技能**——数据分析编排（数据分析/口径/对账）：带有口径存疑、对账、外部报告问题的数据分析任务经 critic/executor 处理，评审/核验/执行元规则内联进派发提示词。
 - **`vwa-writing` 技能**——带证据核验的文档写作与评审：来源快照、论断标记、论证图和语义评审通道，适用于需要可追溯论断的研究文章、历史或文学分析、技术报告。见 [VWA 写作与评审](/zh/guide/vwa-writing)。
-- **`formal-design` 技能**——在既有设计评审之前做有界 TLA+ 模型检查，面向涉及共享状态顺序、重试、崩溃恢复或异步所有权的协议或状态机改动。要求 PATH 上有 Java >=17；钉定版本的 TLC JAR 随插件发布，无需单独下载或配置 JAR。安装插件并不会启用它——需要由人把项目规则片段采纳进生效的项目规则（显式请求和已加载的编排技能也可以选中它）。插件更新后请重启 dsh，以使用更新后的技能和运行器。
+- **`formal-design` 技能**——在既有设计评审之前，做有界 TLA+ 模型检查，并在 Lean 中证明高影响的确定性规则。TLA+ 适合涉及共享状态顺序、重试、崩溃恢复或异步所有权的协议或状态机改动；事件顺序、重试与恢复走这条路径。TLC 检查要求 PATH 上有 Java >=17，钉定版本的 TLC JAR 随插件发布，无需单独下载或配置 JAR。Lean 检查需要单独、一次性用 `lean-provision.mjs` 提供的钉定 Lean 工具链——启动和检查时都不会下载任何东西。Lean 覆盖高影响的确定性行为：带明确不变量的权限/策略/资格或配置组合；带明确守恒、边界或顺序要求的预算/配额/分配或排序算术；有明确一般正确性要求的确定性变换；或显式的 Lean 请求。安装插件并不会启用它——需要由人把项目规则片段采纳进生效的项目规则（显式请求和已加载的编排技能也可以选中它）。插件更新后请重启 dsh，以使用更新后的技能和运行器。
+- **`vwa-batch` 技能**——无人值守的多页 VWA 评审批次：给出一条指令加一份页面清单，整个循环无需逐页交互即可跑完——每页一个项目、评审、一次冻结的评估、一个修复并出报告的提交、推送、PR、CI，最后是 `docs/vwa-reports/batch-<batchId>.md` 上的批次账本。驱动者是 agent：没有 runner，也没有守护进程，批次状态存放在 `.dsh/vwa/batches/<batchId>/` 下。唯一的用户操作是 `/permissions grant .dsh/vwa/batches/<batchId>/grant-descriptor.json`。见 [VWA 写作与评审](/zh/guide/vwa-writing)。
 
 在会话内安装，然后重启会话：
 

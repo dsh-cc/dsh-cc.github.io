@@ -112,7 +112,7 @@ frontmatter 的 `tools:` 值会收窄子代理的工具集，并针对 spawn 时
 
 上面的后台化控制不会延续到这一通道：这类定义上的 `background: true` 固定会被忽略（并附一条显式提示，说明固定被忽略是因为只读临时代理永远以前台一次性方式运行）；显式的 `run_in_background: true` 参数会被快速失败拒绝；`isolation: worktree` 以同样方式被拒绝；Ctrl+B 无法提升临时代理的等待；每条临时代理的结果都带有一行提示，说明没有创建持久子代理。
 
-运行中的临时子代理按定义的 `ephemeralTtlMs` 或 15 分钟默认值收割；到期会提示 "ephemeral child hit its TTL; re-spawn it"。运行中的临时子代理计入 25 个存活子代理的容量护栏；对运行中的临时代理不支持 `release_agent`（按模式门控）——它只能自己结束，或撞上 TTL。
+运行中的临时子代理按定义的 `ephemeralTtlMs` 或 15 分钟默认值收割；到期会提示 "ephemeral child hit its TTL; re-spawn it"。运行中的临时子代理占用驻留树容量中的一个槽位；一次性占用者不可释放，因此对运行中的临时代理不支持 `release_agent`——它只能自己结束，或撞上 TTL。
 
 ### 自然结束后的自动释放
 
@@ -120,14 +120,14 @@ frontmatter 的 `tools:` 值会收窄子代理的工具集，并针对 spawn 时
 
 按定义覆盖的旋钮是 frontmatter 的 `autoReleaseMs`（毫秒）：缺省使用层级默认值，`0` 表示永不自动释放，非法值在加载时大声失败。`dsh-cc-agents` 插件的写通道代理在其定义中固定了 `autoReleaseMs: 7200000`——等于 2 小时的后台默认值，显式固定是为了让它不受策略漂移影响。
 
-结束时的消息会在两个送达点都标明该窗口（"auto-released after … of inactivity"），被自动释放的子代理在 `/agents` 中的标记与手动释放的完全相同。自动释放后该子代理无法继续——`send_message` 会被拒绝，与手动 `release_agent` 同一条规则；`release_agent` 仍然是用来处理卡死的 RUNNING 子代理（可以丢弃的那种）的工具。
+结束时的消息会在两个送达点都标明该窗口（"auto-released after … of inactivity"），被自动释放的子代理在 `/agents` 中的标记与手动释放的完全相同。自动释放后该子代理无法继续——`send_message` 会被拒绝，与手动 `release_agent` 同一条规则；`release_agent` 仍然是用来处理可以丢弃的驻留子代理（运行中或空闲）的工具。
 
 ### `isolation: worktree`
 
 frontmatter 中标记 `isolation: worktree` 的定义，其子代理会被调度进一个专属的 git worktree，而不是父目录树：
 
 1. **创建**——在 `<mainRepoRoot>/.claude/worktrees/subagent-<childId>` 下、`worktree-subagent-<childId>` 分支上创建 worktree，走的是与 `EnterWorktree` 相同的加固路径（公共目录根定位、local-config 扫描、filter-driver 中和；LFS 内容以指针文件形式到达），并在运行期间加锁。任何创建失败都会拒绝本次调度——子代理绝不会悄悄回落到父目录树。
-2. **接管**——子代理的第一个步骤会把它的会话 cwd 移入 worktree；同时向人设追加一段契约说明，并在提示的第一行前置一条提示。
+2. **接管**——worktree 路径作为 `cwd` 随 start 请求携带，harness 会在子代理的第一个步骤之前把它（awaited）提交到 `workingDirectory` 服务上；权限工作区、会话 cwd 边界守卫与上下文桶随之跟进。同时向人设追加一段契约说明，并在提示的第一行前置一条提示。
 3. **清理**——`subagent/end` 时会探测工作区是否有未提交改动、以及是否有超出记录基线 HEAD 的提交。干净且无提交 → worktree 解锁并连同分支一起删除；否则该树会**留在磁盘上**，并在子代理的最终输出中说明这一点。
 
 如实说明限制（该功能是**部分的**）：子代理的 `header.cwd`、harness 沙箱根和 bash 默认工作目录仍沿用父级的；当约定目录无法落入沙箱根时（父 cwd 在仓库根的子目录下），调度会被拒绝；被委派的子代理无法回应审批提示，沙箱拒绝的写入会直接硬失败；Serena（用户自行挂载）固定一个项目根，不会跟随子代理。文件格式见 [/reference/extension-formats](/zh/reference/extension-formats)；启动器与会话内 worktree 生命周期见 [/guide/worktrees](/zh/guide/worktrees)。
@@ -142,7 +142,7 @@ frontmatter 中标记 `isolation: worktree` 的定义，其子代理会被调度
 
 - **`/agents` 是部分的。** 它只是对运行中代理的瘦快照（列表/详情/停止/释放）；分组只有驻留状态，`/agents` attach 是保留但未实现的命名空间。
 - **进程级发现缓存。** 定义按工作区根在进程生命周期内缓存，且不监听文件系统：对于尚未建立缓存的条目，编辑在下一个会话生效；否则需重启进程。
-- **冷恢复按钉版恢复。** 后台子代理的人设、工具过滤、模型路由和 `maxTokens` 都从恢复钉版还原——钉版中记录为未设置的推理力度或 token 字段按缺失处理，而不是重新解析。其他代理选项在恢复后不保留。
+- **冷恢复按钉版恢复。** 固定的 `{provider, model, reasoningEffort}` 三元组会在发布时（spawn 与冷恢复、第一个步骤冻结之前）被持久地选定到子代理的模型选择上；固定的 `maxTokens` 则在每个恢复的回合按字段重新应用（显式缺省也算）。cc 预设挂载 `@dsh-cc/subagent-resume-pins` 后，该三元组在恢复后得以保留；其他代理选项在恢复后不保留。
 - **没有 TaskOutput 别名，也没有 outputFile 字段。** 前台结果以文本返回，没有输出文件。
 - **Task 子代理会剥离工作区指令。** 与 Claude Code 的自定义子代理不同，被委派的子代理在其可见批次中不会收到工作区 `CLAUDE.md` / `AGENTS.md` 基线（fork 子代理仍继承父种子中已有的内容）。
 

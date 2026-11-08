@@ -1,7 +1,7 @@
 ---
 title: Claude Code compatibility
 description: What "Claude Code compatibility" means in dsh-cc — and how to read the parity matrix honestly.
-distilled-from: dsh-cc v0.9.2 (5f496613)
+distilled-from: dsh-cc v0.9.4 (e65fa0ac)
 ---
 
 # Claude Code compatibility
@@ -63,9 +63,10 @@ for the current state before relying on any of them.
   extension rows beyond Claude Code, marked divergent in the matrix:
   `engine.moa` (tiered cascade routing for the main conversation; its routing
   scope is main-session turns only — subagent sessions are never classified,
-  overlaid, or judged; a notice sanitizer drops phantom `[model changed: …]`
-  notices while the overlay is active; a mid-session `/model` selection
-  disarms moa until it returns to the boot pair),
+  selected, or judged; classification is recorded durably at admission through
+  session-persisted selections, the display name shows the effective pair, and
+  a mid-session `/model` selection disarms moa until it returns to the boot
+  pair),
   `engine.acp-front-end` (the ACP lane), `engine.completion-gate`,
   `engine.verify-before-retry`, `engine.config-snapshot`,
   `sessions.progress-rebuild` (default ON since 2026-10-16, was ship-dark),

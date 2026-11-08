@@ -54,7 +54,7 @@ TUI 还提供对话导出、用量/上下文显示、todo 查看、审批、排�
 
 ### 微压缩与廉价通道摘要
 
-微压缩（microcompaction）是不调用模型、可重放安全的陈旧工具结果折叠：除最近 `retainResults`（10）条工具结果外，更旧的结果会被替换为确定性的 `[... tool result compacted ...]` 占位符，最多 `placeholderChars`（256）个码点。它是 preset 插件配置（profile 层面的调整，`auto` 默认 `false`），不是一个 settings 命名空间。`auto: true` 时，连续 `failureCap`（3）次失败会让该 pass 对本会话暂停，并注入一条模型可见的提示，指向手动的 `/compact`；之后任何一次成功都会重新武装。tool-use-summary 开启时，陈旧占位符会在强制的不可信包装内携带摘要。
+微压缩（microcompaction）是不调用模型、可重放安全的陈旧工具结果折叠：除最近 `retainResults`（10）条工具结果外，更旧的结果会被替换为确定性的 `[... earlier tool result compacted ...]` 占位符，最多 `placeholderChars`（256）个码点。它是 preset 插件配置（profile 层面的调整，`auto` 默认 `false`），不是一个 settings 命名空间。`auto: true` 时，连续 `failureCap`（3）次失败会让该 pass 对本会话暂停，并注入一条模型可见的提示，指向手动的 `/compact`；之后任何一次成功都会重新武装。tool-use-summary 开启时，陈旧占位符会在强制的不可信包装内携带摘要。
 
 工具使用摘要（tool-use-summary，TUS）默认开启（命名空间 `cc-tool-use-summary`）：每个较大的工具结果都会得到一份 fire-and-forget 的廉价通道摘要（默认别名 `haiku`，≤150 词，在账本中截断到 800 字符），按 `callId` 记录，压缩时直接消费摘要而不再读取原始输出。默认值：`enabled` true、`topLevelOnly` true、`minResultBytes` 4096、`maxSummariesPerSession` 200、`maxTokens` 256、`timeoutMs` 5000、`excludeTools` `['structured_output']`、`retentionDays` 7（0 = 仅内存）、`upgradeMicroPlaceholders` true。账本位于 `$DSH_HOME/tool-use-summary/<sessionId>.jsonl`。摘要在消费侧会被不可信包装；context-crusher 桩永远不会被替换（它们的 `ccr://` 定位符必须保留）。
 
@@ -76,7 +76,7 @@ TUI 还提供对话导出、用量/上下文显示、todo 查看、审批、排�
 另有更多交互插件补足这一层面，其中两项自 2026-10-16 起默认开启：
 
 - **completion-gate**（`cc-completion-gate`，`enabled` false、`nudges-per-session` 1；仅用户层）：无论开关如何，已结束的工具执行都会记录一份哈希回执；开启 `enabled` 后，每个会话最多一次——当 turn-stop 时最后一条 assistant 消息宣称已完成（"tests pass"、"committed"、"pushed"、"build succeeded"）而自你上一条消息以来没有相匹配的已执行证据，就会发出提醒。账本位于 `<dshHome>/completion-gate/receipts/`。
-- **retry-attendant**（`retry-attendant`，`enabled` true——自 2026-10-16 起默认开启，此前需主动开启；可用 `retry-attendant.enabled: false` 关闭；`guidance` 与 `escalate` 默认 true；`expire-minutes` 10；仅用户层）：对结果含糊的变更类工具调用（超时、沙箱拒绝、部分写入、git/包管理变更失败），追加一行针对失败类别的提示——重新运行前先验证预期的后置条件；在过期窗口内出现完全相同的重试（效果字段一致）时，升级为权限询问。
+- **retry-attendant**（`retry-attendant`，`enabled` true——自 2026-10-16 起默认开启，此前需主动开启；可用 `retry-attendant.enabled: false` 关闭；`guidance` 与 `escalate` 默认 true；`expire-minutes` 10；仅用户层）：对结果含糊的变更类工具调用（超时、沙箱拒绝、部分写入、git/包管理/MCP 变更失败），追加一行针对失败类别的提示——重新运行前先验证预期的后置条件；在过期窗口内出现完全相同的重试（效果字段一致）时，升级为权限询问。
 - **progress-rebuild**（`progress-rebuild`，`enabled` true——自 2026-10-16 起默认开启，此前 ships dark；可用 `progress-rebuild.enabled: false` 关闭；`max-lines` 120、`include-verified` true）：一次成功的压缩之后，第一个模型请求会重新带上一份结构化进度简报——目标状态、最新的 todo 快照、已验证的 bash 执行回执，以及你上一条真实消息——全部由已提交的会话事件推导而来。
 
 ## 安全地并行开发

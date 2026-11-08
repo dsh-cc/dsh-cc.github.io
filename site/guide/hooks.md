@@ -76,7 +76,7 @@ The bridge supports **20 of Claude Code's hook events**:
 
 | Event | Status | What the bridge does |
 | --- | --- | --- |
-| `SessionStart` | supported | additionalContext is injected into the new session (cannot block); partial — plain stdout context, `initialUserMessage`, `sessionTitle`, `watchPaths`, `reloadSkills`, and `CLAUDE_ENV_FILE` are unsupported |
+| `SessionStart` | supported | additionalContext is queued as next-step context and never blocks, so a slow hook can miss the first request; for a live subagent child the delivery window is claim-bounded — context resolving after the child's first inbox claim is dropped with a warn; partial — plain stdout context, `initialUserMessage`, `sessionTitle`, `watchPaths`, `reloadSkills`, and `CLAUDE_ENV_FILE` are unsupported |
 | `UserPromptSubmit` | supported (partial) | blocking and JSON `additionalContext` work; plain stdout context, `sessionTitle`, and `suppressOriginalPrompt` are unsupported |
 | `PreToolUse` | supported (partial) | `deny`, `ask`, and `allow` (pre-approval) work; `additionalContext` is injected as post-result context; `updatedInput` is logged + warned but not honored |
 | `PostToolUse` | supported | blocking feedback, JSON `additionalContext`, and `updatedToolOutput` / `updatedMCPToolOutput` work |
@@ -124,6 +124,12 @@ Most emit points run **detached** — no extension point awaits a
 point in the set. Multiple file-configured hooks on one point run serially, in
 config order, and fold most-restrictively (`deny > ask > allow`).
 
+For a live subagent child, that detached delivery window is claim-bounded:
+context — and the hook's `systemMessage` notice — that resolves after the child
+has claimed its first inbox item is dropped with a warn rather than delivered
+into a later step of the running child, since that delivery would re-open the
+running turn.
+
 Every agent-scoped stdin payload carries `session_id` and a string-shaped
 `transcript_path`, which is always `''`: the pinned persistence seam exposes no
 public artifact-path accessor.
@@ -139,7 +145,7 @@ equals `session_id`. A child that ended and is resumed as a top-level session
 carries no identity fields.
 
 Hook issues (`timeout`, `exit-code`, `parse-failure`, `spawn-failure`, `stop-cap`, `config`) are appended to
-`<dsh home>/hooks/diagnostics.jsonl` and visible in `/doctor`.
+`<dsh home>/hooks/diagnostics.jsonl`, but they are not yet surfaced in `/doctor`.
 
 ## Executor kinds
 
