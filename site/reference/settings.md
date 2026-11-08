@@ -1,7 +1,7 @@
 ---
 title: Settings cascade
 description: How dsh-cc resolves settings.json across five levels, merges them, and applies environment variables safely.
-distilled-from: dsh-cc v0.9.2 (5f496613)
+distilled-from: dsh-cc v0.9.4 (e65fa0ac)
 ---
 
 # Settings cascade
@@ -134,7 +134,7 @@ Three more namespaces exist only inside the VWA agent preset:
 
 | Namespace | Keys (defaults) | What it tunes |
 | --- | --- | --- |
-| `vwa-argument` | `semantic-enabled` (false), `review-alias` (sonnet) | Lane-2 argument tools: `semantic-enabled` gates whether the lane-2 tools mount at all (they mount only when true); `review-alias` is the model alias used for the reviewer. |
+| `vwa-argument` | `semantic-enabled` (false), `review-alias` (sonnet), `review-claims-batch-size` (1, range 1-4) | Lane-2 argument tools: `semantic-enabled` gates the semantic tools — when it is false they do not mount, while the `/vwa` command still mounts and semantic review is inert; `review-alias` is the model alias used for the reviewer; `review-claims-batch-size` batches consecutive `claims` review tasks. |
 | `vwa-evidence` | `enabled` (true inside the vwa preset), `nudge-budget` (4) | Evidence tooling for the VWA project, including its nudge budget. |
 | `vwa-preset` | `selectedDefault` (absent) | The saved default agent preset targeted by `/preset`; absent means the deployment default `cc`. |
 

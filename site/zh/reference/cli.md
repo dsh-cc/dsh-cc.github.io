@@ -1,7 +1,7 @@
 ---
 title: CLI 参数
 description: dsh-cc 可执行文件在启动 dsh --profile tui 之前接受的参数。
-distilled-from: dsh-cc v0.9.2 (5f496613)
+distilled-from: dsh-cc v0.9.4 (e65fa0ac)
 ---
 
 # CLI 参数
@@ -16,7 +16,7 @@ $ npm install -g @deepseek-ai/dsh @dsh-cc/cli
 $ dsh-cc
 ```
 
-启动器在引导时会强制检查 harness 下限：已安装的 `dsh` 必须 **>= 0.2.0-rc.2**，否则拒绝启动。
+启动器在引导时会强制检查 harness 下限：已安装的 `dsh` 必须 **>= 0.2.2-rc.1**，否则拒绝启动。
 
 ## 参数
 

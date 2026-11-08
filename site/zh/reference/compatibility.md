@@ -1,7 +1,7 @@
 ---
 title: Claude Code 兼容性
 description: dsh-cc 中"Claude Code 兼容性"的含义——以及如何诚实地解读一致性矩阵。
-distilled-from: dsh-cc v0.9.2 (5f496613)
+distilled-from: dsh-cc v0.9.4 (e65fa0ac)
 ---
 
 # Claude Code 兼容性
@@ -55,9 +55,9 @@ Code 的逐字节模拟，也不以克隆每一个绑定厂商的特性为目标
 - **WebSearch** 和 **plan mode** —— 完全一致，默认挂载。
 - **设计上就不同的扩展能力** —— v0.9.0 新增了若干超出 Claude Code 的
   扩展行，矩阵中标记为 divergent：`engine.moa`（主对话的分层级联路由；
-  其路由范围仅限主会话轮次——子代理会话永远不会被分类、叠加 overlay 或
-  判定；overlay 激活期间，一个通知 sanitizer 会丢弃幽灵般的
-  `[model changed: …]` 通知；会话中途的 `/model` 选择会解除 moa，直到
+  其路由范围仅限主会话轮次——子代理会话永远不会被分类、选定或判定；
+  分类在准入处通过会话持久化的选择被持久记录，显示名呈现实际生效的
+  模型对；会话中途的 `/model` 选择会解除 moa，直到
   回到启动模型对）、`engine.acp-front-end`（ACP 通道）、
   `engine.completion-gate`、`engine.verify-before-retry`、
   `engine.config-snapshot`、`sessions.progress-rebuild`（自 2026-10-16

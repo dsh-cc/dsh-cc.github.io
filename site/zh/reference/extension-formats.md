@@ -1,7 +1,7 @@
 ---
 title: 扩展格式
 description: 每个 Claude Code 兼容扩展文件（hooks、skills、plugins、subagents）的存放位置、最小骨架，以及指向完整指南的链接。
-distilled-from: dsh-cc v0.9.2 (5f496613)
+distilled-from: dsh-cc v0.9.4 (e65fa0ac)
 ---
 
 # 扩展格式
@@ -38,7 +38,7 @@ hook；单 hook 默认为 600 000 毫秒）：
 
 支持四种执行器类型：`command`、`http`，以及——默认关闭、由
 `enablePromptHooks` / `enableAgentHooks` 配置开启——`prompt` 和 `agent`
-（二者都 fork 一个一次性子代理）。支持 18 种 hook 事件；配置里不支持的事件
+（二者都 fork 一个一次性子代理）。支持 20 种 hook 事件；配置里不支持的事件
 在分组解析之前就被忽略。
 
 **完整内容：** [/guide/hooks](/zh/guide/hooks)
@@ -54,6 +54,7 @@ hook；单 hook 默认为 600 000 毫秒）：
 | 200 | project | `<projectRoot>/.claude/skills` |
 | 300 | user | `<dshHome>/skills` |
 | 400 | additional | 每个 `config.additionalDirs` |
+| 500 | learned | `$DSH_HOME/learned-skills/` |
 
 project root 是包含 `.git` 的最近祖先目录；没有则用当前 cwd。旧式
 `.claude/commands/*.md` 文件也会被加载，并在元数据中标记为 `deprecated`。

@@ -32,14 +32,14 @@ inherit             -> parent agent route
 `gauge` 是面向 System One 模型的纯决策通道，供权限分类器这类类型化决策的使用方选用。**绝不要把它用作 Agent frontmatter 的 `model:`。** 未配置时它跟随 `haiku`。routes 服务会以 `SystemOneChatModelError`（code `SYSTEMONE_NOT_CHAT_MODEL`）拒绝任何发往 System One 模型的聊天请求。
 
 ::: tip
-dsh-cc 项目本身就使用这套路由进行日常开发——当前开发映射见项目 README 的 [Dogfooding dsh-cc](https://github.com/dsh-cc/dsh-cc#dogfooding-dsh-cc) 章节。那只是项目自身的真实配置，不是强制默认值。
+dsh-cc 项目本身就使用 dsh-cc 进行日常开发，其模型路由是通过模型别名表达的用户配置——见项目 README 的 [模型别名](https://github.com/dsh-cc/dsh-cc#model-aliases) 章节。那只是项目自身的真实配置，不是强制默认值。
 :::
 
 ## 分层级联路由（moa）
 
-`@dsh-cc/moa` 插件把主对话轮次路由到 `sketch` / `draft` / `blueprint` / `masterplan` 四条通道别名上：每个用户轮次由一次 System One 决策调用分类到足够用的最便宜层级，可选的验收判定器会把被拒绝的回答升级到上一层级。
+`@dsh-cc/moa` 插件把主对话轮次路由到 `sketch` / `draft` / `blueprint` / `masterplan` 四条通道别名上：每个用户轮次由一次 System One 决策调用分类到足够用的最便宜层级，可选的验收判定器会把被拒绝的回答升级到上一层级。分类在入口准入接缝处、步骤派发之前完成，并把层级持久记录为会话的模型选择（`agent.model.select(…)`；harness 0.2.2 的会话持久化选择——请求期 overlay 已经不存在）。
 
-moa **默认关闭**——`moa.enabled: false` 时插件不挂载任何东西，也不产生任何开销。子代理和 fork 永远不会被叠加该路由。
+moa **默认关闭**——`moa.enabled: false` 时插件不挂载任何东西，也不产生任何开销。子代理和 fork 不在范围内：子会话永远不会被分类、选定或判定（见下文的范围说明）。
 
 配置位于 `moa` settings 命名空间：
 
@@ -58,15 +58,15 @@ moa **默认关闭**——`moa.enabled: false` 时插件不挂载任何东西，
 
 ### 模型记账的真实化
 
-当 moa overlay 处于激活状态时，以下机制保证会话如实呈现当前真正在服务的模型：
+当 moa 路由处于激活状态时，以下机制保证会话如实呈现当前真正在服务的模型：
 
-- **过滤幽灵通知。** 在 overlay 之下，harness 几乎每一步都会重新发出 `[model changed: …]` 通知，声称一个 overlay 并不会使用的续写模型。一个 sanitizer 只在 overlay 激活时精确丢弃这些行；其余所有状态（moa 禁用、已解除、校验失败或根本没有 moa）下，harness 通知逐字节原样透传。
-- **`/model` 会解除 moa。** 会话中途用 `/model` 选到启动模型对以外的选择，会在下一个轮次分类之前解除 moa——链路上真正服务你选中的模型（此前在 overlay 下这个切换会被静默忽略）。切回启动选择后，moa 从下一个轮次重新启用。
-- **人格声明实际生效的模型。** 只要 overlay 生效，系统提示中的 `provider`/`model` 变量会被改写为解析后的层级模型对；任何 fail-open（分类失败或超时、偏离启动选择、禁用）时，harness 自己的选择变量原样透传，提示词与链路始终保持一致。
-- **状态栏展示实际模型对。** overlay 激活时，状态栏渲染 `<resolved-model> ◂ <tier-alias>`（例如 `<provider-model> ◂ sketch`），而不是裸的层级别名；自定义状态栏载荷会获得 `moa: {tier, model}` 字段。切走后该段会被清除。
+- **通知本身是真实的。** sanitizer 发布冻结的每步选择，并让每一条 `[model changed: …]` 通知逐字节原样透传——路由在准入之前就已决定，通知不可能再声称一个下一步并不会使用的模型，因此「丢弃幽灵通知」的规则已退役。
+- **`/model` 会解除 moa。** 会话中途用 `/model` 选到启动模型对以外的选择，会在下一个轮次分类之前解除 moa（用户的显式优先），链路上真正服务你选中的模型；此前这个切换会被静默忽略。切回启动选择后，moa 从下一个轮次重新启用。
+- **人格声明实际生效的模型。** moa 路由激活时，系统提示中的 `provider`/`model` 变量携带选定的层级模型对；任何 fail-open（分类失败或超时、偏离启动选择、禁用）时，harness 自己的选择变量原样透传，提示词与链路始终保持一致。
+- **状态栏展示实际模型对。** moa 路由激活时，状态栏渲染 `<resolved-model> ◂ <tier-alias>`（例如 `<provider-model> ◂ sketch`），而不是裸的层级别名；自定义状态栏载荷会获得 `moa: {tier, model}` 字段。切走后该段会被清除。
 - **状态栏展示 moa 未启用的原因。** 当 `moa.enabled: true` 但启用被拒绝（路由不可用、层级阶梯退化、judge-route 窗口失败）时，状态栏渲染 `moa:unarmed — <reason>`，配置错误不再藏在一条 warn 日志里。
 
-路由范围仅限主对话——子代理会话永远不会被分类、叠加 overlay 或判定。
+路由范围仅限主会话自身的轮次。子代理会话——任何带 `subagent` origin 或正数 `delegationDepth` 头的会话，包括 fork 型子 agent 以及以交互方式驱动的恢复子会话——永远不会被分类、选定或判定，因此被 spawn 的 agent 的模型始终是它声明在 spawn 时解析出的那个。
 
 ## 用 `/provider` 管理供应商
 

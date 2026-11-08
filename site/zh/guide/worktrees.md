@@ -70,7 +70,7 @@ dsh-cc --worktree https://gitlab.com/<owner>/<repo>/-/merge_requests/12
 - 已存在的目标目录只有在其 `.git` 条目能解析到本仓库的 `.git/worktrees/` 注册时才会被收编。
 - 在 git 工作树之外时返回结构化错误，不做任何改动。
 
-由于会话工作目录在会话创建时就已固定，进入之后你（模型）需要在后续的 shell 和 fs 调用中把 `workdir` 传成报告的 `worktreePath`。每个进程同时最多只有一个活跃工作树。`path` 形式——指定约定目录之外的路径——总是要求确认，只有 bypassPermissions 能跳过该提示。
+两个工具都通过 awaited 的 harness `workingDirectory.set` 调用提交会话 cwd，因此切换是真实的而非仅声明——`set` 被拒绝会让进入或退出失败，而不是回退。`tool:worktree:cwd` 运行时上下文只是把新的工作目录作为次级、面向模型的提示报告出来，你（模型）仍被告知在后续 shell 和 fs 调用中把 `workdir` 传成报告的 `worktreePath`。每个进程同时最多只有一个活跃工作树。`path` 形式——指定约定目录之外的路径——总是要求确认，只有 bypassPermissions 能跳过该提示。
 
 工作树以 `git worktree lock --reason="dsh-cc session <slug>"` 加锁，两种退出动作都会解锁。
 

@@ -112,7 +112,7 @@ Allow-listed read-only definitions — the bundled `explore` and `dsh-cc-guide`,
 
 The backgrounding controls above do not carry over. A `background: true` pin on such a definition is ignored, with an explicit notice saying the pin was ignored because read-only ephemeral agents always run as foreground one-shots; an explicit `run_in_background: true` argument is fail-fast rejected; `isolation: worktree` is rejected the same way; Ctrl+B cannot promote an ephemeral wait; and every ephemeral result carries a one-line notice that no durable child was created.
 
-Running ephemeral children are reaped at the definition's `ephemeralTtlMs` or a 15-minute default; expiry surfaces "ephemeral child hit its TTL; re-spawn it". A running ephemeral child counts toward the 25 live-child capacity guard; `release_agent` is not supported on a running ephemeral (mode-gated) — it settles or hits its TTL on its own.
+Running ephemeral children are reaped at the definition's `ephemeralTtlMs` or a 15-minute default; expiry surfaces "ephemeral child hit its TTL; re-spawn it". A running ephemeral child holds a slot in the resident-tree capacity count; one-shot occupants are not releasable, so `release_agent` is not supported on a running ephemeral — it settles or hits its TTL on its own.
 
 ### Settled auto-release
 
@@ -120,14 +120,14 @@ A settled continuable child is auto-released after an inactivity grace window: 3
 
 The per-definition override is the frontmatter `autoReleaseMs` (in milliseconds): absent uses the tier default, `0` never auto-releases, and a malformed value fails loudly at load. The `dsh-cc-agents` plugin's write-lane agent pins `autoReleaseMs: 7200000` in its definition — equal to the 2-hour background default, pinned explicitly so it survives policy drift.
 
-The settle-time message names the window ("auto-released after … of inactivity") at both delivery sites, and an auto-released child is tagged in `/agents` exactly like a manually released one. After auto-release the child cannot be continued — `send_message` is refused, the same rule as manual `release_agent`, which remains the tool for stuck RUNNING children you can discard.
+The settle-time message names the window ("auto-released after … of inactivity") at both delivery sites, and an auto-released child is tagged in `/agents` exactly like a manually released one. After auto-release the child cannot be continued — `send_message` is refused, the same rule as manual `release_agent`, which remains the tool for resident children you can discard, running or idle.
 
 ### `isolation: worktree`
 
 A definition whose frontmatter pins `isolation: worktree` is dispatched into a per-child git worktree instead of the parent tree:
 
 1. **Create** — a worktree under `<mainRepoRoot>/.claude/worktrees/subagent-<childId>` on branch `worktree-subagent-<childId>`, created through the same hardened path as `EnterWorktree` (common-dir root pin, local-config scan, filter-driver neutralization; LFS content arrives as pointer files), then locked for the run. Any creation failure refuses the dispatch — the child never silently falls back to the parent tree.
-2. **Adopt** — on the child's first step, the child's session cwd moves into the worktree; a contract paragraph is appended to the persona and a first-line note is prepended to the prompt.
+2. **Adopt** — the worktree path travels as `cwd` on the start request, and the harness commits it on the `workingDirectory` service (awaited) before the child's first step; the permission workspace, the session-cwd boundary guard, and the context buckets follow. A contract paragraph is appended to the persona and a first-line note is prepended to the prompt.
 3. **Clean up** — on `subagent/end`, the tree is probed for a dirty status and commits beyond the recorded base HEAD. Clean and no commits → the worktree is unlocked, removed with its branch. Otherwise the tree is **left on disk** and the child's final text says so.
 
 Honest limits (the feature is **partial**): the child's `header.cwd`, the harness sandbox root, and the bash default workdir remain the parent's; a parent cwd under which the worktree convention directory does not fit the sandbox root refuses the dispatch; delegated children cannot answer approval prompts, so a sandbox-denied write hard-fails; and Serena (user-mounted) pins one project root and does not follow the child. File formats: [/reference/extension-formats](/reference/extension-formats); launcher and in-session worktree lifecycle: [/guide/worktrees](/guide/worktrees).
@@ -142,7 +142,7 @@ As of dsh-cc v0.6.0:
 
 - **`/agents` is partial.** It is a thin snapshot (list/detail/stop/release) over running agents; groups are residency-only and `/agents` attach is reserved but unimplemented.
 - **Process-level discovery cache.** Definitions are cached per workspace root for the process lifetime with no filesystem watcher: edits take effect on the next session for an uncached workspace, and on process restart otherwise.
-- **Cold resume is pinned.** A background child's persona, tool filter, model route, and `maxTokens` are restored from its resume pin — a pin recording an unset reasoning-effort or token field is honored as absent rather than re-resolved. Other agent options do not survive resume.
+- **Cold resume is pinned.** The pinned `{provider, model, reasoningEffort}` triple is selected durably onto the child's model selection at publication — spawn and cold resume, before the first step freezes — and the pinned `maxTokens` is re-applied field-by-field on every resumed turn, explicit absence included. With the cc preset's `@dsh-cc/subagent-resume-pins` mounted, that tuple survives resume; other agent options do not.
 - **No TaskOutput alias or outputFile field.** Foreground results come back as text; there is no output file.
 - **Workspace instructions are stripped from Task children.** Unlike Claude Code custom subagents, delegated children do not receive the workspace `CLAUDE.md` / `AGENTS.md` baseline in their visible batch (a fork child still inherits what was already in the parent seed).
 

@@ -21,9 +21,9 @@ $ npm install -g @deepseek-ai/dsh @dsh-cc/cli
 $ dsh-cc
 ```
 
-`dsh-cc` requires `dsh` **>= 0.2.0-rc.2**; the default `npm install -g @deepseek-ai/dsh` currently satisfies this (as of 2026-09-29), and the launcher enforces the floor at bootstrap. This floor tracks the dsh-cc development line; the verified per-release pairings are listed in the table under Upgrading.
+`dsh-cc` requires `dsh` **>= 0.2.2-rc.1**, and the launcher enforces that floor at bootstrap. This floor tracks the dsh-cc development line; the verified per-release pairings are listed in the table under Upgrading.
 
-Already have `dsh` **>= 0.2.0-rc.2**? Install only the launcher:
+Already have `dsh` **>= 0.2.2-rc.1**? Install only the launcher:
 
 ```sh
 $ npm install -g @dsh-cc/cli
@@ -38,7 +38,7 @@ Official packages come only from the `@dsh-cc` npm scope.
 
 The install above is the whole quick start. Five optional official plugins — shipped through the dsh-cc repo's `dsh-cc` marketplace — add preconfigured subagent lanes, a document-writing toolkit, and external model bridges:
 
-- **`dsh-cc-agents`** — the `dsh-cc-agents:critic` (reasoning and plan review) and `dsh-cc-agents:executor` (mechanical execution) subagents, plus the `dsh-cc-agents:marathon` (long-horizon, repo-wide work) subagent, an orchestration routing skill, and the `vwa-writing` and `formal-design` skills (evidence-checked document review and bounded TLA+ design checks).
+- **`dsh-cc-agents`** — the `dsh-cc-agents:critic` (reasoning and plan review), `dsh-cc-agents:executor` (mechanical execution), and `dsh-cc-agents:marathon` (long-horizon, repo-wide work) subagents, plus five skills: orchestration routing, data analysis, `vwa-writing` (evidence-checked document review), `formal-design` (bounded TLA+ and Lean design checks), and `vwa-batch` (unattended multi-page VWA review batches driven to a ledger).
 - **`dsh-cc-writing`** — a document-writing toolkit: article writing, article review, and language editing for Chinese and English articles, with a run protocol that keeps briefs, plans, reviews, and preservation checks on disk.
 - **`dsh-cc-shunt`** — gates that redirect bulk file reads and boilerplate generation to cheap-lane worker subagents, keeping large file corpora out of the main context.
 - **`cc-codex-bridge`** — an approval-free Codex rescue lane: a PreToolUse hook auto-allows exactly one canonical, locked-down Codex invocation per session run, so a stuck session can hand a task to Codex without a permission checkpoint.
@@ -62,20 +62,25 @@ $ npm install -g @dsh-cc/cli@latest
 $ dsh-cc
 ```
 
+Stable releases publish to the npm `latest` dist-tag; release candidates publish to `next` and never take `latest`. To try a release candidate, run `npm install -g @dsh-cc/cli@next`.
+
 On the first launch after an upgrade, the launcher re-runs the profile's bundle install at the new version (recorded at `~/.dsh/profiles/tui/.dsh-cc-bootstrap.json`), so the profile converges automatically — no manual step. A failed reconcile (network, or the release still inside npm/pnpm's minimum-release-age window) warns and boots anyway, retrying on the next launch. Dev-synced profiles (via `scripts/sync-local-profile.sh` — `dsh-cc --version` shows `-dev+<commit>[.dirty]`) are never reconciled by the launcher.
 
 ### dsh version compatibility
 
 | dsh-cc release | Verified dsh |
 | --- | --- |
-| v0.9.0-rc.1 – v0.9.2 | 0.2.0-rc.2 |
-| v0.8.3 | 0.2.0-rc.2 |
+| v0.9.4 | 0.2.2-rc.1 |
+| v0.9.3 | 0.2.1-rc.5 |
+| v0.8.3-rc.1 – v0.9.3-rc.4 | 0.2.0-rc.2 |
 | v0.8.2 | 0.1.7-rc.2 |
 | v0.6.3 – v0.8.1 | 0.1.5-rc.1 |
 | v0.6.0 – v0.6.2 | 0.1.2-rc.1 |
 | v0.5.0 | 0.1.1-rc.2 (no launcher version gate) |
 
 Each `dsh-cc` release is developed and CI-verified against one `dsh` version, and the launcher enforces it as the minimum at bootstrap. There is no enforced upper bound, but only the pairing listed above is CI-verified. When a new `dsh-cc` release moves to a newer `dsh`, upgrade `dsh` first, then `dsh-cc` — `@latest` on one side is not necessarily the verified partner of `@latest` on the other.
+
+Sessions written by the dsh 0.2.1 line record job and working-directory events that pre-0.2.1 readers refuse, so downgrading `dsh` after using this release cannot resume those sessions. Finish or export the sessions you need before downgrading.
 
 ## First run
 

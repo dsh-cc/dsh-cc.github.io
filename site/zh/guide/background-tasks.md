@@ -44,7 +44,7 @@ parity 矩阵记录的其他控制项：
 
 - **Ctrl+B 提升（仅 TUI）。** TUI 忙碌时按下 Ctrl+B 会把待定的前台收集提升到后台：挂起的工具调用解析为 `{ status: 'async_launched', agentId, backgroundedByUser: true }`，子代理继续运行。非 TUI 客户端没有提升路径。在 tmux 下，Ctrl+B 是默认前缀——连按两次会透传字面 Ctrl+B。
 - **关闭开关。** `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS` 设为除 `0`/`false`（大小写不敏感）以外的非空值时，会禁用"省略即后台"的固定；显式 `run_in_background` 参数两种方向仍然生效。
-- **容量护栏。** 当父代理已有 25 个存活子代理时，Task 工具会拒绝新的可持续子代理——而且只有*运行中*的子代理占用护栏槽位（空闲激活不占槽）。错误提示会指明真正的释放路径：用 `release_agent` 作用于运行中的子代理（或在交互界面用 `/agents release <id>`）释放槽位，或让子代理自然结束；`/agents stop` 只中断回合，永远不会释放槽位。
+- **容量护栏。** 容量是 harness 子代理池的树级**驻留**计数——cc bundle 中为 25。运行中的子代理、等待子代理结算的空闲父级，以及冷恢复的子代理都占用槽位；对已经驻留的子代理发 `send_message` 后续消息不占新槽位。池没有队列：达到上限时抛出 `ACTIVATION_LIMIT_REACHED`，拒绝信息会点明父级激活树中的驻留数量。用 `release_agent` 作用于列出的某个子代理（或在交互界面用 `/agents release <id>`）释放槽位——释放驻留子代理时，无论它在运行还是空闲都会释放其槽位；一次性运行占用者不可释放，错误信息会说明这一点。`/agents stop` 只中断回合，永远不会释放槽位。
 
 ## 检查与干预
 
@@ -64,7 +64,7 @@ TUI 消费同一份快照，并在详情视图中追加折叠派生的装饰（p
 - `send_message` — 向同一后台代理的会话发送后续 prompt。
 - `interrupt` — 停止子代理的当前回合；其持久化会话保留，可继续。
 - `list` — 枚举子代理及其状态。
-- `release_agent` — 驱逐运行中可持续子代理的常驻激活以释放其容量槽位；此后同会话内无法再继续该子代理（`send_message` 会解析但不运行任何回合），而其持久化会话仍在磁盘上保留。
+- `release_agent` — 驱逐可持续子代理的驻留激活（运行中或空闲）以释放其容量槽位；此后同会话内无法再继续该子代理（`send_message` 会解析但不运行任何回合），而其持久化会话仍在磁盘上保留。
 
 **`/tasks`**（partial parity）只列出后台**作业**；todo 列表接缝尚待实现。
 
@@ -74,13 +74,13 @@ TUI 消费同一份快照，并在详情视图中追加折叠派生的装饰（p
 
 - **父代理退出会抽干进行中的回合。** 退出会话会抽干后台子代理进行中的回合；其持久化会话保留。
 - **冷恢复（cold resume）。** 子代理的持久化会话在下一次 `send_message` 时冷恢复——这只适用于自然结束的子代理。回合在父代理退出时被抽干（DRAINED）或已被 RELEASED 的子代理，无法在同一会话内继续（`send_message` 会解析但不运行任何回合——已知上游缺陷），抽干之后的跨会话恢复也未经验证。
-- **冷恢复会丢弃额外的代理选项。** 后台子代理的 `persona`、`toolFilter` 和模型路由在恢复后保留，但其他字段——例如别名标注的 `reasoningEffort` 或 token 上限——不会。
-- **恢复固定（resume pins）。** 每次后台启动都会把一份恢复固定（spawn 时选定的别名加上 `maxTokens`）写入恢复固定存储，恢复时还原该固定元组*包括显式缺省*——固定中记录为未设置的值会被当作缺省，而不是重新解析。父代理已无法解析的固定模型受 `subagents-resume.onUnavailableModel` 设置门控（`block` 或 `route-current`，默认 `block`），拒绝码如 `SUBAGENT_MODEL_UNAVAILABLE`、`WORKSPACE_CHANGED`、`DEFINITION_CHANGED`、`PINNED_TOOL_UNAVAILABLE`、`PIN_ORPHANED`、`PIN_UNREADABLE` 指明对应的策略旋钮。
-- **自然结束后的自动释放（settled auto-release）。** 自然结束的可持续子代理会在一段按送达层级区分的不活跃宽限期后被自动释放——前台送达的结果为 30 分钟，后台送达的结果为 2 小时——除非定义在 frontmatter 中固定了 `autoReleaseMs`（缺省使用层级默认值，`0` 表示永不自动释放，非法值在加载时大声失败）。被自动释放的行在 `/agents` 中的标记与 `[released]` 完全相同，且"无法继续"的规则与手动释放一致：`send_message` 会被拒绝。自动释放是自然结束子代理的常规通道；`release_agent` 留给你可以丢弃的运行中子代理。在这一切之上还有一条：白名单中的只读定义——以及任何 `ephemeral: true` 的定义——根本不会创建可持续后台子代理，它们以前台一次性方式运行（见 [/guide/subagents](/zh/guide/subagents)）。
+- **冷恢复会丢弃额外的代理选项。** 没有 resume-pins 插件时，后台子代理的 `persona`、`toolFilter` 和模型路由在恢复后保留，但其他字段——例如别名标注的 `reasoningEffort` 或 token 上限——不会。cc 预设挂载了 `@dsh-cc/subagent-resume-pins`，它会把该元组固定下来并在恢复的轮次中重新应用，因此这一丢弃只影响没有该插件的宿主与组合。
+- **恢复钉版（resume pins）。** 每次后台启动都会把一份钉版写入钉版存储。在发布时（spawn 与冷恢复、第一个步骤冻结之前），钉版中的 `{provider, model, reasoningEffort}` 三元组会被持久地选定到子代理的模型选择上，而每回合的 overlay 只按字段应用钉版的 `maxTokens`（显式缺省也算），因此钉版中记录为未设置的值会被当作缺省，而不是重新解析。父代理已无法解析的钉版模型受 `subagents-resume.onUnavailableModel` 设置门控（`block` 或 `route-current`，默认 `block`），拒绝码如 `SUBAGENT_MODEL_UNAVAILABLE`、`WORKSPACE_CHANGED`、`DEFINITION_CHANGED`、`PINNED_TOOL_UNAVAILABLE`、`PIN_ORPHANED`、`PIN_UNREADABLE` 指明对应的策略旋钮。续跑在 `send_message` 上原子接纳（审批与钉版策略门之后），并由每个父级一条的 FIFO 租约串行化；harness 子代理池（cc bundle 中为 25）是唯一的容量阀门。
+- **自然结束后的自动释放（settled auto-release）。** 自然结束的可持续子代理会在一段按送达层级区分的不活跃宽限期后被自动释放——前台送达的结果为 30 分钟，后台送达的结果为 2 小时——除非定义在 frontmatter 中固定了 `autoReleaseMs`（缺省使用层级默认值，`0` 表示永不自动释放，非法值在加载时大声失败）。被自动释放的行在 `/agents` 中的标记与 `[released]` 完全相同，且"无法继续"的规则与手动释放一致：`send_message` 会被拒绝。自动释放是自然结束子代理的常规通道；`release_agent` 留给你可以丢弃的驻留子代理（运行中或空闲）。在这一切之上还有一条：白名单中的只读定义——以及任何 `ephemeral: true` 的定义——根本不会创建可持续后台子代理，它们以前台一次性方式运行（见 [/guide/subagents](/zh/guide/subagents)）。
 - **没有输出文件。** 不存在 `TaskOutput` 别名，也没有 `outputFile` 字段；前台结果以文本返回。
 
 ::: info
-前台启动的子代理（非 fork，具名代理或 `general-purpose`）也会作为可持续子代理被内联收集，并带同样的恢复固定——因此前台启动的子代理与后台子代理一样可固定、可恢复。
+前台启动的子代理（非 fork，具名代理或 `general-purpose`）也会作为可持续子代理被内联收集，并带同样的恢复钉版——因此前台启动的子代理与后台子代理一样可固定、可恢复。
 :::
 
 ## 一个完整的操作流

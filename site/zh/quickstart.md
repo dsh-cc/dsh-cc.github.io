@@ -21,9 +21,9 @@ $ npm install -g @deepseek-ai/dsh @dsh-cc/cli
 $ dsh-cc
 ```
 
-`dsh-cc` 要求 `dsh` **>= 0.2.0-rc.2**；默认的 `npm install -g @deepseek-ai/dsh` 目前满足该要求（截至 2026-09-29），启动器会在引导时强制检查这一下限。该下限随 dsh-cc 的开发线变动，各发布版本对应的已验证配对见“升级”一节中的表格。
+`dsh-cc` 要求 `dsh` **>= 0.2.2-rc.1**，启动器会在引导时强制检查这一下限。该下限随 dsh-cc 的开发线变动，各发布版本对应的已验证配对见“升级”一节中的表格。
 
-如果已经安装 `dsh` **>= 0.2.0-rc.2**，只需安装启动器：
+如果已经安装 `dsh` **>= 0.2.2-rc.1**，只需安装启动器：
 
 ```sh
 $ npm install -g @dsh-cc/cli
@@ -38,7 +38,7 @@ $ dsh-cc
 
 以上安装就是完整的快速开始。另有五个可选官方插件——通过 dsh-cc 仓库自带的 `dsh-cc` marketplace 分发——提供预配置好的子代理通道、一套文档写作工具包，以及外部模型桥接：
 
-- **`dsh-cc-agents`** — `dsh-cc-agents:critic`（推理与方案评审）、`dsh-cc-agents:executor`（机械执行）和 `dsh-cc-agents:marathon`（长周期、全仓库级工作）三个子代理，外加编排路由 skill，以及 `vwa-writing` 和 `formal-design` 两个 skill（证据核验的文档评审与有界 TLA+ 设计检查）。
+- **`dsh-cc-agents`** — `dsh-cc-agents:critic`（推理与方案评审）、`dsh-cc-agents:executor`（机械执行）和 `dsh-cc-agents:marathon`（长周期、全仓库级工作）三个子代理，外加五个 skill：编排路由、数据分析、`vwa-writing`（证据核验的文档评审）、`formal-design`（有界 TLA+ 与 Lean 设计检查）和 `vwa-batch`（无人值守的多页 VWA 评审批，一路推进到批账本）。
 - **`dsh-cc-writing`** — 文档写作工具包：面向中英文文章的写作、评审与语言编辑，运行协议会把简报、计划、评审和保真检查都留在磁盘上。
 - **`dsh-cc-shunt`** — 把大批量文件读取和模板代码生成重定向到廉价通道的工作子代理，让大文件语料不进入主上下文。
 - **`cc-codex-bridge`** — 一条免审批的 Codex 救援通道：PreToolUse hook 会在每次会话运行中自动放行唯一一条规范化、锁定参数的 Codex 调用，让卡住的会话可以把任务交给 Codex，而无需经过权限检查点。
@@ -62,20 +62,25 @@ $ npm install -g @dsh-cc/cli@latest
 $ dsh-cc
 ```
 
+稳定版本发布到 npm 的 `latest` dist-tag；候选版本（rc）发布到 `next`，永远不会占用 `latest`。想试用候选版本，请执行 `npm install -g @dsh-cc/cli@next`。
+
 升级后的首次启动，启动器会以新版本重新执行 profile 的 bundle 安装（记录在 `~/.dsh/profiles/tui/.dsh-cc-bootstrap.json`），profile 会自动收敛——无需手动操作。对账失败（网络问题，或新版本仍在 npm/pnpm 的 minimum-release-age 窗口内）只会警告并照常启动，下次启动时重试。通过 `scripts/sync-local-profile.sh` 同步的 dev profile（`dsh-cc --version` 显示 `-dev+<commit>[.dirty]`）永远不会被启动器对账。
 
 ### dsh 版本兼容性
 
 | dsh-cc release | Verified dsh |
 | --- | --- |
-| v0.9.0-rc.1 – v0.9.2 | 0.2.0-rc.2 |
-| v0.8.3 | 0.2.0-rc.2 |
+| v0.9.4 | 0.2.2-rc.1 |
+| v0.9.3 | 0.2.1-rc.5 |
+| v0.8.3-rc.1 – v0.9.3-rc.4 | 0.2.0-rc.2 |
 | v0.8.2 | 0.1.7-rc.2 |
 | v0.6.3 – v0.8.1 | 0.1.5-rc.1 |
 | v0.6.0 – v0.6.2 | 0.1.2-rc.1 |
 | v0.5.0 | 0.1.1-rc.2 (no launcher version gate) |
 
 每个 `dsh-cc` 发布版本都针对一个确定的 `dsh` 版本开发并通过 CI 验证，启动器会在引导时将其强制为下限。没有强制的版本上限，但只有上表列出的配对经过 CI 验证。当新的 `dsh-cc` 发布迁移到更新的 `dsh` 时，请先升级 `dsh`，再升级 `dsh-cc`——一方的 `@latest` 未必是另一方 `@latest` 的已验证配对。
+
+dsh 0.2.1 线写出的会话会记录 job 与工作目录事件，0.2.1 之前的读取器会拒绝这些事件；因此在用过本发布后降级 `dsh`，将无法恢复这些会话。确需降级，请先完成或导出所需的会话。
 
 ## 首次运行
 

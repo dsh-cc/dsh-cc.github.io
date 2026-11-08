@@ -32,14 +32,14 @@ The key point: **aliases are configuration, not hard-coded vendor bindings.** Th
 `gauge` is a decision-only lane for System One models, used by typed-decision consumers such as the permission classifier. **Never use it as agent frontmatter `model:`.** When unconfigured it follows `haiku`. The routes service rejects any chat request for a System One model with `SystemOneChatModelError` (code `SYSTEMONE_NOT_CHAT_MODEL`).
 
 ::: tip
-The dsh-cc project itself is developed with dsh-cc using this exact routing — see the current development mapping in the project README's [Dogfooding dsh-cc](https://github.com/dsh-cc/dsh-cc#dogfooding-dsh-cc) section. It is a real project configuration, not a required default.
+The dsh-cc project itself is developed with dsh-cc, and its model routes are plain user configuration expressed through model aliases — see [model aliases](https://github.com/dsh-cc/dsh-cc#model-aliases) in the project README. It is a real project configuration, not a required default.
 :::
 
 ## Tiered cascade routing (moa)
 
-The `@dsh-cc/moa` plugin routes main-conversation turns over the four lane aliases `sketch` / `draft` / `blueprint` / `masterplan`: each user turn is classified by a System One decision call into the cheapest sufficient tier, and an optional acceptance judge escalates a rejected answer to the next tier up.
+The `@dsh-cc/moa` plugin routes main-conversation turns over the four lane aliases `sketch` / `draft` / `blueprint` / `masterplan`: each user turn is classified by a System One decision call into the cheapest sufficient tier, and an optional acceptance judge escalates a rejected answer to the next tier up. Classification runs at the entry-point admission seam, before the step is dispatched, and records the tier durably as the session's model selection (`agent.model.select(…)`; harness 0.2.2 session-persisted selections — the request-time overlay is gone).
 
-moa is **off by default** — with `moa.enabled: false` the plugin mounts nothing and costs nothing. Subagents and forks are never overlaid.
+moa is **off by default** — with `moa.enabled: false` the plugin mounts nothing and costs nothing. Subagents and forks are out of scope: child sessions are never classified, selected, or judged (see the scope note below).
 
 Configuration lives in the `moa` settings namespace:
 
@@ -58,15 +58,15 @@ The acceptance judge runs on the `gauge` lane described above — the typed-deci
 
 ### Truthful model bookkeeping
 
-While a moa overlay is active, several things keep the session honest about which model is actually serving it:
+While moa routing is active, several things keep the session honest about which model is actually serving it:
 
-- **Phantom notices filtered.** The harness re-emits `[model changed: …]` notices on nearly every step under the overlay, claiming a continuation model the overlay will not serve. A sanitizer drops exactly those rows while the overlay is active; in every other state (moa disabled, disarmed, validation-failed, or no moa at all) harness notices pass through byte-identical.
-- **`/model` disarms moa.** A mid-session `/model` selection away from the boot pair disarms moa before the next turn is classified — the wire serves your selection (previously the switch was silently ignored while overlaid). Switching back to the boot selection re-arms moa from the next turn.
-- **Persona states the effective model.** The system-prompt `provider`/`model` variables are rewritten to the resolved tier pair whenever the overlay applies; on any fail-open (classification failure or timeout, off-boot selection, disabled) the harness's own selection variables pass through untouched, so the prompt and the wire always agree.
-- **Statusline shows the effective pair.** While an overlay is active the statusline renders `<resolved-model> ◂ <tier-alias>` (e.g. `<provider-model> ◂ sketch`) instead of the bare tier alias; custom statusline payloads gain a `moa: {tier, model}` field. A switch-away clears the segment.
+- **Notices are truthful.** The sanitizer publishes the frozen per-step selection and passes every `[model changed: …]` notice through byte-identical — with routing decided before admission, a notice can no longer claim a model the next step will not serve, so the rule that dropped "phantom" notices is retired.
+- **`/model` disarms moa.** A mid-session `/model` selection away from the boot pair disarms moa before the next turn is classified — an explicit user precedence, and the wire serves your selection (previously the switch was silently ignored). Switching back to the boot selection re-arms moa from the next turn.
+- **Persona states the effective model.** The system-prompt `provider`/`model` variables carry the selected tier pair while moa routing is active; on any fail-open (classification failure or timeout, off-boot selection, disabled) the harness's own selection variables pass through untouched, so the prompt and the wire always agree.
+- **Statusline shows the effective pair.** While moa routing is active the statusline renders `<resolved-model> ◂ <tier-alias>` (e.g. `<provider-model> ◂ sketch`) instead of the bare tier alias; custom statusline payloads gain a `moa: {tier, model}` field. A switch-away clears the segment.
 - **Statusline shows why moa is not armed.** With `moa.enabled: true` but arming refused (routes unavailable, degenerate ladder, judge-route window failure) the statusline renders `moa:unarmed — <reason>` instead of hiding the misconfiguration in a warn line.
 
-Routing scope is the main conversation only — subagent sessions are never classified, overlaid, or judged.
+Routing scope is the main session's own turns only. A subagent session — anything carrying a `subagent` origin or a positive `delegationDepth` header, fork-type children and resumed child sessions driven interactively included — is never classified, selected, or judged, so a spawned agent's model stays whatever its declaration resolved to at spawn.
 
 ## Managing providers with `/provider`
 

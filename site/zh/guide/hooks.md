@@ -69,7 +69,7 @@ cwd 加载它）用于自举（dogfooding）。
 
 | 事件 | 状态 | 桥接层的行为 |
 | --- | --- | --- |
-| `SessionStart` | 支持 | additionalContext 注入新会话（不能阻塞）；部分——纯 stdout 上下文、`initialUserMessage`、`sessionTitle`、`watchPaths`、`reloadSkills` 和 `CLAUDE_ENV_FILE` 不支持 |
+| `SessionStart` | 支持 | additionalContext 作为下一步上下文排队注入新会话、从不阻塞，因此慢 hook 可能错过首个请求；对存活的子代理，投递窗口以认领为界——在子代理认领首条 inbox 之后才 resolve 的上下文会带 warn 丢弃；部分——纯 stdout 上下文、`initialUserMessage`、`sessionTitle`、`watchPaths`、`reloadSkills` 和 `CLAUDE_ENV_FILE` 不支持 |
 | `UserPromptSubmit` | 支持（部分） | 阻塞与 JSON `additionalContext` 可用；纯 stdout 上下文、`sessionTitle` 和 `suppressOriginalPrompt` 不支持 |
 | `PreToolUse` | 支持（部分） | `deny`、`ask` 和 `allow`（预批准）可用；`additionalContext` 作为结果后上下文注入；`updatedInput` 只记录并告警、不被采纳 |
 | `PostToolUse` | 支持 | 阻塞反馈、JSON `additionalContext`，以及 `updatedToolOutput` / `updatedMCPToolOutput` 可用 |
@@ -117,6 +117,10 @@ idle / `auth_success` / `elicitation` 子类型以及 `SessionResume` 的
 同一拦截点上多条来自文件的 hook 按**配置顺序串行**运行，并按最严格方向
 合并（`deny > ask > allow`）。
 
+对存活的子代理，这个分离式投递窗口以认领为界：子代理认领首条 inbox 之后才
+resolve 的上下文，连同 hook 的 `systemMessage` 通知，都会带 warn 丢弃，不再
+注入运行中子代理的后续步骤（那样投递会重新打开运行中的轮次）。
+
 每个 agent 作用域的 stdin 载荷都携带 `session_id` 和字符串形态的
 `transcript_path`，后者始终为 `''`：固定版本的持久化接缝没有公开的产物路径
 访问器。
@@ -131,8 +135,8 @@ idle / `auth_success` / `elicitation` 子类型以及 `SessionResume` 的
 
 hook 问题
 （`timeout`、`exit-code`、`parse-failure`、`spawn-failure`、`stop-cap`、
-`config`）会追加写入 `<dsh home>/hooks/diagnostics.jsonl`，并可在
-`/doctor` 中查看。
+`config`）会追加写入 `<dsh home>/hooks/diagnostics.jsonl`，但尚未在
+`/doctor` 中露面。
 
 ## 执行器类型
 

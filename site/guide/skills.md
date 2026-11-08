@@ -25,6 +25,7 @@ name conflicts):
 | 200 | project | `<projectRoot>/.claude/skills` |
 | 300 | user | `<dshHome>/skills` |
 | 400 | additional | each `config.additionalDirs` |
+| 500 | learned | `$DSH_HOME/learned-skills/` |
 
 Notes, from the provider's discovery rules:
 
@@ -37,8 +38,8 @@ Notes, from the provider's discovery rules:
   after project and user roots.
 - **Bundled** skills ship inside the provider package and are served at rank
   600. Because 600 is the highest rank, any managed (100), project (200),
-  user (300), or additional (400) skill of the same name wins the name
-  conflict — local skills override built-ins, matching Claude Code's
+  user (300), additional (400), or learned (500) skill of the same name wins
+  the name conflict — local skills override built-ins, matching Claude Code's
   precedence. The current bundled subset is `debug`, `simplify`, and `batch`.
 - Legacy `.claude/commands/*.md` files are also loaded and marked
   `deprecated` in their metadata.

@@ -1,7 +1,7 @@
 ---
 title: Extension formats
 description: Where each Claude Code-compatible extension file lives (hooks, skills, plugins, subagents), with minimal skeletons and links to the full guides.
-distilled-from: dsh-cc v0.9.2 (5f496613)
+distilled-from: dsh-cc v0.9.4 (e65fa0ac)
 ---
 
 # Extension formats
@@ -41,7 +41,7 @@ explicit `timeout`; the per-hook default is 600 000 ms):
 
 Four executor kinds are accepted: `command`, `http`, and — off by default,
 enabled by the `enablePromptHooks` / `enableAgentHooks` config flags —
-`prompt` and `agent` (both fork a one-shot subagent). 18 hook events are
+`prompt` and `agent` (both fork a one-shot subagent). 20 hook events are
 supported; unsupported events in the config are ignored before group parsing.
 
 **Full story:** [/guide/hooks](/guide/hooks)
@@ -57,6 +57,7 @@ these roots, in precedence order (lower rank wins name conflicts):
 | 200 | project | `<projectRoot>/.claude/skills` |
 | 300 | user | `<dshHome>/skills` |
 | 400 | additional | each `config.additionalDirs` |
+| 500 | learned | `$DSH_HOME/learned-skills/` |
 
 The project root is the nearest ancestor containing `.git`; without one, the
 current cwd is used. Legacy `.claude/commands/*.md` files are also loaded and
