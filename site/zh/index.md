@@ -20,6 +20,8 @@ features:
     details: 将 `sketch`、`draft`、`blueprint`、`masterplan` 等稳定别名映射到当前 dsh 部署支持的任意 provider/model。
   - title: 覆盖完整编程闭环
     details: TUI、MCP、记忆、子代理、后台任务、worktree、结构化输出、延迟工具发现、可逆的工具输出压缩（`context-crusher` + `context_retrieve`）与成本门控的压缩——完整闭环，开箱即用。
+  - title: 决定 Agent 能做什么
+    details: 五种权限模式（`default`、`acceptEdits`、`plan`、`auto`、`bypassPermissions`），兼容 Claude Code 的 `allow`/`deny`/`ask` 规则引擎（跨层级取并集，`deny` 优先），以及 `auto` 模式下可选的风险分类器——见 [权限指南](/zh/guide/permissions)。
   - title: 带证据核验的文档写作
     details: 可选的 VWA 预设用来源快照、论断标记、论证图和语义评审通道来写作与评审文档——见 [VWA 写作指南](/zh/guide/vwa-writing)。
   - title: 保持可组合

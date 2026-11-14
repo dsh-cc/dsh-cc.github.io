@@ -20,6 +20,8 @@ features:
     details: Route stable aliases like `sketch`, `draft`, `blueprint`, and `masterplan` to any provider/model pair your dsh deployment supports.
   - title: Run a complete coding loop
     details: TUI, MCP, memory, subagents, background tasks, worktrees, structured output, deferred tool discovery, reversible tool-output compression (`context-crusher` + `context_retrieve`), and cost-gated compaction — the full loop, out of the box.
+  - title: Decide what the agent may do
+    details: Five permission modes (`default`, `acceptEdits`, `plan`, `auto`, `bypassPermissions`), a Claude Code-compatible `allow`/`deny`/`ask` rule engine that unions across levels with `deny` winning, and an optional risk classifier for `auto` — see the [permissions guide](/guide/permissions).
   - title: Write documents with evidence checks
     details: An optional VWA preset writes and reviews articles with source snapshots, claim markers, an argument graph, and a semantic review lane — see the [VWA writing guide](/guide/vwa-writing).
   - title: Stay composable
