@@ -209,6 +209,8 @@ Settings live in the `cc-skill-usage` namespace, user layer only:
 
 Stated boundaries: observation is **main-realm only** — subagent skill loads are invisible; attribution keys on the skill name, so a shadowed learned skill's loads may belong to the shadowing skill; and the ledger is **unbounded in v1** — rotation is a follow-up.
 
+- The advisory `recommend_skill` tool is a separate, read-only helper mounted as a dark row by the `cc` and `vwa` presets: `cc-skill-recommendation.mode` defaults to `off`, so nothing runs and nothing changes until you set it to `shadow` (records judgments only) or `active` (returns a few skill names with relevance and prerequisite evidence). It never loads a skill body, never executes or hides a skill, never changes which skills may be invoked, and skills you name explicitly keep their normal flow; it requires the optional System One decision runtime and answers `unavailable` without it. Knobs: [/reference/settings](/reference/settings).
+
 ## A minimal worked example
 
 The source does not ship an example `SKILL.md` for copy-paste, so the

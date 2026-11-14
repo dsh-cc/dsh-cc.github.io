@@ -68,6 +68,8 @@ To delegate to one, pass its name as the `subagent_type` argument of the Task to
 
 The section lists workspace file definitions plus any agents mounted by plugins, the latter by their scoped `plugin:agent` ids — backend provider names are never shown as addressable types.
 
+That render is byte-capped through the `cc-subagent-catalog` settings namespace (on by default): over budget, each entry's `whenToUse` is truncated UTF-8-safely, and if the roster still overflows the tail collapses into a names-only line; `truncate: false` restores the uncapped render, and the knobs are in [/reference/settings](/reference/settings).
+
 Dispatch follows five cases:
 
 1. **`subagent_type` omitted, blank, or `general-purpose`** — a fresh spawn of the caller: your prompt text becomes the child's first user message, no definition participates, and no parent conversation is copied. Write a self-contained prompt.

@@ -53,8 +53,21 @@ moa **默认关闭**——`moa.enabled: false` 时插件不挂载任何东西，
 | `judge-route` | 别名 `gauge` | 别名或 `{provider, model, protocol}`；未设置时使用 gauge 通道别名，它必须解析到一条 System One 路由，否则 moa 保持未启用状态 |
 | `classify-budget-tokens` | `4000` | 分类输入预算 |
 | `call-budget-ms` | `8000` | 每条消息的级联时限 |
+| `context-routing.mode` | `off` | `off`/`shadow`/`active`——上下文感知分类 v2（见下文） |
+| `context-routing.timeout-ms` | `1500` | 单次决策时限（读取时钳制 100..8000） |
+| `context-routing.max-input-tokens` | `4000` | 路由状态加问题的输入预算（读取时钳制 512..16000） |
+| `context-routing.max-under-tier-probability` | `0.10` | 所选层级之上可容忍的概率质量上限（0..0.5） |
+| `context-routing.min-top-probability` | `0.60` | 最高概率低于此值时回退到实时选择（0.25..1） |
 
 验收判定器运行在上文介绍的 `gauge` 通道上——即 System One 模型的类型化决策廉价通道——因此 `judge-route` 未设置时，能解析到 System One 路由的 `gauge` 映射是启用判定的前提。
+
+### 上下文路由 v2
+
+`context-routing` 可选，默认 `off`。开启后它把四层级答案上的 argmax 换成上下文感知分类加一层尾风险层级策略：分类器只看轮次历史的一个有界切片（当前请求、最近三次用户请求、最近一条助手回答和工具名，绝不含参数、路径或结果），实际生效的层级取其中最便宜的一层，条件是它之上的概率质量仍低于 `max-under-tier-probability`。
+
+`shadow` 与旧分类器并行运行：仍由旧判定选模型，因此 shadow 每轮要接受一次额外的分类调用；`active` 则完全取代旧分类器。两者都要求 `moa.enabled: true` 且成功武装，显式 `/model` 依然优先。升级重试路径以及子代理/fork 会话永不分类。
+
+开启 `active` 前必须先让离线评估门（`moa/eval/context-routing.json`，120 条盲标样本）通过；把 `context-routing.mode` 设回 `off` 就是全部回滚。
 
 ### 模型记账的真实化
 
@@ -114,6 +127,8 @@ moa **默认关闭**——`moa.enabled: false` 时插件不挂载任何东西，
 ## 廉价通道的可观测性
 
 未配置的内置别名静默继承父路由时，解析器会记录一条警告——每个别名只记一次。该警告由 `model-aliases` settings 命名空间中的 `warnOnInherit` 键控制（默认 `true`；设为 `false` 可关闭）。
+
+可选的 System One 决策运行时（`@dsh-cc/decision-usage`，即经可信的 `systemone-decisions` settings 命名空间配置的 `ctx.systemoneDecisions` 服务）为每个会话保留一份决策调用的持久账本——挂载它本身不启用任何业务，也不会触发任何请求。会话有这份账本时，`/cost` 会单独渲染一个 `SystemOne decisions` 区块：已确认的花费按该尝试的实际模型与 provider、走同一张价格表折算，未知或尚未结算的用量作为预留上界单列，不计入已确认小计，而没有配置价格的模型读作未定价——永远不是 `$0`。
 
 ## 用 Ctrl+P 循环切换模型
 

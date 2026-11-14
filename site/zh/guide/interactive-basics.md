@@ -50,7 +50,7 @@ TUI 还提供对话导出、用量/上下文显示、todo 查看、审批、排�
 
 上下文处理：`/compact` 可带保留指令压缩会话；TUI 本地的 `/clear`（别名 `/new`、`/reset`）开启全新对话且旧会话仍可恢复（详见[斜杠命令目录](/zh/reference/commands)）。记忆层（`CLAUDE.md` 风格的上下文，外加专门用于持久记忆的写入通道，按工作区隔离）承载长期知识；可用 `/memory` 查看记忆。
 
-还可选开启 CCR（compress-cache-retrieve）压缩：当 `cc-context-compression.enabled: true` 且 `mode: on` 时（默认 mode 是 `dry-run`，只测量不替换），大体量的 grep/日志形工具结果会被替换为一个全新的文本块加一条 `[dsh-cc compressed BEFORE→AFTER tokens. Original: ccr://<hash>]` 标记。原文缓存在 `$DSH_HOME/ccr/<projectKey>/<hash16>`（projectKey = `sha256(会话工作目录)` 的前 16 位十六进制）下的内容寻址存储中，这是一个上限 200 条、TTL 为 3600 秒的 LRU 存储，可通过 `context_retrieve` 工具逐字还原。配置项：`min-bytes`（8192）、`min-savings-ratio`（0.4）、`protected-tools`——显式设置会整体替换默认列表，不是并集。同一个 `cc-context-compression` 命名空间还带有一组 reducer 配置项，全部默认关闭（ships dark）：`reducer-enabled`（false）、`reducer-commands`、`reducer-max-input-tokens`（30000）、`reducer-min-savings-ratio`（0.5）、`reducer-max-tokens`（1024）、`reducer-timeout-ms`（10000）、`reducer-alias`（`'haiku'`）。reducer 把确定性路由器拒绝处理的嘈杂构建/测试输出升级为一次廉价通道提取，产出一份回执（failing-test 列表加逐字证据引用），先做确定性校验再替换，任何一步失败都回退为原始字节；未路由或继承 provider 的通道会被跳过。这个命名空间还带有一组延迟外化（deferred externalization）配置项：`defer-requests`（默认 0，即关闭）——符合条件的结果先原样进入会话，只有经过这么多次主循环发送计数后才换为标准 stub；换出受后缀成本倍增器 `defer-margin`（1.5）门控；从未换出的延迟驻留条目会在 `defer-max-age-ms`（1800000）后被清扫；`defer-urgency-tokens`（未设置，不生效）在会话估算进入模型窗口的该 token 距离内时强制换出，没有窗口来源时不生效。注意：回放和 `/export` 保留的是压缩后的形态。
+可逆的 CCR（compress-cache-retrieve）压缩：测量自 2026-11-11 起默认开启——`cc-context-compression.enabled` 默认 true，默认 `mode: dry-run` 下压缩器只向账本追加测量行，绝不改动工具结果；只有 `mode: on` 才真正替换：大体量的 grep/日志形工具结果会被换成一个全新的文本块加一条 `[dsh-cc compressed BEFORE→AFTER tokens. Original: ccr://<hash>]` 标记。要关闭用 `enabled: false`。原文缓存在 `$DSH_HOME/ccr/<projectKey>/<hash16>`（projectKey = `sha256(会话工作目录)` 的前 16 位十六进制）下的内容寻址存储中，这是一个上限 200 条、TTL 为 3600 秒的 LRU 存储，可通过 `context_retrieve` 工具逐字还原。配置项：`min-bytes`（8192）、`min-savings-ratio`（0.4）、`protected-tools`——显式设置会整体替换默认列表，不是并集。同一个 `cc-context-compression` 命名空间还带有一组 reducer 配置项，全部默认关闭（ships dark）：`reducer-enabled`（false）、`reducer-commands`、`reducer-max-input-tokens`（30000）、`reducer-min-savings-ratio`（0.5）、`reducer-max-tokens`（1024）、`reducer-timeout-ms`（10000）、`reducer-alias`（`'haiku'`）。reducer 把确定性路由器拒绝处理的嘈杂构建/测试输出升级为一次廉价通道提取，产出一份回执（failing-test 列表加逐字证据引用），先做确定性校验再替换，任何一步失败都回退为原始字节；未路由或继承 provider 的通道会被跳过。同一命名空间下还嵌着一个 `reducer-decision-gate` 对象（默认 `off`）：它在旁路查询之前，先对 reducer 的回执尝试是否值得付费给出一次生成前的可行性判定；完整配置项见[设置参考](/zh/reference/settings)。这个命名空间还带有一组延迟外化（deferred externalization）配置项：`defer-requests`（默认 0，即关闭）——符合条件的结果先原样进入会话，只有经过这么多次主循环发送计数后才换为标准 stub；换出受后缀成本倍增器 `defer-margin`（1.5）门控；从未换出的延迟驻留条目会在 `defer-max-age-ms`（1800000）后被清扫；`defer-urgency-tokens`（未设置，不生效）在会话估算进入模型窗口的该 token 距离内时强制换出，没有窗口来源时不生效。注意：回放和 `/export` 保留的是压缩后的形态。
 
 ### 微压缩与廉价通道摘要
 
@@ -60,22 +60,28 @@ TUI 还提供对话导出、用量/上下文显示、todo 查看、审批、排�
 
 成本门控的计划步骤压缩（`cc-compaction-cost-gate`）默认关闭（ships dark，`enabled` false、`mode` `'dry-run'`）：完成一个计划步骤（一次 `todo_write` 到 completed 的状态转移）会武装一个边界，agent 下次空闲时评估压缩是否划算——预期输入 token 节省对比重写成本加债务，`margin` 1.0——划算才真正压缩。真实压缩后进入 `cooldown-ms`（600000）冷却；`window-pressure-tokens` 未设置则没有旁路；`model-table` 可选。账本位于 `$DSH_HOME/compaction-cost-gate/<projectKey>.jsonl`；连续 3 次真实失败会让本功能对会话暂停，并给出指向手动 `/compact` 的提示；`dry-run` 模式把不等式两侧都记入账本但不压缩。自 v0.8.3 起，该门控挂载在 compaction realm 内部，被武装的空闲评估会真正执行——更早的版本把它接在 realm 之外，每次评估都只记录为 `compaction-unavailable`，从不真正评估。
 
+压缩期钉扎（`cc-compaction-pinning`，默认开启，仅用户层）让治理类用户消息跨过一次摘要压缩：来源类别为 `turn-rules` 或 `edit-recovery-hint` 的这类消息会被逐字收进一个按会话有界的环形缓冲，当摘要压缩遮蔽了它们时，在检查点提交后立即按原顺序逐字恢复一次。上限：`max-pinned` 16 条、`max-pinned-bytes` 16384。配置项与默认值见[设置参考](/zh/reference/settings)。
+
+输入治理由一对插件完成，观察每一步真正进入模型的内容。`cc-input-ledger`（默认开启）是纯观察者：三个监听器把不含内容的逐步记录（分节与消息来源构成、UTF-8 字节数、短本地哈希，绝不含文本）追加到 `$DSH_HOME/input-ledger/<projectKey>/<sessionId>.jsonl`。`cc-input-budget`（默认开启，`observe` 模式）按内容类别记录它本会裁剪或延后哪些 `memory`、`advisory` 消息，但直到你设置 `mode: enforce` 才真正改动批次；预算为 `enter-budget-bytes` 24576、`advisory-budget-bytes` 8192、`memory-budget-bytes` 16384，`defer-ttl-steps` 3。这些记录离线读取，没有对应的斜杠命令；细节见[设置参考](/zh/reference/settings)。
+
 ### 可选预览
+
+自 2026-11-11 起默认开启的有：post-edit-verify、completion-gate 与 lsp-on-write。下面每一项仍然只读用户层配置。
 
 三个预览功能只读用户层配置：命名空间只存在于用户层的 `~/.dsh/settings.json`——项目作用域永远不会被读取（是不可见，而非拒绝）。
 
 - **prompt-suggest**（`cc-prompt-suggest`，`enabled` false）：turn-stop 时通过一次廉价通道旁路查询（`alias` `'haiku'`、`timeoutMs` 4000、`maxTokens` 128）预测你的下一条输入，≤120 字符，5 分钟 TTL。在 TUI 自动补全中只按前缀匹配呈现——触发字符 `/`/`@` 或强制 Tab，空输入永不触发；输入前几个字符后按 Tab 即可补全。
-- **post-edit-verify**（`cc-post-edit-verify`，`enabled` false）：一次被接受的 edit/write 之后，运行第一条匹配的 `rules` 条目 `{glob, command, timeout-ms?}`（POSIX sh，会话工作目录），并把结果以 `[auto-verify]` 块追加到同一个工具结果上。配置项：`rules` `[]`、`debounce-ms` 5000（只用于突发标记——每次匹配的编辑仍会执行）、`max-output-bytes` 4096、`verbose-on-success` false、每条规则的 `timeout-ms` 60000，上限 120000。成功时只静默输出一行，除非开启 verbose。
+- **post-edit-verify**（`cc-post-edit-verify`，`enabled` true——自 2026-11-11 起默认开启，此前 ships dark；可用 `cc-post-edit-verify.enabled: false` 关闭；默认 `rules` 为空时完全惰性，不声明至少一条规则就不会运行）：一次被接受的 edit/write 之后，运行第一条匹配的 `rules` 条目 `{glob, command, timeout-ms?}`（POSIX sh，会话工作目录），并把结果以 `[auto-verify]` 块追加到同一个工具结果上。配置项：`rules` `[]`、`debounce-ms` 5000（只用于突发标记——每次匹配的编辑仍会执行）、`max-output-bytes` 4096、`verbose-on-success` false、每条规则的 `timeout-ms` 60000，上限 120000。成功时只静默输出一行，除非开启 verbose。
 - **edit-recovery-hint**（`cc-edit-recovery-hint`，`enabled` true——自 2026-10-16 起默认开启，此前 ships dark；可用 `cc-edit-recovery-hint.enabled: false` 关闭）：当 edit 因多行 `old_string` 未找到而失败时，作为旁带上下文追加一段固定的静态建议（改用单行锚点重试，或按 hunk 拆分编辑；只有锚点也失败时，才重新读取目标区域）。歧义失败（"appears more than once"）刻意不匹配；提示文本是静态的——不会插入任何工具输出。
 
-另有两项可选功能遵循同样的仅用户层规则：
+另有两项功能遵循同样的仅用户层规则（advisor 仍需主动开启）：
 
 - **advisor watchdog**（`cc-advisor`，`enabled` false）：由第二个模型审查每个完成的轮次。每轮结束后它询问一个廉价通道（`alias` `'haiku'`；未配置的别名绝不会回落到主路由），并把保留下来的 `nit` / `concern` / `blocker` 注记作为一条注入消息送达，绝不会在工具批次中途插入，也不会唤醒空闲会话。约束：每次运行 `budget` 2 条非 blocker 注记，`immune-turns` 3，`session-cap` 24。`subagents` `'off'` 只审查顶层会话。每次运行记录到 `$DSH_HOME/advisor/<sessionId>.jsonl`。
-- **lsp-on-write**（`cc-lsp-on-write`，`enabled` false）：`edit`/`write`/`NotebookEdit` 成功后，从运行中的 serena 语言服务器（MCP 连接 `server-name` `serena`）拉取该文件的诊断，并把紧凑的 `[lsp]` 块追加到同一个工具结果。参数：`timeout-ms` 1500，`max-diagnostics` 8，`min-severity` `warning`。任何失败都静默丢弃；连续丢弃 3 次后，本会话内自动停用。
+- **lsp-on-write**（`cc-lsp-on-write`，`enabled` true——自 2026-11-11 起默认开启，此前 ships dark；可用 `cc-lsp-on-write.enabled: false` 关闭；没有挂载 `serena` MCP 时惰性，只 warn 一次然后原样透传）：`edit`/`write`/`NotebookEdit` 成功后，从运行中的 serena 语言服务器（MCP 连接 `server-name` `serena`）拉取该文件的诊断，并把紧凑的 `[lsp]` 块追加到同一个工具结果。参数：`timeout-ms` 1500，`max-diagnostics` 8，`min-severity` `warning`。任何失败都静默丢弃；连续丢弃 3 次后，本会话内自动停用。
 
-另有更多交互插件补足这一层面，其中两项自 2026-10-16 起默认开启：
+另有更多交互插件补足这一层面，其中三项默认开启，两项自 2026-10-16 起：
 
-- **completion-gate**（`cc-completion-gate`，`enabled` false、`nudges-per-session` 1；仅用户层）：无论开关如何，已结束的工具执行都会记录一份哈希回执；开启 `enabled` 后，每个会话最多一次——当 turn-stop 时最后一条 assistant 消息宣称已完成（"tests pass"、"committed"、"pushed"、"build succeeded"）而自你上一条消息以来没有相匹配的已执行证据，就会发出提醒。账本位于 `<dshHome>/completion-gate/receipts/`。
+- **completion-gate**（`cc-completion-gate`，`enabled` true——自 2026-11-11 起默认开启，此前 ships dark；可用 `cc-completion-gate.enabled: false` 关闭；`nudges-per-session` 1；仅用户层）：无论开关如何，已结束的工具执行都会记录哈希回执字段；只有开启 `enabled` 时才捕获经隐私清洗的 bash 命令头部（≤200 字节，六步清洗器），这些头部不会进入账本文件。开启 `enabled` 后，每个会话最多一次——当 turn-stop 时最后一条 assistant 消息宣称已完成（"tests pass"、"committed"、"pushed"、"build succeeded"）而自你上一条消息以来没有相匹配的已执行证据，就会发出提醒。账本位于 `<dshHome>/completion-gate/receipts/`。
 - **retry-attendant**（`retry-attendant`，`enabled` true——自 2026-10-16 起默认开启，此前需主动开启；可用 `retry-attendant.enabled: false` 关闭；`guidance` 与 `escalate` 默认 true；`expire-minutes` 10；仅用户层）：对结果含糊的变更类工具调用（超时、沙箱拒绝、部分写入、git/包管理/MCP 变更失败），追加一行针对失败类别的提示——重新运行前先验证预期的后置条件；在过期窗口内出现完全相同的重试（效果字段一致）时，升级为权限询问。
 - **progress-rebuild**（`progress-rebuild`，`enabled` true——自 2026-10-16 起默认开启，此前 ships dark；可用 `progress-rebuild.enabled: false` 关闭；`max-lines` 120、`include-verified` true）：一次成功的压缩之后，第一个模型请求会重新带上一份结构化进度简报——目标状态、最新的 todo 快照、已验证的 bash 执行回执，以及你上一条真实消息——全部由已提交的会话事件推导而来。
 

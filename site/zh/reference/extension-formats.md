@@ -1,7 +1,7 @@
 ---
 title: 扩展格式
 description: 每个 Claude Code 兼容扩展文件（hooks、skills、plugins、subagents）的存放位置、最小骨架，以及指向完整指南的链接。
-distilled-from: dsh-cc v0.9.4 (e65fa0ac)
+distilled-from: dsh-cc v0.9.5 (4465ee18)
 ---
 
 # 扩展格式

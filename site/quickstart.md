@@ -70,6 +70,7 @@ On the first launch after an upgrade, the launcher re-runs the profile's bundle 
 
 | dsh-cc release | Verified dsh |
 | --- | --- |
+| v0.9.5 | 0.2.2-rc.1 |
 | v0.9.4 | 0.2.2-rc.1 |
 | v0.9.3 | 0.2.1-rc.5 |
 | v0.8.3-rc.1 – v0.9.3-rc.4 | 0.2.0-rc.2 |

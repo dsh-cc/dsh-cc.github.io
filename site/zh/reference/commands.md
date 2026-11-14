@@ -1,7 +1,7 @@
 ---
 title: 斜杠命令
 description: dsh-cc 全部斜杠命令的参考目录——preset（harness）命令与 TUI 本地命令，附对等状态。
-distilled-from: dsh-cc v0.9.4 (e65fa0ac)
+distilled-from: dsh-cc v0.9.5 (4465ee18)
 ---
 
 # 斜杠命令
@@ -58,7 +58,7 @@ matrix 未声明该命令的状态。
 | `/status` | 会话状态摘要：当前模型、权限 preset、会话 id、工作目录。 | Full |
 | `/diff` | 通过 shell 显示 git diff 摘要或单文件 diff；也用于检查 CLAUDE.md / settings 差异。 | Full |
 | `/commit-split` | 建议性的 dry-run：读取工作区变更（status、staged、unstaged），请 `blueprint` 通道给出有序的原子提交拆分方案（message、文件、依赖边）。它从不提交；lockfile 归入末尾的 `chore(deps)` 组。`blueprint` 未配置时，会有一条说明报告继承的主模型路由。 | Full |
-| `/cost` | 按模型的会话用量与费用，对照部署价格表折算。CC preset 内置一张官方公布牌价的起步价格表（USD per 1M tokens）；带路由前缀的运行时 id（如 `llmbox_ant/glm-5.3`）通过 `/` 后缀最长行优先匹配命中裸模型行，且没有 `*` 通配——未匹配的模型会报告 "no price configured"，而不是误导性的零费用。价格在 preset 的 `modelTable` 配置中。 | Full |
+| `/cost` | 按模型的会话用量与费用，对照部署价格表折算。CC preset 内置一张官方公布牌价的起步价格表（USD per 1M tokens）；带路由前缀的运行时 id（如 `llmbox_ant/glm-5.3`）通过 `/` 后缀最长行优先匹配命中裸模型行，且没有 `*` 通配——未匹配的模型会报告 "no price configured"，而不是误导性的零费用。价格在 preset 的 `modelTable` 配置中。会话存在 SystemOne 决策账本时，另起 `SystemOne decisions` 区块用同一张价格表折算这些尝试：未知或未结算的用量作为预留上界单列于已确认小计之外，未配置价格的模型读作未定价而不是 `$0`。 | Full |
 | `/cache-health` | 显示 prompt-cache 前缀稳定性（稳定前缀段数、估算 token 数、自上次调用后是否有变化的标记、漂移表），并与本会话按 provider 计量的 cache 读/写比率联查。被动观察者，仅探测——只报告，从不改写请求。禁用方式是组合配置（CC preset 的 cordis yml 中的 `config.enabled`），不是 settings 命名空间。 | Full |
 | `/stats` | 会话事件统计：轮次与步数、工具调用分布、token 用量合计。 | Full |
 | `/version` | 打印插件包版本，宿主可见时还打印 harness 版本。 | Full |
