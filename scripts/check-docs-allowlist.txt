@@ -25,3 +25,11 @@ DSH_AGENTS_HOME # harness skill-filesystem agentsHome override; verified in deep
 # The site's settings reference documents its removal; the token no longer
 # appears in the v0.8.3 corpus by design.
 @dsh-cc/settings-migrations
+
+# --- md-corpus casualty of the v0.9.5 settings merge (commit cd24880c, #387) ---
+# Identifier is live upstream (packages/settings/settings/src/cascade/env.ts:10,
+# tests/cascade/env.spec.ts); its only md mention lived in the deleted
+# packages/settings/settings-cascade/README*.md and was not carried into the
+# merged @dsh-cc/settings README. Site prose at reference/settings.md:51 names
+# the static allowlist by its export name.
+DANGEROUS_ENV_VARS

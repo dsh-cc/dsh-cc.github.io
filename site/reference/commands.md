@@ -1,7 +1,7 @@
 ---
 title: Slash commands
 description: Reference catalog of every slash command in dsh-cc — preset (harness) commands and TUI-local commands, with parity status.
-distilled-from: dsh-cc v0.9.4 (e65fa0ac)
+distilled-from: dsh-cc v0.9.5 (4465ee18)
 ---
 
 # Slash commands
@@ -60,7 +60,7 @@ the matrix does not state a status for that command.
 | `/status` | Session status summary: current model, permission preset, session id, working directory. | Full |
 | `/diff` | Show git diff summary or a file diff via the shell; also inspects CLAUDE.md / settings differences. | Full |
 | `/commit-split` | Advisory dry-run: reads the working-tree change (status, staged, unstaged) and asks the `blueprint` lane for an ordered atomic-commit split plan (message, files, dependency edges). It never commits; lockfiles go to a trailing `chore(deps)` group. When `blueprint` is unconfigured, a note reports the inherited main-model route. | Full |
-| `/cost` | Per-model session usage and cost, folded against the deployment price table. The CC preset ships a starter table of official published list prices (USD per 1M tokens); a runtime id with a route prefix (e.g. `llmbox_ant/glm-5.3`) matches the bare model row via `/`-suffix longest-row-wins matching, and there is no `*` wildcard — unmatched models report "no price configured" instead of a misleading zero cost. Prices live in the preset's `modelTable` config. | Full |
+| `/cost` | Per-model session usage and cost, folded against the deployment price table. The CC preset ships a starter table of official published list prices (USD per 1M tokens); a runtime id with a route prefix (e.g. `llmbox_ant/glm-5.3`) matches the bare model row via `/`-suffix longest-row-wins matching, and there is no `*` wildcard — unmatched models report "no price configured" instead of a misleading zero cost. Prices live in the preset's `modelTable` config. When the session has a SystemOne decision ledger, a separate `SystemOne decisions` section prices those attempts the same way, keeps unknown or unsettled usage as a reserved upper bound outside the confirmed subtotal, and reports an unconfigured model as unpriced rather than `$0`. | Full |
 | `/cache-health` | Shows prompt-cache prefix stability (stable prefix segment count, estimated tokens, changed-since-last-call flag, drift table) joined with provider-metered cache read/write ratios for this session. A passive observer, detector-only: it reports, never rewrites requests. Disabling is composition config (`config.enabled` in the CC preset's cordis yml), not a settings namespace. | Full |
 | `/stats` | Session event statistics: turn and step counts, tool-call distribution, token usage totals. | Full |
 | `/version` | Print the plugin bundle version and, when the host surfaces one, the harness version. | Full |

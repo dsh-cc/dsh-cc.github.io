@@ -68,6 +68,8 @@ To delegate to one, pass its name as the `subagent_type` argument of the Task to
 
 区块列出工作区文件定义，以及插件挂载的代理（后者以限定 id `plugin:agent` 呈现）——后端 provider 名称永远不会被当作可寻址的类型展示。
 
+该渲染经由 `cc-subagent-catalog` 设置命名空间做字节上限（默认开启）：超出预算时，每个条目的 `whenToUse` 按 UTF-8 安全截断；若名册仍然溢出，尾部会折叠成只留名字的一行。`truncate: false` 可恢复不受上限的原始渲染，各项旋钮见 [/reference/settings](/zh/reference/settings)。
+
 调度分五种情况：
 
 1. **`subagent_type` 省略、为空或为 `general-purpose`** —— 对调用者做一次全新 spawn：提示文本成为子代理的第一条用户消息，不参与任何定义，也不复制父对话。请写自包含的提示。

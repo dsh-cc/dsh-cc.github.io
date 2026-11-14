@@ -1,7 +1,7 @@
 ---
 title: CLI flags
 description: The dsh-cc bin and the flags it accepts before spawning dsh --profile tui.
-distilled-from: dsh-cc v0.9.4 (e65fa0ac)
+distilled-from: dsh-cc v0.9.5 (4465ee18)
 ---
 
 # CLI flags

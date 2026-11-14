@@ -1,7 +1,7 @@
 ---
 title: Claude Code 兼容性
 description: dsh-cc 中"Claude Code 兼容性"的含义——以及如何诚实地解读一致性矩阵。
-distilled-from: dsh-cc v0.9.4 (e65fa0ac)
+distilled-from: dsh-cc v0.9.5 (4465ee18)
 ---
 
 # Claude Code 兼容性

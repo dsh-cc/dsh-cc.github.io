@@ -1,7 +1,7 @@
 ---
 title: Claude Code compatibility
 description: What "Claude Code compatibility" means in dsh-cc — and how to read the parity matrix honestly.
-distilled-from: dsh-cc v0.9.4 (e65fa0ac)
+distilled-from: dsh-cc v0.9.5 (4465ee18)
 ---
 
 # Claude Code compatibility
